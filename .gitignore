@@ -1,0 +1,16 @@
+# Xcode
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+
+# macOS
+.DS_Store
+*.swp
+
+# API Key — 不提交
+SnapLingo/APIConfig.swift

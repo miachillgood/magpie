@@ -5,20 +5,5 @@
 //  Created by Mia Miao on 13/04/2026.
 //
 
-import SwiftUI
-
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
-
-#Preview {
-    ContentView()
-}
+// ContentView.swift 已被 RootTabView 替代，保留此文件仅供兼容。
+// 实际入口：SnapLingoApp.swift → RootTabView
