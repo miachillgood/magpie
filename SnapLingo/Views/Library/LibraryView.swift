@@ -12,7 +12,6 @@ struct LibraryView: View {
     @Environment(AppCoordinator.self) private var coordinator
 
     @State private var viewModel = LibraryViewModel()
-    @State private var selectedWord: VocabWord?
 
     private var filtered: [VocabWord] { viewModel.filtered(allWords) }
     private var dueCount: Int { viewModel.dueCount(allWords) }
@@ -35,14 +34,13 @@ struct LibraryView: View {
                 words: [word.word],
                 sourceImage: word.sourceImageThumbnail.flatMap { UIImage(data: $0) },
                 sceneTag: word.sceneTag,
-                ocrText: word.exampleSentence
+                ocrText: word.exampleSentence,
+                categoryName: word.categoryName
             )
         }
     }
 
     // MARK: - 列表
-
-    private var scanSessions: [ScanSession] { viewModel.scanSessions(from: allWords) }
 
     private var wordList: some View {
         List {
@@ -64,35 +62,22 @@ struct LibraryView: View {
                 }
             }
 
-            // 扫描历史胶卷（有多次扫描时才显示）
-            if scanSessions.count > 1 {
-                Section("扫描历史") {
+            // 分类过滤芯片
+            let categories = viewModel.allCategories(from: allWords)
+            if !categories.isEmpty {
+                Section {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(scanSessions) { session in
-                                scanSessionCard(session)
+                        HStack(spacing: 8) {
+                            categoryChip(nil, label: "全部")
+                            ForEach(categories, id: \.self) { cat in
+                                categoryChip(cat, label: cat)
                             }
                         }
                         .padding(.horizontal, 2)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 4)
                     }
                     .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
                 }
-            }
-
-            // 场景过滤芯片
-            Section {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        sceneChip(nil, label: "全部")
-                        ForEach(SceneTag.allCases, id: \.self) { scene in
-                            sceneChip(scene, label: scene.rawValue)
-                        }
-                    }
-                    .padding(.horizontal, 2)
-                    .padding(.vertical, 4)
-                }
-                .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
             }
 
             // 单词列表
@@ -102,13 +87,11 @@ struct LibraryView: View {
                         VocabWordRowView(word: word)
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        // 删除
                         Button(role: .destructive) {
                             modelContext.delete(word)
                         } label: {
                             Label("删除", systemImage: "trash")
                         }
-                        // 标记已掌握
                         Button {
                             word.isMastered.toggle()
                         } label: {
@@ -125,52 +108,12 @@ struct LibraryView: View {
         .listStyle(.insetGrouped)
     }
 
-    // MARK: - 扫描历史卡片
+    // MARK: - 分类过滤芯片
 
-    private func scanSessionCard(_ session: ScanSession) -> some View {
-        let isSelected = viewModel.selectedSessionID == session.id
+    private func categoryChip(_ category: String?, label: String) -> some View {
+        let selected = viewModel.selectedCategory == category
         return Button {
-            viewModel.selectedSessionID = isSelected ? nil : session.id
-        } label: {
-            VStack(spacing: 4) {
-                // 缩略图或占位
-                Group {
-                    if let data = session.thumbnail, let img = UIImage(data: data) {
-                        Image(uiImage: img)
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        Color.secondary.opacity(0.15)
-                            .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
-                    }
-                }
-                .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2.5)
-                )
-
-                Text("\(session.wordCount) 词")
-                    .font(.caption2)
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-
-                Text(session.date, style: .date)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
-            }
-            .frame(width: 72)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - 场景过滤芯片
-
-    private func sceneChip(_ scene: SceneTag?, label: String) -> some View {
-        let selected = viewModel.selectedScene == scene
-        return Button {
-            viewModel.selectedScene = scene
+            viewModel.selectedCategory = category
         } label: {
             Text(label)
                 .font(.caption.weight(.medium))

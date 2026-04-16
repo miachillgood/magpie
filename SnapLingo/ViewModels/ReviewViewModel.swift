@@ -43,8 +43,14 @@ final class ReviewViewModel {
 
     // MARK: - 动作
 
+    /// 从所有词中筛出到期词，随机排序
     func load(from words: [VocabWord]) {
-        queue = srService.dueWords(from: words).shuffled()
+        loadExact(words: srService.dueWords(from: words).shuffled())
+    }
+
+    /// 直接加载指定词列表（已经过滤好）
+    func loadExact(words: [VocabWord]) {
+        queue = words
         currentIndex = 0
         isShowingAnswer = false
         sessionResults = []

@@ -55,7 +55,7 @@ final class WordDetailViewModel {
 
     // MARK: - 保存词汇
 
-    func save(word: String, scene: SceneTag, sourceImage: UIImage?, scanSessionID: UUID, context: ModelContext) {
+    func save(word: String, scene: SceneTag, categoryName: String, sourceImage: UIImage?, scanSessionID: UUID, context: ModelContext) {
         guard let exp = explanations[word] else { return }
 
         // 去重检查
@@ -75,7 +75,8 @@ final class WordDetailViewModel {
             exampleSentenceChinese: exp.exampleSentenceChinese,
             sceneNote: exp.sceneNote,
             sceneTag: scene,
-            scanSessionID: scanSessionID
+            scanSessionID: scanSessionID,
+            categoryName: categoryName
         )
         if let img = sourceImage {
             vocab.sourceImageThumbnail = ImageUtilities.thumbnail(from: img)

@@ -13,6 +13,7 @@ struct WordDetailView: View {
     let sceneTag: SceneTag
     let ocrText: String
     var scanSessionID: UUID = UUID()
+    var categoryName: String = "通用"
 
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = WordDetailViewModel()
@@ -39,6 +40,7 @@ struct WordDetailView: View {
                         viewModel.save(
                             word: word,
                             scene: sceneTag,
+                            categoryName: categoryName,
                             sourceImage: sourceImage,
                             scanSessionID: scanSessionID,
                             context: modelContext
@@ -102,7 +104,7 @@ struct WordDetailView: View {
         let unsaved = words.filter { !viewModel.isSaved($0) }
         return Button("全部保存") {
             for word in unsaved {
-                viewModel.save(word: word, scene: sceneTag, sourceImage: sourceImage, scanSessionID: scanSessionID, context: modelContext)
+                viewModel.save(word: word, scene: sceneTag, categoryName: categoryName, sourceImage: sourceImage, scanSessionID: scanSessionID, context: modelContext)
             }
         }
         .disabled(unsaved.isEmpty)

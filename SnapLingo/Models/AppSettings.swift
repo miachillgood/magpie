@@ -8,7 +8,7 @@ import SwiftData
 
 // MARK: - User Level
 
-enum UserLevel: String, Codable {
+enum UserLevel: String, Codable, CaseIterable {
     case unknown        // 尚未评估
     case beginner       // 初级：第一次拍照选词率 > 70%
     case intermediate   // 中级：30%-70%

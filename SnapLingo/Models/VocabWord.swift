@@ -26,6 +26,17 @@ enum SceneTag: String, Codable, CaseIterable {
         case .general:     return "text.bubble"
         }
     }
+
+    var defaultCategory: String {
+        switch self {
+        case .restaurant:  return "餐厅美食"
+        case .supermarket: return "超市购物"
+        case .medical:     return "医疗保健"
+        case .legal:       return "法律文件"
+        case .signage:     return "路牌标识"
+        case .general:     return "通用"
+        }
+    }
 }
 
 // MARK: - VocabWord
@@ -58,6 +69,7 @@ final class VocabWord {
     var addedAt: Date
     var isMastered: Bool                // 用户手动标记为已掌握
     var scanSessionID: UUID = UUID()    // 同一次扫描保存的词共享此 ID，用于词库分组
+    var categoryName: String = "通用"   // 用户自定义分类名（中文）
 
     init(
         word: String,
@@ -66,7 +78,8 @@ final class VocabWord {
         exampleSentenceChinese: String,
         sceneNote: String = "",
         sceneTag: SceneTag = .general,
-        scanSessionID: UUID = UUID()
+        scanSessionID: UUID = UUID(),
+        categoryName: String = "通用"
     ) {
         self.id = UUID()
         self.word = word
@@ -77,6 +90,7 @@ final class VocabWord {
         self.sceneNote = sceneNote
         self.sceneTag = sceneTag
         self.scanSessionID = scanSessionID
+        self.categoryName = categoryName
         self.easeFactor = 2.5
         self.interval = 1
         self.repetitions = 0

@@ -14,10 +14,19 @@ struct WordSelectionView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = WordSelectionViewModel()
     @State private var scanSessionID = UUID()   // 本次扫描的唯一 ID
+    @State private var showCategorySheet = false
+    @State private var newCategoryInput = ""
 
     // 读取用户水平
     @Query private var settingsArray: [AppSettings]
     private var settings: AppSettings? { settingsArray.first }
+
+    // 历史分类（用于分类编辑 sheet）
+    @Query private var allWords: [VocabWord]
+    private var historicalCategories: [String] {
+        let cats = Set(allWords.map(\.categoryName)).subtracting(["通用"])
+        return cats.sorted()
+    }
 
     var body: some View {
         @Bindable var coordinator = coordinator
@@ -25,15 +34,46 @@ struct WordSelectionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
 
-                // 场景标签
+                // 原图（自然比例，下拉弹性，不裁剪）
+                GeometryReader { geo in
+                    let minY = geo.frame(in: .named("wordSelectionScroll")).minY
+                    let stretch = max(0, minY)
+                    Image(uiImage: sourceImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height + stretch)
+                        .clipped()
+                        .cornerRadius(12)
+                        .offset(y: -stretch)
+                }
+                .aspectRatio(sourceImage.size, contentMode: .fit)
+                .padding(.horizontal)
+
+                // 分类标签（可编辑）
                 HStack {
-                    Image(systemName: viewModel.detectedScene.icon)
-                    Text("场景：\(viewModel.detectedScene.rawValue)")
+                    Button {
+                        newCategoryInput = viewModel.editableCategory
+                        showCategorySheet = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: viewModel.detectedScene.icon)
+                            Text(viewModel.editableCategory)
+                            Image(systemName: "pencil")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                        .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
                     Spacer()
                     Text("共 \(viewModel.presentedWords.count) 个词")
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .font(.subheadline.weight(.medium))
                 .padding(.horizontal)
 
                 Divider().padding(.horizontal)
@@ -93,19 +133,24 @@ struct WordSelectionView: View {
             }
             .padding(.vertical)
         }
+        .coordinateSpace(name: "wordSelectionScroll")
         .navigationTitle("选择词汇")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             confirmButton
         }
         .task { await loadKeywords() }
+        .sheet(isPresented: $showCategorySheet) {
+            categoryPickerSheet
+        }
         .navigationDestination(for: WordDetailRoute.self) { route in
             WordDetailView(
                 words: route.words,
                 sourceImage: route.sourceImage,
                 sceneTag: route.sceneTag,
                 ocrText: route.ocrText,
-                scanSessionID: route.scanSessionID
+                scanSessionID: route.scanSessionID,
+                categoryName: route.categoryName
             )
         }
     }
@@ -133,6 +178,68 @@ struct WordSelectionView: View {
         .background(.regularMaterial)
     }
 
+    // MARK: - 分类选择 Sheet
+
+    private var categoryPickerSheet: some View {
+        NavigationStack {
+            List {
+                Section("输入新分类") {
+                    HStack {
+                        TextField("例如：咖啡店、健身房…", text: $newCategoryInput)
+                            .autocorrectionDisabled()
+                        if !newCategoryInput.isEmpty {
+                            Button {
+                                newCategoryInput = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                if !historicalCategories.isEmpty {
+                    Section("历史分类") {
+                        ForEach(historicalCategories, id: \.self) { cat in
+                            Button {
+                                viewModel.editableCategory = cat
+                                showCategorySheet = false
+                            } label: {
+                                HStack {
+                                    Text(cat)
+                                    Spacer()
+                                    if cat == viewModel.editableCategory {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                            }
+                            .foregroundStyle(.primary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("选择分类")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { showCategorySheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("确认") {
+                        let trimmed = newCategoryInput.trimmingCharacters(in: .whitespaces)
+                        if !trimmed.isEmpty {
+                            viewModel.editableCategory = trimmed
+                        }
+                        showCategorySheet = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
     // MARK: - 动作
 
     private func loadKeywords() async {
@@ -158,7 +265,8 @@ struct WordSelectionView: View {
             sourceImage: sourceImage,
             sceneTag: viewModel.detectedScene,
             ocrText: ocrResult.fullText,
-            scanSessionID: scanSessionID
+            scanSessionID: scanSessionID,
+            categoryName: viewModel.editableCategory
         ))
     }
 }
@@ -171,6 +279,7 @@ struct WordDetailRoute: Hashable {
     let sceneTag: SceneTag
     let ocrText: String
     let scanSessionID: UUID
+    let categoryName: String
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(words)

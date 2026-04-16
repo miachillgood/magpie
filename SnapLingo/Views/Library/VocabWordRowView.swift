@@ -9,10 +9,7 @@ struct VocabWordRowView: View {
     let word: VocabWord
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            // 缩略图
-            thumbnailView
-
+        HStack(alignment: .center, spacing: 10) {
             // 文字内容
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -28,40 +25,18 @@ struct VocabWordRowView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+
+                Label(word.categoryName, systemImage: word.sceneTag.icon)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.tint)
             }
 
             Spacer()
 
-            // 右侧状态
-            VStack(alignment: .trailing, spacing: 4) {
-                Label(word.sceneTag.rawValue, systemImage: word.sceneTag.icon)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.tint)
-
-                reviewBadge
-            }
+            // 复习状态
+            reviewBadge
         }
         .padding(.vertical, 4)
-    }
-
-    @ViewBuilder
-    private var thumbnailView: some View {
-        if let data = word.sourceImageThumbnail,
-           let uiImg = UIImage(data: data) {
-            Image(uiImage: uiImg)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 48, height: 48)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        } else {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.secondary.opacity(0.15))
-                .frame(width: 48, height: 48)
-                .overlay(
-                    Image(systemName: "text.viewfinder")
-                        .foregroundStyle(.secondary)
-                )
-        }
     }
 
     private var reviewBadge: some View {

@@ -37,6 +37,7 @@ struct ExtractedWord: Identifiable, Hashable {
 struct KeywordExtractionResult {
     let words: [ExtractedWord]
     let detectedScene: SceneTag
+    let suggestedCategory: String   // 中文分类名，供用户展示和编辑
 }
 
 struct WordExplanation {
@@ -94,8 +95,25 @@ final class ClaudeAPIService {
         3. 排除纯数字、纯符号、单个字母
         4. 每次返回 10-15 个词（文本词汇不足时返回全部有价值的词）
 
+        场景判断规则（scene_detected字段必须严格按照以下规则填写）：
+        - "medical"：药品、保健品、维生素、营养补充剂、药片、医疗器械、医院单据、处方、疫苗、医疗保险
+        - "supermarket"：食品包装、货架标签、成分表、营养成分、价格标签、超市促销
+        - "restaurant"：菜单、咖啡单、外卖单、食物描述、饮料单
+        - "legal"：合同、租约、条款、政府文件、法律声明、隐私协议
+        - "signage"：路牌、公告、警示标语、营业时间、门牌、指示牌
+        - "general"：以上均不符合时才使用
+
+        同时根据场景给出一个简短的中文分类名（suggested_category），供用户在学习记录中使用。示例：
+        - medical → "医疗保健"
+        - supermarket → "超市购物"
+        - restaurant → "餐厅美食"
+        - legal → "法律文件"
+        - signage → "路牌标识"
+        - general → "通用"
+        可根据内容更具体，如"维生素营养"、"咖啡饮品"等。
+
         只返回 JSON，不要有任何多余文字或 markdown 代码块：
-        {"scene_detected":"restaurant|supermarket|medical|legal|signage|general","words":[{"word":"prescription","likely_known":false}]}
+        {"scene_detected":"restaurant|supermarket|medical|legal|signage|general","suggested_category":"餐厅美食","words":[{"word":"prescription","likely_known":false}]}
         """
 
         let userMessage = "请从以下英文文本中提取关键学习词汇：\n\n\(text)"
@@ -104,7 +122,11 @@ final class ClaudeAPIService {
 
         // 解析 JSON
         struct RawWord: Decodable { let word: String; let likely_known: Bool }
-        struct RawResult: Decodable { let scene_detected: String; let words: [RawWord] }
+        struct RawResult: Decodable {
+            let scene_detected: String
+            let suggested_category: String?
+            let words: [RawWord]
+        }
 
         let cleaned = cleanJSON(raw)
         guard let data = cleaned.data(using: .utf8),
@@ -114,7 +136,8 @@ final class ClaudeAPIService {
 
         let scene = SceneTag(rawValue: result.scene_detected) ?? .general
         let words = result.words.map { ExtractedWord(word: $0.word, likelyKnown: $0.likely_known) }
-        return KeywordExtractionResult(words: words, detectedScene: scene)
+        let category = result.suggested_category ?? scene.defaultCategory
+        return KeywordExtractionResult(words: words, detectedScene: scene, suggestedCategory: category)
     }
 
     // MARK: - 生成解释（Prompt B）

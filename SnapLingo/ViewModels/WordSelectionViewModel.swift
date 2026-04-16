@@ -14,6 +14,7 @@ final class WordSelectionViewModel {
     var presentedWords: [ExtractedWord] = []
     var selectedWordTexts: Set<String> = []
     var detectedScene: SceneTag = .general
+    var editableCategory: String = "通用"   // 用户可编辑的分类名
     var isLoadingKeywords = false
     var errorMessage: String?
 
@@ -38,6 +39,7 @@ final class WordSelectionViewModel {
             await MainActor.run {
                 presentedWords = result.words
                 detectedScene = result.detectedScene
+                editableCategory = result.suggestedCategory
                 // 首次拍照（水平未知）：预选 Claude 认为可能不认识的词，降低操作摩擦
                 if userLevel == .unknown {
                     selectedWordTexts = Set(result.words.filter { !$0.likelyKnown }.map(\.word))
