@@ -5,263 +5,340 @@
 
 import Foundation
 
-// MARK: - 请求 / 响应结构体
-
-private struct ClaudeRequest: Encodable {
-    let model: String
-    let max_tokens: Int
-    let system: String
-    let messages: [ClaudeMessage]
-}
-
-private struct ClaudeMessage: Encodable {
-    let role: String
-    let content: String
-}
-
-private struct ClaudeResponse: Decodable {
-    struct ContentBlock: Decodable { let type: String; let text: String }
-    struct Usage: Decodable { let input_tokens: Int; let output_tokens: Int }
-    let content: [ContentBlock]
-    let usage: Usage
-}
-
 // MARK: - 业务数据结构
 
-struct ExtractedWord: Identifiable, Hashable {
-    let id = UUID()
-    let word: String
-    let likelyKnown: Bool   // Claude 认为该用户水平大概率认识
+struct SceneExtraction: Sendable {
+    var scene: SceneType
+    var title: String
+    var candidates: [WordCandidate]
 }
 
-struct KeywordExtractionResult {
-    let words: [ExtractedWord]
-    let detectedScene: SceneTag
-    let suggestedCategory: String   // 中文分类名，供用户展示和编辑
+/// 要解释的一个词
+struct ExplainItem: Sendable {
+    var key: String
+    var word: String
+    var context: String
 }
 
-struct WordExplanation {
-    let chineseExplanation: String
-    let exampleSentence: String
-    let exampleSentenceChinese: String
-    let sceneNote: String
+struct WordExplanation: Sendable {
+    var lemma: String
+    var partOfSpeech: String
+    var cefr: CEFRLevel?
+    var gloss: String
+    var phonetic: String
+    var explanation: String
+    var exampleSentence: String
+    var exampleTranslation: String
+    var sceneNote: String
 }
 
-// MARK: - 错误类型
+// MARK: - 错误
 
 enum ClaudeAPIError: LocalizedError {
     case noAPIKey
     case unauthorized
     case rateLimited
-    case networkError(Error)
-    case decodingError(String)
-    case apiError(statusCode: Int, message: String)
+    case overloaded
+    case network(Error)
+    case decoding
+    case truncated
+    case api(statusCode: Int, message: String)
 
     var errorDescription: String? {
         switch self {
-        case .noAPIKey:          return "请先在设置中填写 Claude API Key"
-        case .unauthorized:      return "API Key 无效，请重新检查"
-        case .rateLimited:       return "请求过于频繁，请稍候再试"
-        case .networkError(let e): return "网络错误：\(e.localizedDescription)"
-        case .decodingError(let s): return "数据解析失败：\(s)"
-        case .apiError(let code, let msg): return "API 错误 \(code)：\(msg)"
+        case .noAPIKey:     "还没有配置 Claude API Key"
+        case .unauthorized: "API Key 无效，请检查配置"
+        case .rateLimited:  "请求太频繁了，稍等一下再试"
+        case .overloaded:   "服务有点忙，稍后再试"
+        case .network:      "网络连接失败，请检查网络"
+        case .decoding:     "返回的数据看不懂，请重试"
+        case .truncated:    "内容太长被截断了，请重试"
+        case .api(let code, _): "服务出错了（\(code)）"
+        }
+    }
+
+    var isRetryable: Bool {
+        switch self {
+        case .rateLimited, .overloaded, .network: true
+        case .api(let code, _): code >= 500
+        default: false
         }
     }
 }
 
 // MARK: - ClaudeAPIService
 
-final class ClaudeAPIService {
-    private let baseURL = URL(string: "https://api.anthropic.com/v1/messages")!
-    private let model   = "claude-haiku-4-5-20251001"
+/// 调用 Claude Messages API，用结构化输出（JSON Schema）保证返回格式
+final class ClaudeAPIService: Sendable {
+    static let shared = ClaudeAPIService()
 
-    // MARK: - 筛词（Prompt A）
+    private let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
+    /// 扫描流程对速度敏感，用 Haiku
+    private let model = "claude-haiku-4-5"
+    private let maxAttempts = 3
 
-    func extractKeywords(
-        from text: String,
-        userLevel: UserLevel = .unknown,
-        sceneHint: SceneTag? = nil
-    ) async throws -> KeywordExtractionResult {
+    // MARK: 1. 从场景文字里挑词
 
-        let systemPrompt = """
-        你是一个专业的英语教学助手，帮助中文母语者学习英语。
-        用户当前英语水平：\(userLevel.displayName)
-        \(sceneHint.map { "当前场景提示：\($0.rawValue)" } ?? "")
+    func extractWords(from text: String, level: CEFRLevel) async throws -> SceneExtraction {
+        let sceneList = SceneType.allCases
+            .map { "- \($0.rawValue)：\($0.promptHint)" }
+            .joined(separator: "\n")
 
-        你的任务是从OCR识别的英文文本中筛选出最有学习价值的词汇。
-        筛选标准：
-        1. 选择对该场景重要的专业词汇或实用词汇
-        2. 选择该水平学习者可能不认识的词，排除极其常见的基础词（the, is, a, and, to, of 等）
-        3. 排除纯数字、纯符号、单个字母
-        4. 每次返回 10-15 个词（文本词汇不足时返回全部有价值的词）
+        let system = """
+        你是一位帮助中文母语者在英语国家生活的英语老师。用户拍下了生活中的英文文字，你要从中挑出值得学的单词。
 
-        场景判断规则（scene_detected字段必须严格按照以下规则填写）：
-        - "medical"：药品、保健品、维生素、营养补充剂、药片、医疗器械、医院单据、处方、疫苗、医疗保险
-        - "supermarket"：食品包装、货架标签、成分表、营养成分、价格标签、超市促销
-        - "restaurant"：菜单、咖啡单、外卖单、食物描述、饮料单
-        - "legal"：合同、租约、条款、政府文件、法律声明、隐私协议
-        - "signage"：路牌、公告、警示标语、营业时间、门牌、指示牌
-        - "general"：以上均不符合时才使用
+        用户当前水平：CEFR \(level.code)（\(level.displayName)）。
 
-        同时根据场景给出一个简短的中文分类名（suggested_category），供用户在学习记录中使用。示例：
-        - medical → "医疗保健"
-        - supermarket → "超市购物"
-        - restaurant → "餐厅美食"
-        - legal → "法律文件"
-        - signage → "路牌标识"
-        - general → "通用"
-        可根据内容更具体，如"维生素营养"、"咖啡饮品"等。
+        挑词规则：
+        1. 挑 12–20 个对理解这个场景有用的实用词，覆盖从 \(level.code) 往上两级的难度，也可以保留少量更简单的词。
+        2. 排除人名、品牌名、纯数字、单个字母、明显的 OCR 错误。
+        3. 同一个词只出现一次；词组（如 "gluten free"）可以作为一个条目。
+        4. word 是原文里的写法，lemma 是词典原形（小写，名词单数、动词原形）。
+        5. cefr 是这个词义在日常英语里的大致等级。
+        6. gloss 是结合这个场景的简短中文释义，不超过 8 个字。
+        7. part_of_speech 用英文缩写：n. / v. / adj. / adv. / phr. 等。
 
-        只返回 JSON，不要有任何多余文字或 markdown 代码块：
-        {"scene_detected":"restaurant|supermarket|medical|legal|signage|general","suggested_category":"餐厅美食","words":[{"word":"prescription","likely_known":false}]}
+        场景 scene 从下面选一个最贴切的：
+        \(sceneList)
+
+        title 是给这个场景起的简短中文标题（不超过 10 个字），尽量具体，比如“Countdown 超市货架”“租房合同”“咖啡店菜单”。
         """
 
-        let userMessage = "请从以下英文文本中提取关键学习词汇：\n\n\(text)"
+        let schema: [String: Any] = [
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["scene", "title", "words"],
+            "properties": [
+                "scene": ["type": "string", "enum": SceneType.allCases.map(\.rawValue)],
+                "title": ["type": "string"],
+                "words": [
+                    "type": "array",
+                    "items": [
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["word", "lemma", "part_of_speech", "cefr", "gloss"],
+                        "properties": [
+                            "word": ["type": "string"],
+                            "lemma": ["type": "string"],
+                            "part_of_speech": ["type": "string"],
+                            "cefr": ["type": "string", "enum": CEFRLevel.allCases.map(\.code)],
+                            "gloss": ["type": "string"]
+                        ]
+                    ]
+                ]
+            ]
+        ]
 
-        let raw = try await callClaude(system: systemPrompt, user: userMessage, maxTokens: 1024)
-
-        // 解析 JSON
-        struct RawWord: Decodable { let word: String; let likely_known: Bool }
-        struct RawResult: Decodable {
-            let scene_detected: String
-            let suggested_category: String?
-            let words: [RawWord]
+        struct Raw: Decodable {
+            struct Word: Decodable {
+                let word: String
+                let lemma: String
+                let part_of_speech: String
+                let cefr: String
+                let gloss: String
+            }
+            let scene: String
+            let title: String
+            let words: [Word]
         }
 
-        let cleaned = cleanJSON(raw)
-        guard let data = cleaned.data(using: .utf8),
-              let result = try? JSONDecoder().decode(RawResult.self, from: data) else {
-            throw ClaudeAPIError.decodingError(raw)
-        }
-
-        let scene = SceneTag(rawValue: result.scene_detected) ?? .general
-        let words = result.words.map { ExtractedWord(word: $0.word, likelyKnown: $0.likely_known) }
-        let category = result.suggested_category ?? scene.defaultCategory
-        return KeywordExtractionResult(words: words, detectedScene: scene, suggestedCategory: category)
-    }
-
-    // MARK: - 生成解释（Prompt B）
-
-    func generateExplanation(
-        for word: String,
-        context: String,
-        scene: SceneTag
-    ) async throws -> WordExplanation {
-
-        let systemPrompt = """
-        你是一个专业的英语词汇教学助手，专门为中文母语者提供清晰、实用的英语词汇解释。
-        你的解释必须：
-        1. 用中文解释，简洁易懂（不超过 30 字）
-        2. 结合实际场景（\(scene.rawValue)）
-        3. 提供一个真实场景中的简短英文例句（不超过 15 个单词）
-        4. 避免使用复杂语法术语
-
-        只返回 JSON，不要有任何多余文字或 markdown 代码块：
-        {"chinese_explanation":"处方；医生开具的药方","example_sentence":"Please bring your prescription to the pharmacy.","example_sentence_chinese":"请把您的处方带到药房。","scene_note":"在药店或医院常见，凭此配药。"}
-        """
-
-        // 截取词汇上下文（前后 60 字符）
-        let snippet = contextSnippet(for: word, in: context)
-        let userMessage = """
-        请解释这个英语单词：\(word)
-
-        这个词出现在以下语境中：
-        \(snippet)
-
-        场景：\(scene.rawValue)
-        """
-
-        let raw = try await callClaude(system: systemPrompt, user: userMessage, maxTokens: 512)
-
-        struct RawExplanation: Decodable {
-            let chinese_explanation: String
-            let example_sentence: String
-            let example_sentence_chinese: String
-            let scene_note: String
-        }
-
-        let cleaned = cleanJSON(raw)
-        guard let data = cleaned.data(using: .utf8),
-              let result = try? JSONDecoder().decode(RawExplanation.self, from: data) else {
-            throw ClaudeAPIError.decodingError(raw)
-        }
-
-        return WordExplanation(
-            chineseExplanation: result.chinese_explanation,
-            exampleSentence: result.example_sentence,
-            exampleSentenceChinese: result.example_sentence_chinese,
-            sceneNote: result.scene_note
+        let raw: Raw = try await callJSON(
+            system: system,
+            user: "场景里识别出的英文文字：\n\n\(text.prefix(6000))",
+            schema: schema,
+            maxTokens: 3000
         )
+
+        var seen = Set<String>()
+        let candidates = raw.words.compactMap { word -> WordCandidate? in
+            let candidate = WordCandidate(
+                word: word.word,
+                lemma: word.lemma.isEmpty ? word.word.lowercased() : word.lemma,
+                partOfSpeech: word.part_of_speech,
+                cefrRaw: CEFRLevel(code: word.cefr)?.rawValue ?? 0,
+                gloss: word.gloss
+            )
+            guard !candidate.key.isEmpty, candidate.key.count > 1, seen.insert(candidate.key).inserted else { return nil }
+            return candidate
+        }
+        return SceneExtraction(scene: SceneType(key: raw.scene), title: raw.title, candidates: candidates)
     }
 
-    // MARK: - 底层 HTTP 调用
+    // MARK: 2. 批量生成解释
 
-    private func callClaude(system: String, user: String, maxTokens: Int) async throws -> String {
-        let apiKey = APIConfig.claudeAPIKey
-        guard !apiKey.isEmpty else {
-            throw ClaudeAPIError.noAPIKey
+    /// 一次请求解释多个词；返回以 key 为索引的结果
+    func explainWords(_ items: [ExplainItem], scene: SceneType) async throws -> [String: WordExplanation] {
+        guard !items.isEmpty else { return [:] }
+
+        let system = """
+        你是一位帮助中文母语者在英语国家生活的英语老师。请为每个单词写一张简洁实用的学习卡片。
+
+        要求：
+        - explanation：结合所给语境的中文解释，不超过 30 个字，避免语法术语。
+        - example_sentence：一个在\(scene.displayName)场景里真实会用到的英文例句，不超过 15 个词。
+        - example_translation：例句的中文翻译。
+        - scene_note：在国外生活时和这个词有关的实用提示（例如常见搭配、容易误解的地方、当地习惯），不超过 30 个字；没有就留空字符串。
+        - phonetic：国际音标，例如 /ˈrɛnt/。
+        - lemma、part_of_speech（n. / v. / adj. 等）、cefr（大致等级）、gloss（不超过 8 个字的简短释义）。
+        - key 原样返回。
+        """
+
+        let list = items.enumerated().map { index, item in
+            let context = item.context.isEmpty ? "" : "\n   语境：\(item.context.prefix(160))"
+            return "\(index + 1). key=\(item.key) 单词：\(item.word)\(context)"
+        }.joined(separator: "\n")
+
+        let entrySchema: [String: Any] = [
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "lemma", "part_of_speech", "cefr", "gloss", "phonetic", "explanation", "example_sentence", "example_translation", "scene_note"],
+            "properties": [
+                "key": ["type": "string"],
+                "lemma": ["type": "string"],
+                "part_of_speech": ["type": "string"],
+                "cefr": ["type": "string", "enum": CEFRLevel.allCases.map(\.code)],
+                "gloss": ["type": "string"],
+                "phonetic": ["type": "string"],
+                "explanation": ["type": "string"],
+                "example_sentence": ["type": "string"],
+                "example_translation": ["type": "string"],
+                "scene_note": ["type": "string"]
+            ]
+        ]
+        let schema: [String: Any] = [
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["cards"],
+            "properties": ["cards": ["type": "array", "items": entrySchema]]
+        ]
+
+        struct Raw: Decodable {
+            struct Card: Decodable {
+                let key: String
+                let lemma: String
+                let part_of_speech: String
+                let cefr: String
+                let gloss: String
+                let phonetic: String
+                let explanation: String
+                let example_sentence: String
+                let example_translation: String
+                let scene_note: String
+            }
+            let cards: [Card]
         }
 
-        var request = URLRequest(url: baseURL)
+        let raw: Raw = try await callJSON(
+            system: system,
+            user: "场景：\(scene.displayName)\n\n需要解释的单词：\n\(list)",
+            schema: schema,
+            maxTokens: min(8000, 600 + items.count * 320)
+        )
+
+        var result: [String: WordExplanation] = [:]
+        for card in raw.cards {
+            result[card.key.normalizedWordKey] = WordExplanation(
+                lemma: card.lemma,
+                partOfSpeech: card.part_of_speech,
+                cefr: CEFRLevel(code: card.cefr),
+                gloss: card.gloss,
+                phonetic: card.phonetic,
+                explanation: card.explanation,
+                exampleSentence: card.example_sentence,
+                exampleTranslation: card.example_translation,
+                sceneNote: card.scene_note
+            )
+        }
+        return result
+    }
+
+    // MARK: - 底层调用
+
+    private func callJSON<T: Decodable>(system: String, user: String, schema: [String: Any], maxTokens: Int) async throws -> T {
+        let text = try await callWithRetry(system: system, user: user, schema: schema, maxTokens: maxTokens)
+        guard let data = text.data(using: .utf8), let value = try? JSONDecoder().decode(T.self, from: data) else {
+            throw ClaudeAPIError.decoding
+        }
+        return value
+    }
+
+    private func callWithRetry(system: String, user: String, schema: [String: Any], maxTokens: Int) async throws -> String {
+        var attempt = 0
+        while true {
+            attempt += 1
+            do {
+                return try await call(system: system, user: user, schema: schema, maxTokens: maxTokens)
+            } catch let error as RetryableFailure {
+                guard attempt < maxAttempts else { throw error.underlying }
+                let backoff = error.retryAfter ?? pow(2, Double(attempt - 1)) + Double.random(in: 0...0.5)
+                try await Task.sleep(for: .seconds(min(backoff, 10)))
+            }
+        }
+    }
+
+    private struct RetryableFailure: Error {
+        let underlying: ClaudeAPIError
+        let retryAfter: Double?
+    }
+
+    private func call(system: String, user: String, schema: [String: Any], maxTokens: Int) async throws -> String {
+        let apiKey = APIConfig.claudeAPIKey
+        guard !apiKey.isEmpty else { throw ClaudeAPIError.noAPIKey }
+
+        var request = URLRequest(url: endpoint, timeoutInterval: 60)
         request.httpMethod = "POST"
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
 
-        let body = ClaudeRequest(
-            model: model,
-            max_tokens: maxTokens,
-            system: system,
-            messages: [ClaudeMessage(role: "user", content: user)]
-        )
-        request.httpBody = try JSONEncoder().encode(body)
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": maxTokens,
+            "system": system,
+            "messages": [["role": "user", "content": user]],
+            "output_config": ["format": ["type": "json_schema", "schema": schema]]
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response): (Data, URLResponse)
+        let data: Data
+        let response: URLResponse
         do {
             (data, response) = try await URLSession.shared.data(for: request)
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
-            throw ClaudeAPIError.networkError(error)
+            throw RetryableFailure(underlying: .network(error), retryAfter: nil)
         }
 
         guard let http = response as? HTTPURLResponse else {
-            throw ClaudeAPIError.networkError(URLError(.badServerResponse))
+            throw RetryableFailure(underlying: .network(URLError(.badServerResponse)), retryAfter: nil)
         }
+        let retryAfter = http.value(forHTTPHeaderField: "retry-after").flatMap(Double.init)
 
         switch http.statusCode {
-        case 200:
-            break
-        case 401:
-            throw ClaudeAPIError.unauthorized
-        case 429:
-            throw ClaudeAPIError.rateLimited
+        case 200: break
+        case 401, 403: throw ClaudeAPIError.unauthorized
+        case 429: throw RetryableFailure(underlying: .rateLimited, retryAfter: retryAfter)
+        case 529: throw RetryableFailure(underlying: .overloaded, retryAfter: retryAfter)
+        case 500...599:
+            throw RetryableFailure(underlying: .api(statusCode: http.statusCode, message: ""), retryAfter: retryAfter)
         default:
-            let msg = String(data: data, encoding: .utf8) ?? "未知错误"
-            throw ClaudeAPIError.apiError(statusCode: http.statusCode, message: msg)
+            let message = String(data: data, encoding: .utf8) ?? ""
+            throw ClaudeAPIError.api(statusCode: http.statusCode, message: message)
         }
 
-        let decoded = try JSONDecoder().decode(ClaudeResponse.self, from: data)
-        return decoded.content.first?.text ?? ""
-    }
-
-    // MARK: - 工具方法
-
-    /// 去除 Claude 偶尔返回的 ```json ... ``` 包裹
-    private func cleanJSON(_ raw: String) -> String {
-        var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if s.hasPrefix("```json") { s = String(s.dropFirst(7)) }
-        else if s.hasPrefix("```")  { s = String(s.dropFirst(3)) }
-        if s.hasSuffix("```") { s = String(s.dropLast(3)) }
-        return s.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// 提取词汇在原文中的上下文片段（前后各 60 字符）
-    private func contextSnippet(for word: String, in text: String) -> String {
-        let lower = text.lowercased()
-        let target = word.lowercased()
-        guard let range = lower.range(of: target) else { return text.prefix(200).description }
-
-        let start = text.index(range.lowerBound, offsetBy: -60, limitedBy: text.startIndex) ?? text.startIndex
-        let end   = text.index(range.upperBound,  offsetBy:  60, limitedBy: text.endIndex)   ?? text.endIndex
-        return String(text[start..<end])
+        struct Response: Decodable {
+            struct Block: Decodable { let type: String; let text: String? }
+            let content: [Block]
+            let stop_reason: String?
+        }
+        guard let decoded = try? JSONDecoder().decode(Response.self, from: data) else {
+            throw ClaudeAPIError.decoding
+        }
+        if decoded.stop_reason == "max_tokens" { throw ClaudeAPIError.truncated }
+        guard let text = decoded.content.first(where: { $0.type == "text" })?.text else {
+            throw ClaudeAPIError.decoding
+        }
+        return text
     }
 }

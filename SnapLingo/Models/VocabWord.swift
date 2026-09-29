@@ -6,101 +6,153 @@
 import Foundation
 import SwiftData
 
-// MARK: - Scene Tag
+// MARK: - 学习状态
 
-enum SceneTag: String, Codable, CaseIterable {
-    case restaurant  = "餐厅"
-    case supermarket = "超市"
-    case medical     = "医疗"
-    case legal       = "法律"
-    case signage     = "标识"
-    case general     = "通用"
+enum WordState: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// 已保存，还没开始学
+    case new
+    /// 学习中（复习间隔 < 21 天）
+    case learning
+    /// 已掌握（复习间隔 ≥ 21 天，或手动标记）
+    case mastered
 
-    var icon: String {
+    var id: String { rawValue }
+
+    var displayName: String {
         switch self {
-        case .restaurant:  return "fork.knife"
-        case .supermarket: return "cart"
-        case .medical:     return "cross.case"
-        case .legal:       return "doc.text"
-        case .signage:     return "signpost.right"
-        case .general:     return "text.bubble"
+        case .new:      "待学"
+        case .learning: "学习中"
+        case .mastered: "已掌握"
         }
     }
 
-    var defaultCategory: String {
+    var symbol: String {
         switch self {
-        case .restaurant:  return "餐厅美食"
-        case .supermarket: return "超市购物"
-        case .medical:     return "医疗保健"
-        case .legal:       return "法律文件"
-        case .signage:     return "路牌标识"
-        case .general:     return "通用"
+        case .new:      "tray"
+        case .learning: "brain.head.profile"
+        case .mastered: "checkmark.seal"
         }
     }
 }
 
-// MARK: - VocabWord
+enum ExplanationStatus: String, Codable, Sendable {
+    case pending
+    case ready
+    case failed
+}
+
+// MARK: - VocabWord（唯一的单词数据源，SRS 状态也在这里）
 
 @Model
 final class VocabWord {
-    // 基础信息
-    var id: UUID
-    var word: String
-    var normalizedForm: String          // 小写去空格，用于去重查询
+    var id: UUID = UUID()
+    /// 展示用词形（通常是原形）
+    var word: String = ""
+    /// 去重 key
+    var normalizedForm: String = ""
+    var partOfSpeech: String = ""
+    /// 1...6 对应 A1...C2；0 表示未知
+    var cefrRaw: Int = 0
+    var phonetic: String = ""
+    /// 简短中文释义（识别阶段就有）
+    var gloss: String = ""
 
-    // AI 生成内容
-    var chineseExplanation: String
-    var exampleSentence: String
-    var exampleSentenceChinese: String
-    var sceneNote: String               // 场景化补充说明
-    var sceneTag: SceneTag
+    // AI 解释（保存后批量生成）
+    var explanation: String = ""
+    var exampleSentence: String = ""
+    var exampleTranslation: String = ""
+    var sceneNote: String = ""
+    var explanationStatusRaw: String = ExplanationStatus.pending.rawValue
+    /// 单词在照片里出现的那一行
+    var contextSnippet: String = ""
 
-    // 原图缩略图（150x150 JPEG Data，复习时场景回溯用）
-    var sourceImageThumbnail: Data?
-
-    // SM-2 间隔重复字段
-    var easeFactor: Double              // 难易系数，默认 2.5
-    var interval: Int                   // 下次复习间隔（天）
-    var repetitions: Int                // 连续答对次数
-    var nextReviewDate: Date
+    // SRS
+    var stateRaw: String = WordState.new.rawValue
+    /// 手动标记“已掌握，不再复习”
+    var excludedFromReview: Bool = false
+    var easeFactor: Double = 2.5
+    var intervalDays: Int = 0
+    var repetitions: Int = 0
+    var lapses: Int = 0
+    /// 到期日（当天 0 点）
+    var dueDate: Date = Date()
     var lastReviewedAt: Date?
+    var introducedAt: Date?
 
-    // 元数据
-    var addedAt: Date
-    var isMastered: Bool                // 用户手动标记为已掌握
-    var scanSessionID: UUID = UUID()    // 同一次扫描保存的词共享此 ID，用于词库分组
-    var categoryName: String = "通用"   // 用户自定义分类名（中文）
+    var addedAt: Date = Date()
+
+    var scans: [Scan] = []
 
     init(
         word: String,
-        chineseExplanation: String,
-        exampleSentence: String,
-        exampleSentenceChinese: String,
-        sceneNote: String = "",
-        sceneTag: SceneTag = .general,
-        scanSessionID: UUID = UUID(),
-        categoryName: String = "通用"
+        partOfSpeech: String = "",
+        cefr: CEFRLevel? = nil,
+        gloss: String = "",
+        contextSnippet: String = "",
+        addedAt: Date = Date()
     ) {
         self.id = UUID()
         self.word = word
-        self.normalizedForm = word.lowercased().trimmingCharacters(in: .whitespaces)
-        self.chineseExplanation = chineseExplanation
-        self.exampleSentence = exampleSentence
-        self.exampleSentenceChinese = exampleSentenceChinese
-        self.sceneNote = sceneNote
-        self.sceneTag = sceneTag
-        self.scanSessionID = scanSessionID
-        self.categoryName = categoryName
-        self.easeFactor = 2.5
-        self.interval = 1
-        self.repetitions = 0
-        self.nextReviewDate = Date()
-        self.addedAt = Date()
-        self.isMastered = false
+        self.normalizedForm = word.normalizedWordKey
+        self.partOfSpeech = partOfSpeech
+        self.cefrRaw = cefr?.rawValue ?? 0
+        self.gloss = gloss
+        self.contextSnippet = contextSnippet
+        self.addedAt = addedAt
+        self.dueDate = Calendar.current.startOfDay(for: addedAt)
     }
 
-    /// 是否今天需要复习
-    var isDueForReview: Bool {
-        !isMastered && nextReviewDate <= Date()
+    // MARK: - 计算属性
+
+    var state: WordState {
+        get { WordState(rawValue: stateRaw) ?? .new }
+        set { stateRaw = newValue.rawValue }
+    }
+
+    var explanationStatus: ExplanationStatus {
+        get { ExplanationStatus(rawValue: explanationStatusRaw) ?? .pending }
+        set { explanationStatusRaw = newValue.rawValue }
+    }
+
+    var cefr: CEFRLevel? { CEFRLevel(rawValue: cefrRaw) }
+
+    /// 释义：优先完整解释，其次识别时的简短释义
+    var meaning: String {
+        explanation.isEmpty ? gloss : explanation
+    }
+
+    /// 最近一次出现的场景（有照片的优先）
+    var latestScan: Scan? {
+        scans.max { $0.createdAt < $1.createdAt }
+    }
+
+    var srs: SRSState {
+        get {
+            SRSState(
+                state: state,
+                easeFactor: easeFactor,
+                intervalDays: intervalDays,
+                repetitions: repetitions,
+                lapses: lapses,
+                dueDate: dueDate
+            )
+        }
+        set {
+            state = newValue.state
+            easeFactor = newValue.easeFactor
+            intervalDays = newValue.intervalDays
+            repetitions = newValue.repetitions
+            lapses = newValue.lapses
+            dueDate = newValue.dueDate
+        }
+    }
+
+    func applyExplanation(_ exp: WordExplanation) {
+        explanation = exp.explanation
+        exampleSentence = exp.exampleSentence
+        exampleTranslation = exp.exampleTranslation
+        sceneNote = exp.sceneNote
+        if !exp.phonetic.isEmpty { phonetic = exp.phonetic }
+        explanationStatus = .ready
     }
 }

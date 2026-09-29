@@ -3,94 +3,75 @@
 //  SnapLingo
 //
 
-import UIKit
+import CoreGraphics
+import Foundation
 import Vision
 
-// MARK: - 结果类型
-
-struct OCRResult {
-    let fullText: String          // 所有文字块拼接（换行分隔）
-    let textBlocks: [TextBlock]   // 各文字块详情
+nonisolated struct OCRResult: Sendable {
+    var fullText: String
+    var lines: [OCRLine]
+    var tokens: [OCRToken]
 }
 
-struct TextBlock {
-    let text: String
-    let confidence: Float
-    let boundingBox: CGRect       // Vision 坐标系（左下原点，归一化）
-}
-
-// MARK: - 错误类型
-
-enum OCRError: LocalizedError {
+nonisolated enum OCRError: LocalizedError {
     case imageConversionFailed
     case noTextFound
-    case visionRequestFailed(Error)
+    case failed(Error)
 
     var errorDescription: String? {
         switch self {
-        case .imageConversionFailed: return "图片格式转换失败，请重试"
-        case .noTextFound:           return "未识别到任何文字，请确保照片中有清晰的英文内容"
-        case .visionRequestFailed(let e): return "文字识别失败：\(e.localizedDescription)"
+        case .imageConversionFailed: "图片处理失败，请换一张试试"
+        case .noTextFound:           "没有找到英文文字。靠近一点、保持光线充足再拍一次吧"
+        case .failed:                "文字识别失败，请重试"
         }
     }
 }
 
-// MARK: - OCRService
+/// 用 Vision 识别英文，输出整段文字、每一行、以及每个单词在照片上的位置
+nonisolated enum OCRService {
 
-final class OCRService {
+    @concurrent
+    static func recognize(_ cgImage: CGImage) async throws -> OCRResult {
+        var request = RecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.recognitionLanguages = [Locale.Language(identifier: "en-US")]
+        request.usesLanguageCorrection = true
 
-    /// 识别图片中的英文文字
-    /// - 在后台线程执行，不阻塞 MainActor
-    func recognizeText(in image: UIImage) async throws -> OCRResult {
-        // 先做尺寸预处理
-        let processed = ImageUtilities.prepareForOCR(image)
-
-        guard let cgImage = processed.cgImage else {
-            throw OCRError.imageConversionFailed
+        let observations: [RecognizedTextObservation]
+        do {
+            observations = try await request.perform(on: cgImage)
+        } catch {
+            throw OCRError.failed(error)
         }
 
-        return try await withCheckedThrowingContinuation { continuation in
-            let request = VNRecognizeTextRequest { request, error in
-                if let error {
-                    continuation.resume(throwing: OCRError.visionRequestFailed(error))
-                    return
-                }
+        var lines: [OCRLine] = []
+        var tokens: [OCRToken] = []
 
-                guard let observations = request.results as? [VNRecognizedTextObservation],
-                      !observations.isEmpty else {
-                    continuation.resume(throwing: OCRError.noTextFound)
-                    return
-                }
+        for observation in observations {
+            guard let candidate = observation.topCandidates(1).first else { continue }
+            let text = candidate.string
+            guard text.contains(where: \.isLetter) else { continue }
 
-                var blocks: [TextBlock] = []
-                for obs in observations {
-                    guard let candidate = obs.topCandidates(1).first else { continue }
-                    blocks.append(TextBlock(
-                        text: candidate.string,
-                        confidence: candidate.confidence,
-                        boundingBox: obs.boundingBox
-                    ))
-                }
+            let lineIndex = lines.count
+            lines.append(OCRLine(text: text, rect: observation.boundingBox.verticallyFlipped().cgRect))
 
-                let fullText = blocks.map(\.text).joined(separator: "\n")
-                if fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    continuation.resume(throwing: OCRError.noTextFound)
-                } else {
-                    continuation.resume(returning: OCRResult(fullText: fullText, textBlocks: blocks))
-                }
-            }
-
-            // 配置：高精度英文识别
-            request.recognitionLevel = .accurate
-            request.recognitionLanguages = ["en-US"]
-            request.usesLanguageCorrection = true
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            do {
-                try handler.perform([request])
-            } catch {
-                continuation.resume(throwing: OCRError.visionRequestFailed(error))
+            text.enumerateSubstrings(in: text.startIndex..<text.endIndex, options: .byWords) { word, range, _, _ in
+                guard let word, word.count > 1, word.contains(where: \.isLetter),
+                      !word.allSatisfy({ $0.isNumber || $0.isPunctuation }) else { return }
+                guard let box = candidate.boundingBox(for: range) else { return }
+                tokens.append(OCRToken(
+                    id: tokens.count,
+                    text: word,
+                    rect: box.boundingBox.verticallyFlipped().cgRect,
+                    lineIndex: lineIndex
+                ))
             }
         }
+
+        let fullText = lines.map(\.text).joined(separator: "\n")
+        guard !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw OCRError.noTextFound
+        }
+        return OCRResult(fullText: fullText, lines: lines, tokens: tokens)
     }
 }

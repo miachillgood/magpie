@@ -2,342 +2,324 @@
 //  HomeView.swift
 //  SnapLingo
 //
+//  首页 = 照片墙。上半部分随当天状态变化（柔光色 + 一句话 + 单词胶囊 + 按钮），
+//  下半部分是白色底板，按天排出拍过的照片。
+//
 
 import SwiftUI
 import SwiftData
 
 struct HomeView: View {
-    @Query private var allWords: [VocabWord]
-    @Query(sort: \ReviewSession.performedAt, order: .reverse) private var sessions: [ReviewSession]
     @Environment(AppCoordinator.self) private var coordinator
-
-    // MARK: - 统计
-
-    private var dueWords: [VocabWord] { allWords.filter(\.isDueForReview) }
-    private var masteredCount: Int { allWords.filter(\.isMastered).count }
-
-    private var todayReviewedCount: Int {
-        let startOfDay = Calendar.current.startOfDay(for: Date())
-        return sessions.filter { $0.performedAt >= startOfDay }.count
-    }
-
-    private var streakDays: Int {
-        guard !sessions.isEmpty else { return 0 }
-        let cal = Calendar.current
-        var day = cal.startOfDay(for: Date())
-        var streak = 0
-        // 检查今天是否有复习记录，没有则从昨天开始算
-        let todayHasSession = sessions.contains { cal.isDate($0.performedAt, inSameDayAs: day) }
-        if !todayHasSession {
-            guard let yesterday = cal.date(byAdding: .day, value: -1, to: day) else { return 0 }
-            day = yesterday
-        }
-        while true {
-            let hasSession = sessions.contains { cal.isDate($0.performedAt, inSameDayAs: day) }
-            if hasSession {
-                streak += 1
-                guard let prev = cal.date(byAdding: .day, value: -1, to: day) else { break }
-                day = prev
-            } else {
-                break
-            }
-        }
-        return streak
-    }
-
-    // 最近 3 次扫描（按 scanSessionID 分组）
-    private var recentScanSessions: [RecentSession] {
-        var groups: [UUID: [VocabWord]] = [:]
-        for word in allWords { groups[word.scanSessionID, default: []].append(word) }
-        return groups.map { id, ws in
-            let sorted = ws.sorted { $0.addedAt > $1.addedAt }
-            return RecentSession(
-                id: id,
-                date: sorted.first?.addedAt ?? Date(),
-                thumbnail: sorted.first?.sourceImageThumbnail,
-                wordCount: ws.count,
-                categoryName: sorted.first?.categoryName ?? "通用"
-            )
-        }
-        .sorted { $0.date > $1.date }
-        .prefix(3)
-        .map { $0 }
-    }
+    @Query(sort: \Scan.createdAt, order: .reverse) private var scans: [Scan]
+    @Query private var words: [VocabWord]
+    @Query(sort: \ReviewLog.reviewedAt) private var logs: [ReviewLog]
+    @Query(sort: \UserSettings.createdAt) private var settingsRows: [UserSettings]
+    @State private var path = NavigationPath()
+    @Namespace private var zoom
 
     var body: some View {
-        @Bindable var coordinator = coordinator
+        NavigationStack(path: $path) {
+            GeometryReader { proxy in
+                let content = hero
+                let metrics = HomeMetrics(size: proxy.size, firstScreen: HomeMetrics.firstScreenHeight(for: content))
+                ScrollViewReader { reader in
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            HomeHero(content: content, streak: streak, metrics: metrics) { action in
+                                perform(action, scroll: reader)
+                            }
+                            .id(content.mood)
 
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-
-                    // MARK: 问候 + 今日状态
-                    greetingSection
-
-                    // MARK: 快捷操作
-                    actionButtons
-
-                    // MARK: 数据统计
-                    statsRow
-
-                    // MARK: 最近扫描
-                    if !recentScanSessions.isEmpty {
-                        recentScansSection
-                    }
-
-                    // MARK: 分类概览
-                    if !allWords.isEmpty {
-                        categorySection
-                    }
-
-                    Spacer(minLength: 20)
-                }
-                .padding(.horizontal)
-                .padding(.top, 8)
-            }
-            .navigationTitle("SnapLingo")
-            .navigationBarTitleDisplayMode(.large)
-        }
-    }
-
-    // MARK: - 问候区
-
-    private var greetingSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(greetingText)
-                .font(.title2.bold())
-
-            if dueWords.isEmpty {
-                Text("今天的复习都完成啦，继续加油！")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("有 **\(dueWords.count)** 个单词在等你复习")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.top, 4)
-    }
-
-    private var greetingText: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<12:  return "早上好 ☀️"
-        case 12..<18: return "下午好 👋"
-        case 18..<22: return "晚上好 🌙"
-        default:      return "夜深了 🌟"
-        }
-    }
-
-    // MARK: - 快捷操作
-
-    private var actionButtons: some View {
-        HStack(spacing: 12) {
-            // 开始复习
-            Button {
-                coordinator.selectedTab = .review
-            } label: {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Image(systemName: "brain.head.profile")
-                            .font(.title2)
-                        Spacer()
-                        if !dueWords.isEmpty {
-                            Text("\(dueWords.count)")
-                                .font(.caption.weight(.bold))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(.white.opacity(0.25), in: Capsule())
+                            timeline(metrics: metrics)
+                                .id(Self.timelineID)
                         }
                     }
-                    Text("开始复习")
-                        .font(.headline)
-                    Text(dueWords.isEmpty ? "今日已完成" : "\(dueWords.count) 词待复习")
-                        .font(.caption)
-                        .opacity(0.8)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(dueWords.isEmpty ? Color.green : Color.accentColor, in: RoundedRectangle(cornerRadius: 16))
-                .foregroundStyle(.white)
-            }
-            .buttonStyle(.plain)
-
-            // 扫描新词
-            Button {
-                coordinator.showingScan = true
-            } label: {
-                VStack(alignment: .leading, spacing: 6) {
-                    Image(systemName: "camera.viewfinder")
-                        .font(.title2)
-                    Text("扫描新词")
-                        .font(.headline)
-                    Text("拍照学词汇")
-                        .font(.caption)
-                        .opacity(0.8)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.orange, in: RoundedRectangle(cornerRadius: 16))
-                .foregroundStyle(.white)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    // MARK: - 统计行
-
-    private var statsRow: some View {
-        HStack(spacing: 0) {
-            statCell(value: "\(allWords.count)", label: "总词汇", icon: "book.closed", color: .blue)
-            Divider().frame(height: 40)
-            statCell(value: "\(dueWords.count)", label: "待复习", icon: "clock", color: .orange)
-            Divider().frame(height: 40)
-            statCell(value: "\(masteredCount)", label: "已掌握", icon: "checkmark.seal", color: .green)
-            Divider().frame(height: 40)
-            statCell(value: "\(streakDays)", label: "连续天", icon: "flame", color: .red)
-        }
-        .padding(.vertical, 16)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
-    }
-
-    private func statCell(value: String, label: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundStyle(color)
-            Text(value)
-                .font(.title2.bold())
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - 最近扫描
-
-    private var recentScansSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("最近扫描")
-                    .font(.headline)
-                Spacer()
-                Button("查看全部") {
-                    coordinator.selectedTab = .library
-                }
-                .font(.subheadline)
-            }
-
-            HStack(spacing: 12) {
-                ForEach(recentScanSessions) { session in
-                    recentScanCard(session)
-                }
-                Spacer()
-            }
-        }
-    }
-
-    private func recentScanCard(_ session: RecentSession) -> some View {
-        Button {
-            coordinator.selectedTab = .library
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                Group {
-                    if let data = session.thumbnail, let img = UIImage(data: data) {
-                        Image(uiImage: img)
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        Color.secondary.opacity(0.15)
-                            .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
+                    .scrollIndicators(.hidden)
+                    .background {
+                        // 往下拉过头时露出白色，往上拉过头时露出奶油色
+                        VStack(spacing: 0) {
+                            Theme.cream
+                            Theme.sheet
+                        }
+                        .ignoresSafeArea()
                     }
                 }
-                .frame(width: 90, height: 90)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                Text(session.categoryName)
-                    .font(.caption.weight(.medium))
-                    .lineLimit(1)
-                    .foregroundStyle(.primary)
-
-                Text("\(session.wordCount) 词 · \(session.date.formatted(.relative(presentation: .named)))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
-            .frame(width: 90)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - 分类概览
-
-    private var categorySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("分类概览")
-                .font(.headline)
-
-            let categories = categoryStats()
-            ForEach(categories, id: \.name) { cat in
-                categoryRow(cat)
-            }
+            .appTabBar()
+            .toolbarVisibility(.hidden, for: .navigationBar)
+            .libraryDestinations(zoom: zoom)
         }
     }
 
-    private func categoryRow(_ cat: CategoryStat) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(cat.name)
-                    .font(.subheadline.weight(.medium))
-                Text("\(cat.total) 个词")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            // 掌握进度条
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("\(cat.masteredCount) 已掌握")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                ProgressView(value: cat.total > 0 ? Double(cat.masteredCount) / Double(cat.total) : 0)
-                    .frame(width: 80)
-                    .tint(.green)
-            }
-        }
-        .padding(12)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+    private static let timelineID = "timeline"
+
+    // MARK: - 数据
+
+    private var calendar: Calendar { .current }
+
+    private var todayScans: [Scan] {
+        scans.filter { calendar.isDateInToday($0.createdAt) }
     }
 
-    private func categoryStats() -> [CategoryStat] {
-        var groups: [String: [VocabWord]] = [:]
-        for word in allWords { groups[word.categoryName, default: []].append(word) }
-        return groups.map { name, words in
-            CategoryStat(
-                name: name,
-                total: words.count,
-                dueCount: words.filter(\.isDueForReview).count,
-                masteredCount: words.filter(\.isMastered).count
-            )
+    private var weekScans: [Scan] {
+        scans.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }
+    }
+
+    private var plan: DailyPlan {
+        guard let settings = settingsRows.first else { return .empty }
+        return StudyStore.plan(settings: settings, words: words, logs: logs)
+    }
+
+    private var streak: Int { DailyPlanner.streak(events: logs) }
+
+    private var mood: HomeMood {
+        #if DEBUG
+        if let forced = Self.forcedMood { return forced }
+        #endif
+        return HomeMood.pick(scannedToday: !todayScans.isEmpty, pendingStudy: plan.remaining, scansThisWeek: weekScans.count)
+    }
+
+    #if DEBUG
+    /// 调试用：启动参数 -homeMood review 强制显示某种状态
+    private static let forcedMood: HomeMood? = {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-homeMood"), index + 1 < arguments.count else { return nil }
+        return HomeMood(rawValue: arguments[index + 1])
+    }()
+    #endif
+
+    // MARK: - 顶部内容
+
+    private var hero: HomeHeroContent {
+        switch mood {
+        case .captured: capturedHero ?? emptyHero
+        case .review: reviewHero ?? emptyHero
+        case .weekly: weeklyHero ?? emptyHero
+        case .empty: emptyHero
         }
-        .sorted { $0.total > $1.total }
+    }
+
+    /// 刚刚在 [公交站] 捡到 [5 个新词]
+    private var capturedHero: HomeHeroContent? {
+        guard let focus = todayScans.first else { return nil }
+        let todayWords = Set(todayScans.flatMap { $0.words.map(\.id) }).count
+        let focusWords = focus.words.sorted { $0.addedAt < $1.addedAt }
+        let lines: [[HeadlinePiece]]
+        let label: String
+        if todayWords >= 15 {
+            lines = [[.text("今天已经捕捉")], [.marker("\(todayWords)", "个词了！")]]
+            label = "On a roll!"
+        } else {
+            lines = [
+                [.text("\(HomeDates.whenPhrase(for: focus.createdAt))在")],
+                [.place(focus.scene.symbol, focus.displayTitle)],
+                [.text("捡到"), .marker("\(focusWords.count)", "个新词")]
+            ]
+            label = "Nice find!"
+        }
+        return HomeHeroContent(
+            mood: .captured,
+            label: label,
+            lines: lines,
+            chips: focusWords.prefix(6).map { .word($0) },
+            chipsNote: nil,
+            action: .openScan(focus),
+            actionTitle: "看看新词",
+            actionSymbol: "arrow.right",
+            photos: Self.stackPhotos(todayScans, fillingWith: scans),
+            stackStyle: .pile
+        )
+    }
+
+    /// 昨天在 [公交站] 遇见 [5 个词]，还记得几个？
+    private var reviewHero: HomeHeroContent? {
+        let plan = plan
+        let byID = Dictionary(words.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let due = (plan.reviewIDs + plan.newIDs).compactMap { byID[$0] }
+        guard !due.isEmpty else { return nil }
+
+        // 这些词大多来自哪个场景
+        var counts: [UUID: (scan: Scan, count: Int)] = [:]
+        for word in due {
+            guard let scan = word.latestScan else { continue }
+            counts[scan.id, default: (scan, 0)].count += 1
+        }
+        let sources = counts.values.sorted { lhs, rhs in
+            lhs.count != rhs.count ? lhs.count > rhs.count : lhs.scan.createdAt > rhs.scan.createdAt
+        }
+
+        var lines: [[HeadlinePiece]]
+        if let focus = sources.first {
+            // 词来自好几个场景时，地点后面加一个“等”
+            let place = focus.count < due.count ? focus.scan.displayTitle + " 等" : focus.scan.displayTitle
+            lines = [
+                [.text("\(HomeDates.whenPhrase(for: focus.scan.createdAt))在"), .place(focus.scan.scene.symbol, place)],
+                [.text("遇见"), .marker("\(due.count)", "个词")],
+                [.text("还记得几个？")]
+            ]
+        } else {
+            lines = [[.text("有"), .marker("\(due.count)", "个词")], [.text("等你复习")]]
+        }
+
+        return HomeHeroContent(
+            mood: .review,
+            label: "Still remember?",
+            lines: lines,
+            chips: due.compactMap { word in Self.shortGloss(word.gloss).map { .text($0) } }.prefix(4).map { $0 },
+            chipsNote: "先想想这些用英文怎么说",
+            headlineScale: 0.9,
+            action: .study,
+            actionTitle: "测一测",
+            actionSymbol: "arrow.right",
+            photos: Self.stackPhotos(sources.map(\.scan), fillingWith: scans),
+            stackStyle: .pile
+        )
+    }
+
+    /// 这周你在 [5 个地方] 发现了 [16 个词]
+    private var weeklyHero: HomeHeroContent? {
+        let week = weekScans
+        guard !week.isEmpty else { return nil }
+        var seen = Set<UUID>()
+        let weekWords = week.flatMap(\.words)
+            .sorted { $0.addedAt > $1.addedAt }
+            .filter { seen.insert($0.id).inserted }
+        return HomeHeroContent(
+            mood: .weekly,
+            label: "Great week!",
+            lines: [
+                [.text("这周你在"), .place("mappin.and.ellipse", "\(week.count) 个地方")],
+                [.text("发现了"), .marker("\(weekWords.count)", "个词")]
+            ],
+            chips: weekWords.prefix(5).map { .word($0) },
+            chipsNote: "这周遇见的词",
+            action: .showTimeline,
+            actionTitle: "看看这一周",
+            actionSymbol: "arrow.right",
+            photos: Self.stackPhotos(week, fillingWith: scans, limit: 4),
+            stackStyle: .fan
+        )
+    }
+
+    /// 今天还没发现新单词 👀
+    private var emptyHero: HomeHeroContent {
+        let lines: [[HeadlinePiece]] = scans.isEmpty
+            ? [[.text("拍下你的")], [.text("第一块招牌"), .emoji("👀")]]
+            : [[.text("今天还没发现")], [.text("新单词"), .emoji("👀")]]
+        return HomeHeroContent(
+            mood: .empty,
+            label: "Go explore!",
+            lines: lines,
+            chips: ["咖啡店菜单", "公交站牌", "超市价签", "药店货架", "街边告示"].map { .text($0) },
+            chipsNote: "可以去这些地方找找",
+            action: .scan,
+            actionTitle: "出去逛逛",
+            actionSymbol: "camera",
+            photos: Array(scans.prefix(2)),
+            stackStyle: .emptySlot
+        )
+    }
+
+    /// 照片堆最多三张：先放主要的，不够再用最近拍的补上
+    static func stackPhotos(_ primary: [Scan], fillingWith recent: [Scan], limit: Int = 3) -> [Scan] {
+        var result = Array(primary.prefix(limit))
+        for scan in recent where result.count < limit && !result.contains(where: { $0.id == scan.id }) {
+            result.append(scan)
+        }
+        return result
+    }
+
+    /// 胶囊里放得下的简短释义：取第一个义项，最多 8 个字
+    static func shortGloss(_ gloss: String) -> String? {
+        let first = gloss.split(whereSeparator: { "；;，,、/".contains($0) }).first.map(String.init) ?? gloss
+        let trimmed = first.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        return trimmed.count > 8 ? String(trimmed.prefix(8)) + "…" : trimmed
+    }
+
+    // MARK: - 动作
+
+    private func perform(_ action: HomeHeroAction, scroll: ScrollViewProxy) {
+        switch action {
+        case .openScan(let scan): path.append(scan)
+        case .openWord(let word): path.append(word)
+        case .study: coordinator.startStudy()
+        case .scan: coordinator.startScan()
+        case .showTimeline:
+            withAnimation(.smooth) { scroll.scrollTo(Self.timelineID, anchor: .top) }
+        }
+    }
+
+    // MARK: - 下方的照片时间线
+
+    private func timeline(metrics: HomeMetrics) -> some View {
+        let groups = HomeDates.groupByDay(scans) { $0.createdAt }.map { DayGroup(day: $0.day, scans: $0.items) }
+        return LazyVStack(alignment: .leading, spacing: 34) {
+            if groups.isEmpty {
+                Text("拍过的照片会按天出现在这里")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.homeMuted)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 20)
+            }
+            ForEach(groups) { group in
+                DayGroupSection(group: group, scale: metrics.width / 390, zoom: zoom)
+            }
+        }
+        .padding(.horizontal, metrics.sidePadding)
+        .padding(.top, 30)
+        .padding(.bottom, 40)
+        .frame(maxWidth: .infinity, minHeight: metrics.height * 0.5, alignment: .top)
+        .background(
+            Theme.sheet,
+            in: UnevenRoundedRectangle(topLeadingRadius: 32, topTrailingRadius: 32, style: .continuous)
+        )
+        .shadow(color: .black.opacity(0.05), radius: 16, y: -8)
     }
 }
 
-// MARK: - 辅助数据结构
+// MARK: - 屏幕适配
 
-private struct RecentSession: Identifiable {
-    let id: UUID
-    let date: Date
-    let thumbnail: Data?
-    let wordCount: Int
-    let categoryName: String
-}
+/// 设计稿按 390pt 宽画。宽度决定整体缩放；矮屏幕（SE、mini）再压缩照片堆和留白，保证按钮在第一屏
+struct HomeMetrics {
+    var width: CGFloat
+    var height: CGFloat
+    /// 这一屏内容在设计稿（390pt 宽）里的高度
+    var firstScreen: CGFloat
 
-private struct CategoryStat {
-    let name: String
-    let total: Int
-    let dueCount: Int
-    let masteredCount: Int
+    init(size: CGSize, firstScreen: CGFloat = 650) {
+        width = max(size.width, 320)
+        height = max(size.height, 480)
+        self.firstScreen = firstScreen
+    }
+
+    /// 第一屏（标题、照片堆、句子、胶囊、按钮）的设计稿高度：随句子行数、有没有提示语变化。
+    /// 按 iPhone 17 Pro 实测校准（三行句子、两行胶囊约 640pt），再留一点余量
+    static func firstScreenHeight(for content: HomeHeroContent) -> CGFloat {
+        let fixed: CGFloat = 48 + PhotoStack.designHeight + 32 + 18 + 30 + 56
+        let headline = CGFloat(content.lines.count) * 50 * content.headlineScale
+        let note: CGFloat = content.chipsNote == nil ? 0 : 25
+        return fixed + headline + note + 2 * 46 + 12
+    }
+
+    /// 横向缩放
+    var widthScale: CGFloat { min(max(width / 390, 0.86), 1.15) }
+
+    private var designedFirstScreen: CGFloat { firstScreen * widthScale }
+
+    /// 纵向压缩：放不下时按比例压，最多压到 0.74
+    var heightScale: CGFloat { min(1, max(0.74, height / designedFirstScreen)) }
+
+    /// 矮屏幕上单词胶囊只放一行
+    var maxChips: Int { isCompact ? 3 : 6 }
+
+    var isCompact: Bool { heightScale < 0.97 }
+
+    var stackScale: CGFloat { width / 390 * heightScale }
+    var headlineSize: CGFloat { 36 * widthScale * (isCompact ? max(heightScale, 0.88) : 1) }
+    var chipSize: CGFloat { 16 * min(widthScale, 1.08) }
+    var sidePadding: CGFloat { width < 380 ? 20 : 24 }
+    /// 纵向留白
+    func gap(_ value: CGFloat) -> CGFloat { value * heightScale }
 }

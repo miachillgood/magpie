@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		088184362F8C782400773489 /* SnapLingo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnapLingo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A1B2C3D4E5F600000000001 /* SnapLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnapLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +17,22 @@
 			path = SnapLingo;
 			sourceTree = "<group>";
 		};
+		0A1B2C3D4E5F600000000002 /* SnapLingoTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SnapLingoTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		088184332F8C782400773489 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A1B2C3D4E5F600000000005 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +46,7 @@
 			isa = PBXGroup;
 			children = (
 				088184382F8C782400773489 /* SnapLingo */,
+				0A1B2C3D4E5F600000000002 /* SnapLingoTests */,
 				088184372F8C782400773489 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +55,7 @@
 			isa = PBXGroup;
 			children = (
 				088184362F8C782400773489 /* SnapLingo.app */,
+				0A1B2C3D4E5F600000000001 /* SnapLingoTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +85,29 @@
 			productReference = 088184362F8C782400773489 /* SnapLingo.app */;
 			productType = "com.apple.product-type.application";
 		};
+		0A1B2C3D4E5F600000000003 /* SnapLingoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A1B2C3D4E5F600000000009 /* Build configuration list for PBXNativeTarget "SnapLingoTests" */;
+			buildPhases = (
+				0A1B2C3D4E5F600000000004 /* Sources */,
+				0A1B2C3D4E5F600000000005 /* Frameworks */,
+				0A1B2C3D4E5F600000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0A1B2C3D4E5F600000000007 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				0A1B2C3D4E5F600000000002 /* SnapLingoTests */,
+			);
+			name = SnapLingoTests;
+			packageProductDependencies = (
+			);
+			productName = SnapLingoTests;
+			productReference = 0A1B2C3D4E5F600000000001 /* SnapLingoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -83,13 +121,17 @@
 					088184352F8C782400773489 = {
 						CreatedOnToolsVersion = 26.2;
 					};
+					0A1B2C3D4E5F600000000003 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 088184352F8C782400773489;
+					};
 				};
 			};
 			buildConfigurationList = 088184312F8C782400773489 /* Build configuration list for PBXProject "SnapLingo" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
+				"zh-Hans",
 				Base,
 			);
 			mainGroup = 0881842D2F8C782400773489;
@@ -100,12 +142,20 @@
 			projectRoot = "";
 			targets = (
 				088184352F8C782400773489 /* SnapLingo */,
+				0A1B2C3D4E5F600000000003 /* SnapLingoTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		088184342F8C782400773489 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A1B2C3D4E5F600000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +172,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A1B2C3D4E5F600000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		0A1B2C3D4E5F600000000008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0881842E2F8C782400773489 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 088184352F8C782400773489;
+			remoteInfo = SnapLingo;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		0A1B2C3D4E5F600000000007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 088184352F8C782400773489 /* SnapLingo */;
+			targetProxy = 0A1B2C3D4E5F600000000008 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0881843F2F8C782700773489 /* Debug */ = {
@@ -256,11 +331,13 @@
 				DEVELOPMENT_TEAM = RDM6CLF45F;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SnapLingo;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SnapLingo 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -288,11 +365,13 @@
 				DEVELOPMENT_TEAM = RDM6CLF45F;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SnapLingo;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SnapLingo 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -307,6 +386,52 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		0A1B2C3D4E5F60000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RDM6CLF45F;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = name.Mia.SnapLingoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SnapLingo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SnapLingo";
+			};
+			name = Debug;
+		};
+		0A1B2C3D4E5F60000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RDM6CLF45F;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = name.Mia.SnapLingoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SnapLingo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SnapLingo";
 			};
 			name = Release;
 		};
@@ -327,6 +452,15 @@
 			buildConfigurations = (
 				088184422F8C782700773489 /* Debug */,
 				088184432F8C782700773489 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0A1B2C3D4E5F600000000009 /* Build configuration list for PBXNativeTarget "SnapLingoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A1B2C3D4E5F60000000000A /* Debug */,
+				0A1B2C3D4E5F60000000000B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

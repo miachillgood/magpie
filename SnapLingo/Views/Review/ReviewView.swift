@@ -2,190 +2,205 @@
 //  ReviewView.swift
 //  SnapLingo
 //
+//  “复习”标签页：今日计划、待学的词、未来一周的复习量。
+//
 
 import SwiftUI
 import SwiftData
+import Charts
 
 struct ReviewView: View {
-    @Query private var allWords: [VocabWord]
+    @Environment(AppCoordinator.self) private var coordinator
+    @Query private var words: [VocabWord]
+    @Query(sort: \ReviewLog.reviewedAt) private var logs: [ReviewLog]
+    @Query(sort: \UserSettings.createdAt) private var settingsRows: [UserSettings]
 
-    private var dueAll: [VocabWord] { allWords.filter(\.isDueForReview) }
-    private var masteredAll: Int { allWords.filter(\.isMastered).count }
+    private var settings: UserSettings? { settingsRows.first }
 
-    private var categoryStats: [CategoryReviewStat] {
-        var groups: [String: [VocabWord]] = [:]
-        for word in allWords { groups[word.categoryName, default: []].append(word) }
-        return groups.map { name, words in
-            CategoryReviewStat(categoryName: name, words: words)
-        }
-        .sorted { $0.dueCount > $1.dueCount }
+    private var plan: DailyPlan {
+        guard let settings else { return .empty }
+        return StudyStore.plan(settings: settings, words: words, logs: logs)
     }
+
+    private var backlogCount: Int { words.filter { $0.state == .new && !$0.excludedFromReview }.count }
 
     var body: some View {
         NavigationStack {
-            List {
-                // 全局概览 banner
-                overviewSection
-
-                // 全部复习入口
-                if !dueAll.isEmpty {
-                    Section {
-                        NavigationLink {
-                            FlashcardReviewView(
-                                categoryName: "全部复习",
-                                wordsToReview: dueAll
-                            )
-                        } label: {
-                            allReviewRow
-                        }
-                    }
-                }
-
-                // 各分类
-                if !categoryStats.isEmpty {
-                    Section("分类复习") {
-                        ForEach(categoryStats) { stat in
-                            NavigationLink {
-                                FlashcardReviewView(
-                                    categoryName: stat.categoryName,
-                                    wordsToReview: stat.dueWords
-                                )
-                            } label: {
-                                categoryRow(stat)
+            Group {
+                if words.isEmpty {
+                    IllustratedEmptyState(
+                        emoji: "🗂️",
+                        color: Pastel.sky,
+                        title: "还没有要复习的词",
+                        message: "拍一个英文场景，挑几个词，之后每天在这里按计划复习。",
+                        buttonTitle: "扫描一个场景"
+                    ) { coordinator.startScan() }
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: Spacing.xl) {
+                            PlanCard(plan: plan, backlog: backlogCount)
+                            if backlogCount > plan.newIDs.count {
+                                backlogRow
                             }
-                            .disabled(stat.dueCount == 0)
+                            if words.contains(where: { $0.state != .new }) {
+                                ForecastCard(days: DailyPlanner.forecast(words: words))
+                            }
                         }
-                    }
-                }
-
-                // 无词状态
-                if allWords.isEmpty {
-                    Section {
-                        ContentUnavailableView(
-                            "还没有词汇",
-                            systemImage: "books.vertical",
-                            description: Text("从首页扫描照片来添加词汇吧")
-                        )
-                        .listRowBackground(Color.clear)
+                        .padding(.horizontal, Spacing.lg)
+                        .padding(.top, Spacing.sm)
+                        .padding(.bottom, 40)
                     }
                 }
             }
-            .listStyle(.insetGrouped)
+            .background(PaperBackground())
             .navigationTitle("复习")
-            .navigationBarTitleDisplayMode(.large)
+            .appTabBar()
         }
     }
 
-    // MARK: - 全局概览
-
-    private var overviewSection: some View {
-        Section {
-            HStack(spacing: 0) {
-                overviewCell(value: "\(allWords.count)", label: "总词汇", color: .blue)
-                Divider().frame(height: 36)
-                overviewCell(value: "\(dueAll.count)", label: "待复习", color: .orange)
-                Divider().frame(height: 36)
-                overviewCell(value: "\(masteredAll)", label: "已掌握", color: .green)
-            }
-            .padding(.vertical, 8)
-        }
-    }
-
-    private func overviewCell(value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.title2.bold())
-                .foregroundStyle(color)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - 全部复习行
-
-    private var allReviewRow: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "brain.head.profile")
-                .font(.title2)
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 10))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("全部复习")
-                    .font(.headline)
-                Text("混合所有分类，\(dueAll.count) 词待复习")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            dueBadge(dueAll.count, color: .accentColor)
-        }
-        .padding(.vertical, 4)
-    }
-
-    // MARK: - 分类行
-
-    private func categoryRow(_ stat: CategoryReviewStat) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: stat.words.first?.sceneTag.icon ?? "tag")
-                .font(.title3)
-                .foregroundStyle(stat.dueCount > 0 ? .white : .secondary)
-                .frame(width: 44, height: 44)
-                .background(
-                    stat.dueCount > 0 ? Color.accentColor.opacity(0.85) : Color.secondary.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 10)
-                )
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(stat.categoryName)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(stat.dueCount > 0 ? .primary : .secondary)
-
-                HStack(spacing: 8) {
-                    Text("\(stat.totalCount) 词")
-                    Text("·")
-                    Text("\(stat.masteredCount) 已掌握")
+    private var backlogRow: some View {
+        Button {
+            coordinator.showWords(.new)
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                EmojiTile(emoji: "📥", color: Pastel.peach, size: 48)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(backlogCount) 个词待学")
+                        .font(.headline.weight(.heavy))
+                        .contentTransition(.numericText())
+                    Text("每天按计划学一部分，不会一下子太多")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: "arrow.right")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Theme.ink.opacity(0.4))
             }
-
-            Spacer()
-
-            if stat.dueCount > 0 {
-                dueBadge(stat.dueCount, color: .orange)
-            } else {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-            }
+            .card(padding: Spacing.sm + 2)
         }
-        .padding(.vertical, 4)
-    }
-
-    private func dueBadge(_ count: Int, color: Color) -> some View {
-        Text("\(count)")
-            .font(.caption.weight(.bold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(color, in: Capsule())
+        .buttonStyle(.pressable)
+        .foregroundStyle(Theme.ink)
     }
 }
 
-// MARK: - 辅助数据结构
+// MARK: - 今日计划卡片
 
-struct CategoryReviewStat: Identifiable {
-    let id = UUID()
-    let categoryName: String
-    let words: [VocabWord]
+private struct PlanCard: View {
+    @Environment(AppCoordinator.self) private var coordinator
+    var plan: DailyPlan
+    var backlog: Int
 
-    var dueWords: [VocabWord] { words.filter(\.isDueForReview) }
-    var dueCount: Int { dueWords.count }
-    var masteredCount: Int { words.filter(\.isMastered).count }
-    var totalCount: Int { words.count }
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            HStack(spacing: Spacing.lg) {
+                ZStack {
+                    PlanRingView(newProgress: plan.newProgress, reviewProgress: plan.reviewProgress, lineWidth: 13)
+                        .frame(width: 108, height: 108)
+                    if plan.isComplete {
+                        Text("🎉").font(.system(size: 34))
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        VStack(spacing: -2) {
+                            Text("\(plan.remaining)")
+                                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                                .contentTransition(.numericText())
+                            Text("待完成")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text(headline)
+                        .font(.title3.weight(.heavy))
+                    ProgressLine(color: Theme.newWords, title: "新词", done: plan.newDone, target: plan.newTarget)
+                    ProgressLine(color: Theme.reviews, title: "复习", done: plan.reviewsDone, target: plan.reviewTarget)
+                }
+            }
+
+            if plan.hasWork {
+                PrimaryButton(title: plan.doneToday > 0 ? "继续学习" : "开始今日学习", trailingSymbol: "arrow.right") {
+                    coordinator.startStudy()
+                }
+            } else if backlog > 0 {
+                SecondaryButton(title: "再学 5 个新词", symbol: "plus") {
+                    coordinator.startStudy(.today(extraNew: 5))
+                }
+            } else {
+                SecondaryButton(title: "扫描一个新场景", symbol: "camera.viewfinder") {
+                    coordinator.startScan()
+                }
+            }
+        }
+        .card(padding: Spacing.lg, radius: Radius.hero)
+        .animation(.spring, value: plan)
+    }
+
+    private var headline: String {
+        if plan.isComplete { return "今日计划完成" }
+        if !plan.hasWork { return "今天没有要学的词" }
+        return "今日计划"
+    }
+}
+
+private struct ProgressLine: View {
+    var color: Color
+    var title: String
+    var done: Int
+    var target: Int
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            Capsule().fill(color).frame(width: 14, height: 6)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+            Text("\(done)/\(target)")
+                .font(.subheadline.weight(.heavy).monospacedDigit())
+                .contentTransition(.numericText())
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - 未来一周
+
+private struct ForecastCard: View {
+    var days: [ForecastDay]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            SectionHeader(title: "未来一周", emoji: "📊", subtitle: "每天要复习的词")
+            Chart(days) { day in
+                BarMark(
+                    x: .value("日期", day.date, unit: .day),
+                    y: .value("复习", max(day.count, 0))
+                )
+                .foregroundStyle(Calendar.current.isDateInToday(day.date) ? Theme.brand : Theme.reviews.opacity(0.55))
+                .clipShape(.rect(cornerRadius: 8, style: .continuous))
+                .annotation(position: .top, spacing: 3) {
+                    if day.count > 0 {
+                        Text("\(day.count)")
+                            .font(.caption2.weight(.heavy))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day)) { value in
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) {
+                            Text(Calendar.current.isDateInToday(date) ? "今天" : date.formatted(.dateTime.weekday(.narrow)))
+                                .font(.caption2.weight(.bold))
+                        }
+                    }
+                }
+            }
+            .chartYAxis(.hidden)
+            .frame(height: 130)
+        }
+        .card(padding: Spacing.lg, radius: Radius.hero)
+    }
 }
