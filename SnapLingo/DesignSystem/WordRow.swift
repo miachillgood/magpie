@@ -10,6 +10,8 @@ struct WordRow: View {
     var word: VocabWord
     var showsScene = true
 
+    @AppStorage(AIConsent.storageKey) private var consentRaw = AIConsent.State.undecided.rawValue
+
     var body: some View {
         HStack(spacing: Spacing.sm) {
             if showsScene {
@@ -33,7 +35,7 @@ struct WordRow: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text(word.meaning.isEmpty ? String(localized: "正在生成解释…") : word.meaning)
+                Text(word.meaning.isEmpty ? (consentRaw == AIConsent.State.granted.rawValue ? String(localized: "正在生成解释…") : String(localized: "AI 释义已关闭")) : word.meaning)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

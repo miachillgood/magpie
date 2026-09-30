@@ -419,13 +419,25 @@ struct DataCard: View {
 
     @Environment(\.modelContext) private var context
     @State private var confirmingWipe = false
+    @State private var showingConsent = false
+    @AppStorage(AIConsent.storageKey) private var consentRaw = AIConsent.State.undecided.rawValue
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             MeSectionTitle(title: "数据")
             MeCard(padding: 14) {
                 SettingRow(icon: "lock", title: "照片和单词只存在这台手机上") { EmptyView() }
-                ShareLink(item: WordExportFile(rows: WordExport.rows(from: words)), preview: SharePreview(Text("SnapLingo 单词"))) {
+                SettingRow(icon: "sparkles", title: "AI 挑词和释义", subtitle: "识别出的文字会发给 Anthropic 的 Claude") {
+                    // 打开时先看一遍说明再同意；关掉立刻生效
+                    Toggle("AI 挑词和释义", isOn: Binding(
+                        get: { consentRaw == AIConsent.State.granted.rawValue },
+                        set: { on in
+                            if on { showingConsent = true } else { consentRaw = AIConsent.State.declined.rawValue }
+                        }
+                    ))
+                    .labelsHidden()
+                }
+                ShareLink(item: WordExportFile(rows: WordExport.rows(from: words)), preview: SharePreview(Text("Magpie 单词"))) {
                     SettingRow(icon: "square.and.arrow.up", title: "导出单词", subtitle: "表格文件，可以导入 Anki") { Chevron() }
                 }
                 .buttonStyle(.plain)
@@ -443,6 +455,9 @@ struct DataCard: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+        .sheet(isPresented: $showingConsent) {
+            AIConsentSheet()
         }
         .confirmationDialog("清空所有场景、单词和学习记录？", isPresented: $confirmingWipe, titleVisibility: .visible) {
             Button("清空", role: .destructive) { WordLibrary.wipeAll(context) }

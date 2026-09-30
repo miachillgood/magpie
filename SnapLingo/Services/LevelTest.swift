@@ -5,7 +5,8 @@
 
 import Foundation
 
-/// 3 轮自适应“点你认识的词”水平自测
+/// 2 轮自适应“点你认识的词”水平小测，约 15 个词、30 秒：
+/// 第 1 轮 A2–C1 各 2 个，第 2 轮在估计的等级和上下各一级里各取 3 个
 struct LevelTest: Sendable {
     struct Item: Identifiable, Hashable, Sendable {
         var word: String
@@ -13,7 +14,7 @@ struct LevelTest: Sendable {
         var id: String { word }
     }
 
-    static let rounds = 3
+    static let rounds = 2
 
     /// 生活场景常见词，按大致 CEFR 等级分组
     static let bank: [CEFRLevel: [String]] = [

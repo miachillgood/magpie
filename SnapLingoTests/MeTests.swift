@@ -181,3 +181,36 @@ struct ExplanationKeyTests {
         #expect(ClaudeAPIService.matchKey("unrelated", lemma: "other", requested: requested) == "unrelated")
     }
 }
+
+// MARK: - AI 同意
+
+@MainActor
+@Suite(.serialized)
+struct AIConsentTests {
+    @Test func nothingIsSentWithoutConsent() async {
+        let saved = UserDefaults.standard.string(forKey: AIConsent.storageKey)
+        defer { UserDefaults.standard.set(saved, forKey: AIConsent.storageKey) }
+
+        for state in [AIConsent.State.undecided, .declined] {
+            AIConsent.state = state
+            await #expect {
+                _ = try await ClaudeAPIService.shared.extractWords(from: "Please order at the counter", level: .b1, language: .english)
+            } throws: { error in
+                if case ClaudeAPIError.aiDisabled = error { true } else { false }
+            }
+        }
+    }
+
+    @Test func stateRoundTrips() {
+        let saved = UserDefaults.standard.string(forKey: AIConsent.storageKey)
+        defer { UserDefaults.standard.set(saved, forKey: AIConsent.storageKey) }
+
+        UserDefaults.standard.removeObject(forKey: AIConsent.storageKey)
+        #expect(AIConsent.state == .undecided)
+        AIConsent.state = .granted
+        #expect(AIConsent.isGranted)
+        AIConsent.decline()
+        #expect(AIConsent.state == .declined)
+        #expect(!AIConsent.isGranted)
+    }
+}

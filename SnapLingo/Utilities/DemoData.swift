@@ -21,6 +21,8 @@ enum DemoData {
             let settings = UserSettings.current(in: context)
             settings.onboardingCompleted = true
             settings.assessmentCompleted = true
+            // 跳过引导也就跳过了 AI 说明页，当作已经同意（截图、调试用）
+            if AIConsent.state == .undecided { AIConsent.state = .granted }
             try? context.save()
         }
         if arguments.contains("-showOnboarding") {

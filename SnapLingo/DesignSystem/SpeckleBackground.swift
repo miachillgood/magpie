@@ -48,10 +48,12 @@ struct SpeckleBackground: View {
 /// 页面顶部的主题色斑点底纹，往下很快过渡成透明（露出下面的浅灰）；复习页和「我的」共用
 struct ThemeWash: View {
     var height: CGFloat = 560
+    /// 指定时不跟随用户选的主题色（引导页固定用暖沙，和欢迎页一致）
+    var theme: HomeTheme? = nil
     @AppStorage(HomeTheme.storageKey) private var themeRaw = HomeTheme.sky.rawValue
 
     var body: some View {
-        SpeckleBackground(base: HomeTheme(storedValue: themeRaw).base)
+        SpeckleBackground(base: (theme ?? HomeTheme(storedValue: themeRaw)).base)
             .frame(height: height)
             .mask {
                 LinearGradient(

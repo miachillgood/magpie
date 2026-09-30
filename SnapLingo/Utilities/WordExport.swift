@@ -61,7 +61,7 @@ struct WordExportFile: Transferable {
 
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(exportedContentType: .commaSeparatedText) { file in
-            let url = FileManager.default.temporaryDirectory.appending(path: "SnapLingo-words.csv")
+            let url = FileManager.default.temporaryDirectory.appending(path: "Magpie-words.csv")
             // 带 BOM，Excel 才能正确识别 UTF-8 里的中日韩文字
             let data = Data([0xEF, 0xBB, 0xBF]) + Data(WordExport.csv(file.rows).utf8)
             try data.write(to: url, options: .atomic)

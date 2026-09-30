@@ -8,7 +8,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "SnapLingo"
+            "value" : "Magpie"
           }
         }
       },
@@ -21,7 +21,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "SnapLingo"
+            "value" : "Magpie"
           }
         }
       },
@@ -33,13 +33,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SnapLingo uses the camera to photograph English around you and pick out words for you to learn."
+            "value" : "Magpie uses the camera to photograph English around you and pick out words for you to learn."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SnapLingo usa la cámara para fotografiar el inglés a tu alrededor y elegir palabras para que las aprendas."
+            "value" : "Magpie usa la cámara para fotografiar el inglés a tu alrededor y elegir palabras para que las aprendas."
           }
         },
         "ja" : {
@@ -57,19 +57,19 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O SnapLingo usa a câmera para fotografar o inglês ao seu redor e escolher palavras para você aprender."
+            "value" : "O Magpie usa a câmera para fotografar o inglês ao seu redor e escolher palavras para você aprender."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SnapLingo 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。"
+            "value" : "Magpie 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SnapLingo 需要使用相機拍下身邊的英文，幫你從中挑出要學的單字。"
+            "value" : "Magpie 需要使用相機拍下身邊的英文，幫你從中挑出要學的單字。"
           }
         }
       }

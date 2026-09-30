@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// 3 轮“点你认识的词”，完成后显示结果
+/// 2 轮“点你认识的词”，完成后显示结果
 struct LevelTestView: View {
     var onSkip: (() -> Void)? = nil
     var onFinish: (Double) -> Void
@@ -17,7 +17,7 @@ struct LevelTestView: View {
 
     var body: some View {
         ZStack {
-            PaperBackground()
+            OnboardingBackground()
             Group {
                 if finished {
                     result
@@ -33,35 +33,40 @@ struct LevelTestView: View {
             if items.isEmpty { items = test.nextRound() }
         }
         .sensoryFeedback(.selection, trigger: known)
-        .toolbar {
-            if let onSkip, !finished {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("跳过", action: onSkip)
-                        .foregroundStyle(Theme.ink)
-                }
-            }
-        }
     }
 
     // MARK: - 一轮
 
     private var round: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            HStack(spacing: 6) {
-                ForEach(0..<LevelTest.rounds, id: \.self) { index in
-                    Capsule()
-                        .fill(index <= test.round ? Theme.brand : Theme.ink.opacity(0.1))
-                        .frame(height: 6)
+            HStack(spacing: 12) {
+                HStack(spacing: 6) {
+                    ForEach(0..<LevelTest.rounds, id: \.self) { index in
+                        Capsule()
+                            .fill(index <= test.round ? Theme.homeInk : Theme.homeInk.opacity(0.12))
+                            .frame(height: 6)
+                    }
+                }
+                .animation(.smooth, value: test.round)
+                // 跳过做得不显眼：大多数人应该测一下，但不会卡住完全不会的人
+                if let onSkip {
+                    Button("跳过", action: onSkip)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.homeMuted)
                 }
             }
-            .animation(.smooth, value: test.round)
+            .frame(minHeight: 32)
 
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("你认识哪些词？")
-                    .font(.display)
-                Text("点选你知道意思的词。不确定就别选，结果会更准。")
+                Text(test.round == 0 ? "先测一下你的英语水平" : "最后一轮")
+                    .font(.system(size: 30, weight: .heavy))
+                    .contentTransition(.opacity)
+                Text(test.round == 0
+                     ? "点你认识的词，大约 30 秒，一共 2 轮。不确定就别选，结果会更准。"
+                     : "按刚才的结果换了一组词，还是点你认识的。")
                     .font(.body)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             FlowLayout(spacing: Spacing.sm) {

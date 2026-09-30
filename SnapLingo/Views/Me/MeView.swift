@@ -76,7 +76,7 @@ struct MeView: View {
                 DataCard(words: words)
                     .padding(.top, 30)
 
-                Text("SnapLingo \(Bundle.main.shortVersion) · 把生活里遇见的英文变成每天几分钟的复习")
+                Text("Magpie \(Bundle.main.shortVersion) · 把生活里遇见的英文变成每天几分钟的复习")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.homeMuted)
                     .multilineTextAlignment(.center)

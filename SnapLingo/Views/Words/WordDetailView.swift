@@ -12,6 +12,7 @@ struct WordDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \ReviewLog.reviewedAt, order: .reverse) private var allLogs: [ReviewLog]
     @State private var confirmingDelete = false
+    @State private var showingConsent = false
 
     private var logs: [ReviewLog] { allLogs.filter { $0.wordID == word.id } }
     private var scans: [Scan] { word.scans.sorted { $0.createdAt > $1.createdAt } }
@@ -21,7 +22,7 @@ struct WordDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 hero
-                ExplanationCard(word: word) {
+                ExplanationCard(word: word, onEnableAI: { showingConsent = true }) {
                     word.explanationStatus = .pending
                     try? context.save()
                     ExplanationQueue.shared.run(context: context)
@@ -44,6 +45,9 @@ struct WordDetailView: View {
         .background(PaperBackground())
         .navigationTitle(word.word)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingConsent) {
+            AIConsentSheet()
+        }
         .confirmationDialog("从词库删除“\(word.word)”？", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("删除", role: .destructive) {
                 let target = word
@@ -230,63 +234,82 @@ struct SpeakButton: View {
 
 struct ExplanationCard: View {
     var word: VocabWord
+    var onEnableAI: () -> Void
     var onRetry: () -> Void
+
+    @AppStorage(AIConsent.storageKey) private var consentRaw = AIConsent.State.undecided.rawValue
+    private var aiOn: Bool { consentRaw == AIConsent.State.granted.rawValue }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            switch word.explanationStatus {
-            case .ready:
-                block(title: "释义", emoji: "📖") {
-                    Text(word.explanation)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
-                }
-                if !word.exampleSentence.isEmpty {
-                    block(title: "例句", emoji: "💬") {
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                HighlightedText(text: word.exampleSentence, highlight: word.word)
-                                    .font(.word(18, weight: .medium))
-                                Text(word.exampleTranslation)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer(minLength: 0)
-                            SpeakButton(text: word.exampleSentence, size: 36)
-                        }
-                        .padding(Spacing.md)
-                        .background(Theme.insetFill, in: .rect(cornerRadius: Radius.small, style: .continuous))
-                    }
-                }
-                if !word.sceneNote.isEmpty {
-                    block(title: "生活小贴士", emoji: "💡") {
-                        Text(word.sceneNote)
-                            .font(.subheadline)
-                            .padding(Spacing.md)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Pastel.butter, in: .rect(cornerRadius: Radius.small, style: .continuous))
-                    }
-                }
-            case .pending:
-                if !word.gloss.isEmpty {
-                    Text(word.gloss).font(.title3.weight(.semibold))
-                }
-                Label("正在生成详细解释…", systemImage: "sparkles")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .symbolEffect(.pulse)
-            case .failed:
+            if word.explanationStatus != .ready && !aiOn {
                 if !word.gloss.isEmpty {
                     Text(word.gloss).font(.title3.weight(.semibold))
                 }
                 HStack {
-                    Text("😕 解释生成失败")
+                    Text("AI 释义已关闭")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("重试", action: onRetry)
+                    Button("打开", action: onEnableAI)
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(Theme.brand)
+                }
+            } else {
+                switch word.explanationStatus {
+                case .ready:
+                    block(title: "释义", emoji: "📖") {
+                        Text(word.explanation)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                    }
+                    if !word.exampleSentence.isEmpty {
+                        block(title: "例句", emoji: "💬") {
+                            HStack(alignment: .top) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HighlightedText(text: word.exampleSentence, highlight: word.word)
+                                        .font(.word(18, weight: .medium))
+                                    Text(word.exampleTranslation)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 0)
+                                SpeakButton(text: word.exampleSentence, size: 36)
+                            }
+                            .padding(Spacing.md)
+                            .background(Theme.insetFill, in: .rect(cornerRadius: Radius.small, style: .continuous))
+                        }
+                    }
+                    if !word.sceneNote.isEmpty {
+                        block(title: "生活小贴士", emoji: "💡") {
+                            Text(word.sceneNote)
+                                .font(.subheadline)
+                                .padding(Spacing.md)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Pastel.butter, in: .rect(cornerRadius: Radius.small, style: .continuous))
+                        }
+                    }
+                case .pending:
+                    if !word.gloss.isEmpty {
+                        Text(word.gloss).font(.title3.weight(.semibold))
+                    }
+                    Label("正在生成详细解释…", systemImage: "sparkles")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .symbolEffect(.pulse)
+                case .failed:
+                    if !word.gloss.isEmpty {
+                        Text(word.gloss).font(.title3.weight(.semibold))
+                    }
+                    HStack {
+                        Text("😕 解释生成失败")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("重试", action: onRetry)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(Theme.brand)
+                    }
                 }
             }
 

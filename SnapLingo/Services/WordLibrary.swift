@@ -194,6 +194,8 @@ final class ExplanationQueue {
     }
 
     private func process(context: ModelContext) async {
+        // 没同意用 AI 时词先留在待生成，等用户打开后再补
+        guard AIConsent.isGranted else { return }
 
         let readyRaw = ExplanationStatus.ready.rawValue
         let descriptor = FetchDescriptor<VocabWord>(predicate: #Predicate { $0.explanationStatusRaw != readyRaw })

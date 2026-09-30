@@ -1385,6 +1385,88 @@
         }
       }
     },
+    "%lld 秒后可以重新发送" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Resend in %lld second"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Resend in %lld seconds"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Reenviar en %lld segundo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Reenviar en %lld segundos"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 秒後に再送信できます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld초 후에 다시 보낼 수 있어요"
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Reenviar em %lld segundo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Reenviar em %lld segundos"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 秒后可以重新发送"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 秒後可以重新傳送"
+          }
+        }
+      }
+    },
     "%lld%%" : {
       "shouldTranslate" : false
     },
@@ -1648,6 +1730,99 @@
         }
       }
     },
+    "AI 功能已关闭，可以在“我的”里打开" : {
+      "comment" : "Shown when the user has not allowed sending text to AI. No final period: it is inserted into a longer sentence",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI is turned off (you can turn it on in “Me”)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA está desactivada (puedes activarla en “Perfil”)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI機能はオフです（「マイページ」でオンにできます）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 기능이 꺼져 있어요(‘마이’에서 켤 수 있어요)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA está desativada (dá para ativar em “Perfil”)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 功能已关闭，可以在“我的”里打开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 功能已關閉，可以在「我的」裡開啟"
+          }
+        }
+      }
+    },
+    "AI 挑词和释义" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI word picks & meanings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palabras y significados con IA"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AIの単語選びと意味"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 단어 추천과 뜻"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palavras e significados com IA"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 挑词和释义"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 挑單字和釋義"
+          }
+        }
+      }
+    },
     "AI 推荐暂时不可用" : {
       "localizations" : {
         "en" : {
@@ -1690,6 +1865,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI 推薦暫時無法使用"
+          }
+        }
+      }
+    },
+    "AI 释义已关闭" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI meanings are off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Significados con IA desactivados"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AIによる意味はオフです"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 뜻풀이가 꺼져 있어요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Significados com IA desativados"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 释义已关闭"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 釋義已關閉"
           }
         }
       }
@@ -1740,247 +1961,366 @@
         }
       }
     },
+    "Anthropic 隐私政策" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anthropic Privacy Policy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Política de privacidad de Anthropic"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anthropic プライバシーポリシー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anthropic 개인정보 처리방침"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Política de Privacidade da Anthropic"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anthropic 隐私政策"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anthropic 隱私權政策"
+          }
+        }
+      }
+    },
+    "Magpie" : {
+      "shouldTranslate" : false
+    },
+    "Magpie %@ · 把生活里遇见的英文变成每天几分钟的复习" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie %@ · Turn the English you meet every day into a few minutes of review"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie %@ · El inglés de tu día a día, convertido en unos minutos de repaso diario"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie %@ · 暮らしで出会った英語を、毎日数分の復習に"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie %@ · 일상에서 만난 영어를 하루 몇 분 복습으로"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie %@ · Transforma o inglês do seu dia a dia em poucos minutos de revisão por dia"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie %@ · 把生活里遇见的英文变成每天几分钟的复习"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie %@ · 把生活中遇見的英文，變成每天幾分鐘的複習"
+          }
+        }
+      }
+    },
+    "Magpie 单词" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie words"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palabras de Magpie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie 単語"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie 단어"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palavras do Magpie"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie 单词"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie 單字"
+          }
+        }
+      }
+    },
+    "Magpie 用 Anthropic 的 Claude 从照片文字里挑出适合你的词，再用你的母语写释义和例句。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie uses Claude by Anthropic to pick words that suit you from the text in your photos, then writes meanings and examples in your native language."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie usa Claude, de Anthropic, para elegir del texto de tus fotos las palabras que te convienen y escribir significados y ejemplos en tu lengua materna."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MagpieはAnthropicのClaudeを使って、写真の文字からあなたに合った単語を選び、母語で意味と例文を作ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie는 Anthropic의 Claude로 사진 속 글자에서 나에게 맞는 단어를 고르고, 모국어로 뜻과 예문을 만들어요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Magpie usa o Claude, da Anthropic, para escolher no texto das suas fotos as palavras certas para você e escrever significados e exemplos na sua língua materna."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie 用 Anthropic 的 Claude 从照片文字里挑出适合你的词，再用你的母语写释义和例句。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie 用 Anthropic 的 Claude 從照片文字裡挑出適合你的單字，再用你的母語寫釋義和例句。"
+          }
+        }
+      }
+    },
     "New!" : {
       "shouldTranslate" : false
     },
-    "See it. Snap it.\nLearn it." : {
-      "shouldTranslate" : false
-    },
-    "SnapLingo" : {
-      "shouldTranslate" : false
-    },
-    "SnapLingo %@ · 把生活里遇见的英文变成每天几分钟的复习" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo %@ · Turn the English you meet every day into a few minutes of review"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo %@ · El inglés de tu día a día, convertido en unos minutos de repaso diario"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo %@ · 暮らしで出会った英語を、毎日数分の復習に"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo %@ · 일상에서 만난 영어를 하루 몇 분 복습으로"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo %@ · Transforma o inglês do seu dia a dia em poucos minutos de revisão por dia"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo %@ · 把生活里遇见的英文变成每天几分钟的复习"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo %@ · 把生活中遇見的英文，變成每天幾分鐘的複習"
-          }
-        }
-      }
-    },
-    "SnapLingo 单词" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo words"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Palabras de SnapLingo"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo 単語"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo 단어"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Palavras do SnapLingo"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo 单词"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SnapLingo 單字"
-          }
-        }
-      }
-    },
     "card.tag.new" : {
       "comment" : "Tag on a single flashcard: this is a new word (singular)",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nueva"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新しい単語"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "새 단어"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nova"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "新词"
           }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新單字"
-          }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "hero.placeSuffix.many" : {
       "comment" : "Appended after the place name when the words come from several places (e.g. ' etc.'). Keep the leading space if your language needs it",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " & more"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " y más"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "などで"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " 등에서"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " e mais"
-          }
-        },
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " 等"
-          }
-        },
-        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : " 等"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "hero.placeSuffix.one" : {
       "comment" : "Appended after the place name, e.g. a particle like で or 에서. A single space means nothing",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "で"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "에서"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : " "
           }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "iPhone 会从短信里自动填入验证码，填满 6 位就登录。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your iPhone fills in the code from the text message. You're signed in once all 6 digits are in."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu iPhone completa el código desde el SMS. Con los 6 dígitos, se inicia sesión."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone が SMS からコードを自動入力します。6 桁そろうとサインインします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone이 문자에서 인증번호를 자동으로 채워요. 6자리가 다 채워지면 로그인돼요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O iPhone preenche o código a partir do SMS. Com os 6 dígitos, você entra."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 会从短信里自动填入验证码，填满 6 位就登录。"
+          }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : " "
+            "value" : "iPhone 會從簡訊裡自動填入驗證碼，填滿 6 位數就登入。"
+          }
+        }
+      }
+    },
+    "iPhone 会从邮件里自动填入验证码，填满 6 位就登录。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your iPhone fills in the code from the email. You're signed in once all 6 digits are in."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu iPhone completa el código desde el correo. Con los 6 dígitos, se inicia sesión."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone がメールからコードを自動入力します。6 桁そろうとサインインします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone이 이메일에서 인증번호를 자동으로 채워요. 6자리가 다 채워지면 로그인돼요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O iPhone preenche o código a partir do e-mail. Com os 6 dígitos, você entra."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 会从邮件里自动填入验证码，填满 6 位就登录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 會從郵件裡自動填入驗證碼，填滿 6 位數就登入。"
+          }
+        }
+      }
+    },
+    "iPhone 和 iPad 登录同一个账号，进度一样" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use one account on iPhone and iPad and pick up where you left off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con la misma cuenta en iPhone y iPad, tu progreso es el mismo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone と iPad で同じアカウントにサインインすれば、進み具合も同じ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone과 iPad에서 같은 계정으로 로그인하면 진도가 똑같아요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com a mesma conta no iPhone e no iPad, o progresso é o mesmo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 和 iPad 登录同一个账号，进度一样"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 和 iPad 登入同一個帳號，進度一樣"
           }
         }
       }
@@ -2161,6 +2501,53 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "上個月"
+          }
+        }
+      }
+    },
+    "上车刷卡" : {
+      "comment" : "Meaning of 'tap on' (tap your bus card)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "touch your card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pasar la tarjeta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "乗車タッチ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "승차 태그"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "passar o cartão"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上车刷卡"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上車刷卡"
           }
         }
       }
@@ -2479,6 +2866,52 @@
         }
       }
     },
+    "不会发送" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's never sent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nunca se envía"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信しないもの"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보내지 않는 것"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nunca é enviado"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不会发送"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不會傳送"
+          }
+        }
+      }
+    },
     "不再复习" : {
       "localizations" : {
         "en" : {
@@ -2521,6 +2954,144 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "不再複習"
+          }
+        }
+      }
+    },
+    "不同意也可以拍照、手动选词和复习，只是没有自动挑词和释义。随时可以在“我的”里更改。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Without it you can still snap photos, pick words yourself and review. You just won't get word picks or meanings. You can change this anytime in “Me”."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin esto puedes seguir tomando fotos, eligiendo palabras tú mismo y repasando; solo no tendrás sugerencias ni significados automáticos. Puedes cambiarlo cuando quieras en “Perfil”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同意しなくても、撮影・単語の手動選択・復習はできます。自動の単語選びと意味はつきません。「マイページ」でいつでも変更できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동의하지 않아도 사진 찍기, 직접 단어 고르기, 복습은 할 수 있어요. 자동 단어 추천과 뜻만 빠져요. ‘마이’에서 언제든 바꿀 수 있어요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem isso você ainda pode tirar fotos, escolher palavras sozinho e revisar; só fica sem sugestões e significados automáticos. Dá para mudar quando quiser em “Perfil”."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不同意也可以拍照、手动选词和复习，只是没有自动挑词和释义。随时可以在“我的”里更改。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不同意也可以拍照、自己挑單字和複習，只是沒有自動挑單字和釋義。隨時可以在「我的」裡修改。"
+          }
+        }
+      }
+    },
+    "不用注册，打开就能用" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sign-up needed. Just open and go"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin registro: ábrela y úsala"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登録不要、すぐに使えます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "가입 없이 바로 쓸 수 있어요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem cadastro: é só abrir e usar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不用注册，打开就能用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不用註冊，打開就能用"
+          }
+        }
+      }
+    },
+    "不登录的话，数据只存在这台手机上" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Without an account, your data stays on this phone only"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin cuenta, tus datos solo se guardan en este teléfono"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サインインしない場合、データはこの iPhone にだけ保存されます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인하지 않으면 데이터는 이 휴대폰에만 저장돼요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem conta, seus dados ficam só neste celular"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不登录的话，数据只存在这台手机上"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不登入的話，資料只存在這支手機上"
           }
         }
       }
@@ -3493,6 +4064,52 @@
         }
       }
     },
+    "会发送" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's sent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se envía"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信するもの"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보내는 것"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "É enviado"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会发送"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "會傳送"
+          }
+        }
+      }
+    },
     "会把这个场景加到它们的记忆里" : {
       "localizations" : {
         "en" : {
@@ -3673,52 +4290,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的程度：%@"
-          }
-        }
-      }
-    },
-    "你认识哪些词？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which words do you know?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Qué palabras conoces?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "知っている単語はどれですか？"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "어떤 단어를 알고 있나요?"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quais palavras você conhece?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你认识哪些词？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你認識哪些單字？"
           }
         }
       }
@@ -3989,6 +4560,98 @@
         }
       }
     },
+    "先不用" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今はしない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지금은 안 할게요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先不用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先不用"
+          }
+        }
+      }
+    },
+    "先不登录" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今はサインインしない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나중에 할게요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先不登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先不登入"
+          }
+        }
+      }
+    },
     "先想想这些用英文怎么说" : {
       "localizations" : {
         "en" : {
@@ -4031,6 +4694,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "先想想這些用英文怎麼說"
+          }
+        }
+      }
+    },
+    "先测一下你的英语水平" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First, a quick level check"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primero, mide tu nivel de inglés"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まずは英語レベルをチェック"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "먼저 영어 레벨을 확인해요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primeiro, veja seu nível de inglês"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先测一下你的英语水平"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先測一下你的英文程度"
           }
         }
       }
@@ -4727,6 +5436,53 @@
         }
       }
     },
+    "出发" : {
+      "comment" : "Meaning of 'departure' (a bus leaving)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "leaving time"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "salida"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出発"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "출발"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "partida"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出发"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出發"
+          }
+        }
+      }
+    },
     "刚刚" : {
       "comment" : "Just now (happened within the last hour or so)",
       "localizations" : {
@@ -5005,6 +5761,52 @@
         }
       }
     },
+    "单词、照片和复习记录都会存一份" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your words, photos and review history are all saved"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se guardan tus palabras, fotos e historial de repaso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "単語、写真、復習の記録をすべて保存します"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "단어, 사진, 복습 기록을 모두 저장해요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas palavras, fotos e histórico de revisão ficam salvos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单词、照片和复习记录都会存一份"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "單字、照片和複習紀錄都會存一份"
+          }
+        }
+      }
+    },
     "单词的释义和例句翻译会用这种语言。随时可以在“我的”里改。" : {
       "localizations" : {
         "en" : {
@@ -5272,6 +6074,52 @@
         }
       }
     },
+    "发送验证码" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar código"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コードを送信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인증번호 보내기"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar código"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送验证码"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳送驗證碼"
+          }
+        }
+      }
+    },
     "取消" : {
       "localizations" : {
         "en" : {
@@ -5456,6 +6304,52 @@
         }
       }
     },
+    "只挑适合你水平的词，释义和例句用你的母语写，每天复习几分钟就好。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only words that fit your level, explained in your native language. A few minutes of review a day is all it takes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo palabras de tu nivel, explicadas en tu lengua materna. Bastan unos minutos de repaso al día."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたのレベルに合った単語だけを選び、意味と例文は母語で。毎日数分の復習で十分です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내 레벨에 맞는 단어만 골라 모국어로 뜻과 예문을 보여줘요. 하루 몇 분만 복습하면 돼요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Só palavras do seu nível, explicadas na sua língua materna. Alguns minutos de revisão por dia bastam."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只挑适合你水平的词，释义和例句用你的母语写，每天复习几分钟就好。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只挑適合你程度的單字，釋義和例句用你的母語寫，每天複習幾分鐘就好。"
+          }
+        }
+      }
+    },
     "只用于以后的新词" : {
       "localizations" : {
         "en" : {
@@ -5591,6 +6485,98 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "可能已經認識"
+          }
+        }
+      }
+    },
+    "同意" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agree"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceptar"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同意する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동의"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceitar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同意"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同意"
+          }
+        }
+      }
+    },
+    "同意并继续" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agree and continue"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceptar y continuar"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同意して続ける"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동의하고 계속"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceitar e continuar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同意并继续"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同意並繼續"
           }
         }
       }
@@ -5780,6 +6766,52 @@
         }
       }
     },
+    "在“我的”里能删除账号和全部云端数据" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete your account and all cloud data in “Me”"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En “Perfil” puedes borrar tu cuenta y todos tus datos en la nube"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「マイページ」でアカウントとクラウドのデータをすべて削除できます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘마이’에서 계정과 클라우드 데이터를 모두 삭제할 수 있어요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em “Perfil” você apaga a conta e todos os dados na nuvem"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“我的”里能删除账号和全部云端数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「我的」裡能刪除帳號和全部雲端資料"
+          }
+        }
+      }
+    },
     "在「%@」里看到的词" : {
       "localizations" : {
         "en" : {
@@ -5914,6 +6946,98 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在照片裡"
+          }
+        }
+      }
+    },
+    "地区" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Region"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Región"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地域"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지역"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Região"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地区"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地區"
+          }
+        }
+      }
+    },
+    "地区：%@，区号 +%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Region: %@, code +%@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Región: %@, prefijo +%@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地域：%@、国番号 +%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지역: %@, 국가 번호 +%@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Região: %@, código +%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地区：%1$@，区号 +%2$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地區：%@，區碼 +%@"
           }
         }
       }
@@ -6553,6 +7677,52 @@
         }
       }
     },
+    "多台设备同步" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync across devices"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza tus dispositivos"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複数のデバイスで同期"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "여러 기기에서 동기화"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronize seus aparelhos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多台设备同步"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多台裝置同步"
+          }
+        }
+      }
+    },
     "天复习过" : {
       "localizations" : {
         "en" : {
@@ -7062,6 +8232,52 @@
         }
       }
     },
+    "对着英文拍一张" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snap any English"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotografía el inglés"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英語を撮るだけで"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "영어를 찍기만 하면"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotografe o inglês"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对着英文拍一张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對著英文拍一張"
+          }
+        }
+      }
+    },
     "导入示例数据" : {
       "localizations" : {
         "en" : {
@@ -7232,6 +8448,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已儲存 %lld 個單字"
+          }
+        }
+      }
+    },
+    "已发送到 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviado a %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ に送信しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보낸 곳: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviado para %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已发送到 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已傳送到 %@"
           }
         }
       }
@@ -8061,6 +9323,98 @@
         }
       }
     },
+    "我们会发一封带 6 位验证码的邮件。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll email you a 6-digit code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te enviaremos un correo con un código de 6 dígitos."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 桁の確認コードをメールで送ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6자리 인증번호가 담긴 이메일을 보내드려요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vamos enviar um e-mail com um código de 6 dígitos."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我们会发一封带 6 位验证码的邮件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我們會寄一封附有 6 位數驗證碼的郵件。"
+          }
+        }
+      }
+    },
+    "我们会发一条 6 位验证码到你的手机。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll text you a 6-digit code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te enviaremos un código de 6 dígitos por SMS."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 桁の確認コードを SMS で送ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰으로 6자리 인증번호를 보내드려요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vamos enviar um código de 6 dígitos por SMS."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我们会发一条 6 位验证码到你的手机。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我們會傳一則 6 位數驗證碼到你的手機。"
+          }
+        }
+      }
+    },
     "我已经掌握了" : {
       "localizations" : {
         "en" : {
@@ -8333,6 +9687,98 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所有儲存的單字都已經開始學了。"
+          }
+        }
+      }
+    },
+    "手机号" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phone number"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Número de teléfono"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電話番号"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 번호"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Número de telefone"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手机号"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手機號碼"
+          }
+        }
+      }
+    },
+    "打开" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activar"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンにする"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "켜기"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟"
           }
         }
       }
@@ -8825,6 +10271,52 @@
         }
       }
     },
+    "拍下一块公交站牌，单词 tap on、departure、signal 被挑了出来" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A photo of a bus stop sign with the words tap on, departure and signal picked out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto de un cartel de parada de autobús con las palabras tap on, departure y signal seleccionadas"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バス停の看板を撮影し、tap on、departure、signal の単語が選ばれています"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "버스 정류장 표지판 사진에서 tap on, departure, signal 단어를 골라냈어요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto de uma placa de ponto de ônibus com as palavras tap on, departure e signal destacadas"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍下一块公交站牌，单词 tap on、departure、signal 被挑了出来"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍下一塊公車站牌，單字 tap on、departure、signal 被挑了出來"
+          }
+        }
+      }
+    },
     "拍下你的第一块招牌" : {
       "localizations" : {
         "en" : {
@@ -8867,52 +10359,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拍下你的第一塊招牌"
-          }
-        }
-      }
-    },
-    "拍下身边的英文，按你的水平挑词，\n每天几分钟，把它们变成你的词汇。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snap the English around you and get words picked for your level.\nA few minutes a day makes them yours."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotografía el inglés que te rodea y elige palabras a tu nivel.\nCon unos minutos al día, se vuelven parte de tu vocabulario."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "身の回りの英語を撮って、レベルに合った単語を選びましょう。\n毎日数分で、あなたの語彙になります。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "주변의 영어를 찍으면 레벨에 맞는 단어를 골라 줘요.\n하루 몇 분이면 내 단어가 돼요."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotografe o inglês ao seu redor e escolha palavras do seu nível.\nAlguns minutos por dia e elas viram seu vocabulário."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拍下身边的英文，按你的水平挑词，\n每天几分钟，把它们变成你的词汇。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拍下身邊的英文，依你的程度挑單字，\n每天幾分鐘，把它們變成你的字彙。"
           }
         }
       }
@@ -8963,6 +10409,52 @@
         }
       }
     },
+    "拍到的文字里如果有姓名、地址这类个人信息，也会一起发送" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If the text you photograph includes personal details like names or addresses, those are sent too"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si el texto que fotografías incluye datos personales como nombres o direcciones, también se envían"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撮影した文字に名前や住所などの個人情報が含まれている場合は、それも送信されます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "찍은 글자에 이름이나 주소 같은 개인정보가 있으면 함께 보내져요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se o texto fotografado tiver dados pessoais, como nomes ou endereços, eles também são enviados"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍到的文字里如果有姓名、地址这类个人信息，也会一起发送"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍到的文字裡如果有姓名、地址這類個人資料，也會一起傳送"
+          }
+        }
+      }
+    },
     "拍照" : {
       "localizations" : {
         "en" : {
@@ -9005,52 +10497,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拍照"
-          }
-        }
-      }
-    },
-    "拍照识词" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snap to learn"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escanea y aprende"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "撮って単語さがし"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "찍어서 단어 찾기"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotografe e descubra"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拍照识词"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拍照認單字"
           }
         }
       }
@@ -9193,6 +10639,52 @@
         }
       }
     },
+    "按刚才的结果换了一组词，还是点你认识的。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here's a new set based on your answers. Again, tap the ones you know."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según tus respuestas, aquí tienes otras palabras. Toca las que conoces."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "さっきの結果に合わせて単語を入れ替えました。知っている単語をタップしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "방금 결과에 맞춰 단어를 바꿨어요. 이번에도 아는 단어를 눌러 주세요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com base nas suas respostas, aqui vão outras palavras. Toque nas que você conhece."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按刚才的结果换了一组词，还是点你认识的。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依剛才的結果換了一組單字，一樣點你認識的。"
+          }
+        }
+      }
+    },
     "按场景复习" : {
       "localizations" : {
         "en" : {
@@ -9281,52 +10773,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "依忘記次數排序"
-          }
-        }
-      }
-    },
-    "按水平推荐" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Picked for your level"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A tu nivel"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "レベル別おすすめ"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "레벨 맞춤 추천"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sugestões no seu nível"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按水平推荐"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "依程度推薦"
           }
         }
       }
@@ -9456,6 +10902,98 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "撿到 **%lld** 個新單字"
+          }
+        }
+      }
+    },
+    "换个号码" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use a different number"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar otro número"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別の番号にする"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 번호로"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar outro número"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换个号码"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換個號碼"
+          }
+        }
+      }
+    },
+    "换个邮箱" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use a different email"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar otro correo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別のメールにする"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 이메일로"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar outro e-mail"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换个邮箱"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換個信箱"
           }
         }
       }
@@ -9641,6 +11179,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜尋單字庫"
+          }
+        }
+      }
+    },
+    "支持这些地区的号码：%@。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Numbers from these regions work: %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se admiten números de: %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "対応している地域：%@。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지원하는 지역: %@."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Números aceitos de: %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支持这些地区的号码：%@。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支援這些地區的號碼：%@。"
           }
         }
       }
@@ -9964,53 +11548,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法讀取照片"
-          }
-        }
-      }
-    },
-    "无麸质" : {
-      "comment" : "Meaning of 'gluten free' on a menu",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No gluten"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sin gluten"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "グルテンフリー"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "글루텐 프리"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sem glúten"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无麸质"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無麩質"
           }
         }
       }
@@ -10555,6 +12092,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更換大頭貼"
+          }
+        }
+      }
+    },
+    "最后一轮" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last round"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última ronda"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後のラウンド"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "마지막 라운드"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última rodada"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最后一轮"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後一輪"
           }
         }
       }
@@ -11799,52 +13382,6 @@
         }
       }
     },
-    "每日计划" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Daily plan"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plan diario"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "毎日のプラン"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "하루 계획"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plano diário"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每日计划"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每日計畫"
-          }
-        }
-      }
-    },
     "比你现在的水平难一些" : {
       "localizations" : {
         "en" : {
@@ -12025,6 +13562,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有挑出單字"
+          }
+        }
+      }
+    },
+    "没能发送验证码，请检查网络后再试" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't send the code. Check your connection and try again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo enviar el código. Revisa tu conexión e inténtalo de nuevo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コードを送信できませんでした。接続を確認してもう一度お試しください"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인증번호를 보내지 못했어요. 네트워크를 확인하고 다시 시도해 주세요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível enviar o código. Verifique a conexão e tente de novo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能发送验证码，请检查网络后再试"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒能傳送驗證碼，請檢查網路後再試"
           }
         }
       }
@@ -12540,6 +14123,52 @@
         }
       }
     },
+    "点你认识的词，大约 30 秒，一共 2 轮。不确定就别选，结果会更准。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the words you know. It takes about 30 seconds, in 2 rounds. If you're not sure, leave it out for a more accurate result."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca las palabras que conoces. Son unos 30 segundos, en 2 rondas. Si dudas, no la elijas: el resultado será más preciso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "知っている単語をタップしてください。約 30 秒、全 2 回です。自信がないものは選ばないほうが正確です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아는 단어를 눌러 주세요. 약 30초, 총 2라운드예요. 확실하지 않으면 고르지 않는 게 더 정확해요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque nas palavras que você conhece. Leva uns 30 segundos, em 2 rodadas. Na dúvida, não marque: o resultado fica mais preciso."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点你认识的词，大约 30 秒，一共 2 轮。不确定就别选，结果会更准。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點你認識的單字，大約 30 秒，一共 2 輪。不確定就別選，結果會更準。"
+          }
+        }
+      }
+    },
     "点有照片的日子，复习那一天的词" : {
       "localizations" : {
         "en" : {
@@ -12628,52 +14257,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "點照片上的單字，把想學的加進來。"
-          }
-        }
-      }
-    },
-    "点选你知道意思的词。不确定就别选，结果会更准。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap the words you know. If you're not sure, leave it — the result will be more accurate."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toca las palabras que entiendes. Si dudas, déjala sin marcar: así el resultado será más preciso."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "意味を知っている単語をタップしてください。自信がなければ選ばないほうが、結果が正確になります。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "뜻을 아는 단어를 눌러 주세요. 확실하지 않으면 고르지 않아야 결과가 더 정확해요."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toque nas palavras que você sabe o que significam. Na dúvida, não marque: o resultado fica mais preciso."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点选你知道意思的词。不确定就别选，结果会更准。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點選你知道意思的單字。不確定就別選，結果會更準。"
           }
         }
       }
@@ -12816,6 +14399,98 @@
         }
       }
     },
+    "照片本身、昵称、头像和 Apple 账号" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The photo itself, your nickname, avatar and Apple Account"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La foto en sí, tu apodo, tu foto de perfil y tu cuenta de Apple"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真そのもの、ニックネーム、アイコン、Appleアカウント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진 자체, 닉네임, 프로필 사진, Apple 계정"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A foto em si, seu apelido, seu avatar e sua Conta Apple"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片本身、昵称、头像和 Apple 账号"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片本身、暱稱、大頭貼和 Apple 帳號"
+          }
+        }
+      }
+    },
+    "照片里识别出的英文文字、挑出的单词，以及你的英语水平和母语" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The English text read from your photo, the words picked from it, and your English level and native language"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto en inglés leído de tu foto, las palabras elegidas, tu nivel de inglés y tu lengua materna"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真から読み取った英語の文字、選ばれた単語、あなたの英語レベルと母語"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진에서 인식한 영어 글자, 고른 단어, 그리고 내 영어 레벨과 모국어"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O texto em inglês lido na sua foto, as palavras escolhidas, seu nível de inglês e sua língua materna"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片里识别出的英文文字、挑出的单词，以及你的英语水平和母语"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片裡辨識出的英文文字、挑出的單字，以及你的英文程度和母語"
+          }
+        }
+      }
+    },
     "生活小贴士" : {
       "localizations" : {
         "en" : {
@@ -12904,6 +14579,144 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "用名字的第一個字"
+          }
+        }
+      }
+    },
+    "用手机号登录" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with phone"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar con teléfono"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電話番号でサインイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 번호로 로그인"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar com telefone"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用手机号登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用手機號碼登入"
+          }
+        }
+      }
+    },
+    "用邮箱登录" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with email"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar con correo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メールでサインイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이메일로 로그인"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar com e-mail"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用邮箱登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用電子郵件登入"
+          }
+        }
+      }
+    },
+    "登录后，单词不会丢" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in so your words are never lost"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia sesión y no pierdas tus palabras"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サインインで単語を守ろう"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인하면 단어가 사라지지 않아요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre e nunca perca suas palavras"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登录后，单词不会丢"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登入後，單字不會不見"
           }
         }
       }
@@ -13319,6 +15132,53 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "石灰"
+          }
+        }
+      }
+    },
+    "示意" : {
+      "comment" : "Meaning of 'signal' (signal the driver to stop)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "wave to stop"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hacer señal"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "合図する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "신호하다"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fazer sinal"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示意"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示意"
           }
         }
       }
@@ -14016,6 +15876,144 @@
         }
       }
     },
+    "自动备份" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic backup"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia automática"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動バックアップ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자동 백업"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backup automático"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动备份"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動備份"
+          }
+        }
+      }
+    },
+    "自动备份到云端，换手机登录就能找回。不登录也能用全部功能。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything backs up to the cloud, so a new phone gets it all back. Every feature also works without an account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo se guarda en la nube: en un teléfono nuevo, inicia sesión y lo recuperas. Sin cuenta también puedes usar todas las funciones."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラウドに自動でバックアップされ、機種変更してもサインインすれば戻ります。サインインしなくてもすべての機能を使えます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "클라우드에 자동으로 백업돼서 휴대폰을 바꿔도 로그인하면 되찾을 수 있어요. 로그인하지 않아도 모든 기능을 쓸 수 있어요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tudo fica salvo na nuvem: no celular novo, é só entrar para recuperar. Sem conta você também usa todos os recursos."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动备份到云端，换手机登录就能找回。不登录也能用全部功能。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動備份到雲端，換手機登入就能找回。不登入也能用全部功能。"
+          }
+        }
+      }
+    },
+    "获取验证码" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar código"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コードを送信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인증번호 받기"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar código"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "获取验证码"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取得驗證碼"
+          }
+        }
+      }
+    },
     "街边告示" : {
       "localizations" : {
         "en" : {
@@ -14201,6 +16199,52 @@
         }
       }
     },
+    "让 AI 帮你挑词、写释义" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let AI pick words and write meanings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palabras y significados con IA"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "単語選びと意味はAIにおまかせ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI가 단어를 고르고 뜻을 써 줘요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palavras e significados com IA"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "让 AI 帮你挑词、写释义"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 AI 挑單字、寫釋義"
+          }
+        }
+      }
+    },
     "记住率" : {
       "localizations" : {
         "en" : {
@@ -14335,6 +16379,99 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "辨識出的文字"
+          }
+        }
+      }
+    },
+    "识别出的文字会发给 Anthropic 的 Claude" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text read from photos is sent to Claude by Anthropic"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto reconocido se envía a Claude, de Anthropic"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み取った文字はAnthropicのClaudeに送信されます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인식한 글자가 Anthropic의 Claude로 전송돼요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O texto reconhecido é enviado ao Claude, da Anthropic"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "识别出的文字会发给 Anthropic 的 Claude"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辨識出的文字會傳給 Anthropic 的 Claude"
+          }
+        }
+      }
+    },
+    "词会自己**跳出来**" : {
+      "comment" : "Welcome headline, line 2. The part between ** gets a yellow highlighter",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "watch words **pop out**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "y las palabras **saltan**"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "単語が**飛び出す**"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "단어가 **톡 튀어나와요**"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e as palavras **saltam**"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "词会自己**跳出来**"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "單字會自己**跳出來**"
           }
         }
       }
@@ -14611,6 +16748,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請求太頻繁了，稍等一下再試"
+          }
+        }
+      }
+    },
+    "请留意" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heads up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten en cuenta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ご注意ください"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "참고해 주세요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atenção"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请留意"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請留意"
           }
         }
       }
@@ -14940,49 +17123,94 @@
         }
       }
     },
-    "过敏" : {
-      "comment" : "Meaning of 'allergies' on a menu",
+    "输入验证码" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Food reactions"
+            "value" : "Enter the code"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "alergias"
+            "value" : "Escribe el código"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "アレルギー"
+            "value" : "確認コードを入力"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "알레르기"
+            "value" : "인증번호 입력"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alergias"
+            "value" : "Digite o código"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "过敏"
+            "value" : "输入验证码"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "過敏"
+            "value" : "輸入驗證碼"
+          }
+        }
+      }
+    },
+    "返回" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrás"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "戻る"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "뒤로"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voltar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
           }
         }
       }
@@ -16376,6 +18604,52 @@
         }
       }
     },
+    "邮箱" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メールアドレス"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이메일"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-mail"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "邮箱"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電子郵件"
+          }
+        }
+      }
+    },
     "释义" : {
       "localizations" : {
         "en" : {
@@ -16556,6 +18830,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重拍"
+          }
+        }
+      }
+    },
+    "重新发送" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reenviar"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再送信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다시 보내기"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reenviar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新发送"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新傳送"
           }
         }
       }
@@ -16741,6 +19061,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "銀行"
+          }
+        }
+      }
+    },
+    "随时可以删除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete anytime"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bórrala cuando quieras"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いつでも削除できる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "언제든 삭제 가능"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apague quando quiser"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "随时可以删除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隨時可以刪除"
           }
         }
       }
@@ -16976,49 +19342,140 @@
         }
       }
     },
-    "馥芮白" : {
-      "comment" : "Meaning of 'flat white' (a coffee)",
+    "验证码" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Silky milk coffee"
+            "value" : "Verification code"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "café con leche"
+            "value" : "Código de verificación"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "フラットホワイト"
+            "value" : "確認コード"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "플랫 화이트"
+            "value" : "인증번호"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Café com leite"
+            "value" : "Código de verificação"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "馥芮白"
+            "value" : "验证码"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "馥列白"
+            "value" : "驗證碼"
+          }
+        }
+      }
+    },
+    "验证码 10 分钟内有效。没收到的话，看看垃圾邮件文件夹。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The code works for 10 minutes. Didn't get it? Check your spam folder."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El código vale 10 minutos. ¿No te llegó? Revisa la carpeta de spam."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コードの有効期限は 10 分です。届かない場合は迷惑メールフォルダを確認してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인증번호는 10분 동안 유효해요. 받지 못했다면 스팸함을 확인해 주세요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O código vale por 10 minutos. Não chegou? Veja a pasta de spam."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "验证码 10 分钟内有效。没收到的话，看看垃圾邮件文件夹。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "驗證碼 10 分鐘內有效。沒收到的話，看看垃圾郵件資料夾。"
+          }
+        }
+      }
+    },
+    "验证码不对，再试一次" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That code isn't right. Try again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese código no es correcto. Inténtalo de nuevo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コードが違います。もう一度お試しください"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인증번호가 맞지 않아요. 다시 시도해 주세요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esse código não está certo. Tente de novo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "验证码不对，再试一次"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "驗證碼不對，再試一次"
           }
         }
       }

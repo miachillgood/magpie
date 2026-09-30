@@ -35,6 +35,8 @@ struct WordExplanation: Sendable {
 // MARK: - 错误
 
 enum ClaudeAPIError: LocalizedError {
+    /// 用户没同意把文字发给 AI
+    case aiDisabled
     case noAPIKey
     case unauthorized
     case rateLimited
@@ -46,6 +48,7 @@ enum ClaudeAPIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
+        case .aiDisabled:   String(localized: "AI 功能已关闭，可以在“我的”里打开", comment: "Shown when the user has not allowed sending text to AI. No final period: it is inserted into a longer sentence")
         case .noAPIKey:     String(localized: "还没有配置 Claude API Key")
         case .unauthorized: String(localized: "API Key 无效，请检查配置")
         case .rateLimited:  String(localized: "请求太频繁了，稍等一下再试")
@@ -282,6 +285,8 @@ final class ClaudeAPIService: Sendable {
     }
 
     private func callWithRetry(system: String, user: String, schema: [String: Any], maxTokens: Int) async throws -> String {
+        // 所有请求都从这里出去：没同意就一个字都不发
+        guard AIConsent.isGranted else { throw ClaudeAPIError.aiDisabled }
         var attempt = 0
         while true {
             attempt += 1

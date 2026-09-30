@@ -6,44 +6,75 @@
 import SwiftUI
 import SwiftData
 
-/// 首次启动：欢迎 → 母语 → 水平自测 → 每日节奏 → 提醒
+/// 首次启动：欢迎 →（登录）→ 水平小测 → 母语 → AI 说明 → 每日节奏 → 提醒（顺序见 OnboardingFlow）
 struct OnboardingView: View {
     @Bindable var settings: UserSettings
     @Environment(\.modelContext) private var context
-    @State private var step: Step = .welcome
+    @State private var step: OnboardingStep = {
+        #if DEBUG
+        OnboardingDebug.initialStep
+        #else
+        .welcome
+        #endif
+    }()
 
-    private enum Step: Int, CaseIterable {
-        case welcome, language, level, pace, reminder
-    }
+    private let accountsEnabled = AccountFeatures.isEnabled
 
     var body: some View {
         NavigationStack {
             ZStack {
-                PaperBackground()
+                OnboardingBackground()
                 Group {
                     switch step {
                     case .welcome:
-                        WelcomeStep { go(.language) }
-                    case .language:
-                        LanguageStep(selection: $settings.nativeLanguage) { go(.level) }
+                        WelcomeStep { advance() }
+                    case .login:
+                        loginStep
                     case .level:
-                        LevelTestView(onSkip: { go(.pace) }) { score in
+                        LevelTestView(onSkip: { advance() }) { score in
                             settings.levelScore = score
                             settings.assessmentCompleted = true
-                            go(.pace)
+                            advance()
+                        }
+                    case .language:
+                        LanguageStep(selection: $settings.nativeLanguage) { advance() }
+                    case .ai:
+                        AIConsentView {
+                            AIConsent.grant(context: context)
+                            advance()
+                        } onDecline: {
+                            AIConsent.decline()
+                            advance()
                         }
                     case .pace:
-                        PaceStep(selection: $settings.newWordsPerDay) { go(.reminder) }
+                        PaceStep(selection: $settings.newWordsPerDay) { advance() }
                     case .reminder:
                         ReminderStep(settings: settings) { finish() }
                     }
                 }
                 .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
             }
+            .toolbarVisibility(.hidden, for: .navigationBar)
         }
     }
 
-    private func go(_ next: Step) {
+    /// 账号服务上线前（阶段 D）只在调试预览里出现，用假的验证码服务
+    @ViewBuilder
+    private var loginStep: some View {
+        #if DEBUG
+        LoginFlowView(actions: .preview, onApple: { result in
+            if case .signedIn = AppleAccount.handle(result, settings: settings, context: context) { advance() }
+        }, onDone: { advance() })
+        #else
+        Color.clear.onAppear { advance() }
+        #endif
+    }
+
+    private func advance() {
+        guard let next = OnboardingFlow.next(after: step, accountsEnabled: accountsEnabled) else {
+            finish()
+            return
+        }
         try? context.save()
         withAnimation(.smooth) { step = next }
     }
@@ -55,81 +86,13 @@ struct OnboardingView: View {
     }
 }
 
-// MARK: - 欢迎
-
-private struct WelcomeStep: View {
-    var onContinue: () -> Void
-    @State private var appeared = false
-
+/// 引导页的底：上面暖沙斑点（和欢迎页同一个颜色），往下过渡成浅灰
+struct OnboardingBackground: View {
     var body: some View {
-        ZStack(alignment: .top) {
-            MeshBackdrop()
-                .frame(height: 560)
-                .mask(LinearGradient(colors: [.black, .black, .clear], startPoint: .top, endPoint: .bottom))
-                .ignoresSafeArea(edges: .top)
-
-            VStack(spacing: 0) {
-                StickerCollage()
-                    .frame(height: 300)
-                    .padding(.top, 70)
-                    .scaleEffect(appeared ? 1 : 0.85)
-                    .opacity(appeared ? 1 : 0)
-
-                Spacer(minLength: Spacing.lg)
-
-                VStack(spacing: Spacing.sm) {
-                    Text("See it. Snap it.\nLearn it.")
-                        .font(.system(size: 40, weight: .bold, design: .serif))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Theme.ink)
-                    Text("拍下身边的英文，按你的水平挑词，\n每天几分钟，把它们变成你的词汇。")
-                        .font(.body.weight(.medium))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, Spacing.lg)
-                .offset(y: appeared ? 0 : 20)
-                .opacity(appeared ? 1 : 0)
-
-                // 一行放不下时（英文、西语等较长的翻译）折成两行
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: Spacing.xs) {
-                        snapPill
-                        levelPill
-                        planPill
-                    }
-                    VStack(spacing: Spacing.xs) {
-                        HStack(spacing: Spacing.xs) {
-                            snapPill
-                            levelPill
-                        }
-                        planPill
-                    }
-                    VStack(spacing: Spacing.xs) {
-                        snapPill
-                        levelPill
-                        planPill
-                    }
-                }
-                .padding(.horizontal, Spacing.lg)
-                .padding(.top, Spacing.lg)
-                .opacity(appeared ? 1 : 0)
-
-                Spacer(minLength: Spacing.lg)
-
-                PrimaryButton(title: "开始", trailingSymbol: "arrow.right", action: onContinue)
-                    .padding(.horizontal, Spacing.lg)
-                    .padding(.bottom, Spacing.md)
-            }
-        }
-        .onAppear {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) { appeared = true }
-        }
+        Theme.mist
+            .overlay(alignment: .top) { ThemeWash(height: 640, theme: .sand) }
+            .ignoresSafeArea()
     }
-
-    private var snapPill: some View { Pill(text: "拍照识词", emoji: "📸", style: .tinted(Pastel.peach)) }
-    private var levelPill: some View { Pill(text: "按水平推荐", emoji: "✨", style: .tinted(Pastel.lavender)) }
-    private var planPill: some View { Pill(text: "每日计划", emoji: "⏰", style: .tinted(Pastel.mint)) }
 }
 
 // MARK: - 母语

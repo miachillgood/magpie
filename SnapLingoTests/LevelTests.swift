@@ -102,6 +102,32 @@ struct LevelTestScoringTests {
         }
         #expect(test.estimatedLevel == .b1)
     }
+
+    /// 按固定规则作答，把整个测试跑完，返回总词数和结果
+    private func run(knowing rule: (LevelTest.Item) -> Bool) -> (words: Int, level: CEFRLevel) {
+        var test = LevelTest()
+        var total = 0
+        while !test.isFinished {
+            let round = test.nextRound()
+            total += round.count
+            test.submit(round, known: Set(round.filter(rule).map(\.word)))
+        }
+        return (total, test.estimatedLevel)
+    }
+
+    @Test func twoShortRounds() {
+        #expect(LevelTest.rounds == 2)
+        for rule: (LevelTest.Item) -> Bool in [{ _ in true }, { _ in false }, { $0.level <= .b1 }] {
+            let words = run(knowing: rule).words
+            #expect((14...17).contains(words))
+        }
+    }
+
+    @Test func twoRoundsStillReachBothEnds() {
+        #expect(run { _ in true }.level == .c2)
+        #expect(run { _ in false }.level == .a1)
+        #expect(run { $0.level <= .b2 }.level == .b2)
+    }
 }
 
 @MainActor

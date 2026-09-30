@@ -183,7 +183,7 @@ struct HomeHero: View {
 
     private var header: some View {
         HStack {
-            Text("SnapLingo")
+            Text("Magpie")
                 .font(.brand(21))
                 .kerning(-0.4)
                 .foregroundStyle(Theme.homeInk)

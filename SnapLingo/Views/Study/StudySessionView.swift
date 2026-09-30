@@ -252,12 +252,20 @@ private struct CardFront: View {
 private struct CardBack: View {
     let word: VocabWord
 
+    @AppStorage(AIConsent.storageKey) private var consentRaw = AIConsent.State.undecided.rawValue
+
+    private var pendingText: String {
+        consentRaw == AIConsent.State.granted.rawValue
+            ? String(localized: "解释还在生成中，先凭印象评分吧")
+            : String(localized: "AI 释义已关闭")
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 WordHeader(word: word, compact: true)
 
-                Text(word.explanationStatus == .ready ? word.explanation : (word.gloss.isEmpty ? String(localized: "解释还在生成中，先凭印象评分吧") : word.gloss))
+                Text(word.explanationStatus == .ready ? word.explanation : (word.gloss.isEmpty ? pendingText : word.gloss))
                     .font(.title2.weight(.bold))
                     .foregroundStyle(Theme.ink)
 
