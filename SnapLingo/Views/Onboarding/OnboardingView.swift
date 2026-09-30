@@ -87,14 +87,31 @@ private struct WelcomeStep: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
                 }
+                .padding(.horizontal, Spacing.lg)
                 .offset(y: appeared ? 0 : 20)
                 .opacity(appeared ? 1 : 0)
 
-                HStack(spacing: Spacing.xs) {
-                    Pill(text: "拍照识词", emoji: "📸", style: .tinted(Pastel.peach))
-                    Pill(text: "按水平推荐", emoji: "✨", style: .tinted(Pastel.lavender))
-                    Pill(text: "每日计划", emoji: "⏰", style: .tinted(Pastel.mint))
+                // 一行放不下时（英文、西语等较长的翻译）折成两行
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: Spacing.xs) {
+                        snapPill
+                        levelPill
+                        planPill
+                    }
+                    VStack(spacing: Spacing.xs) {
+                        HStack(spacing: Spacing.xs) {
+                            snapPill
+                            levelPill
+                        }
+                        planPill
+                    }
+                    VStack(spacing: Spacing.xs) {
+                        snapPill
+                        levelPill
+                        planPill
+                    }
                 }
+                .padding(.horizontal, Spacing.lg)
                 .padding(.top, Spacing.lg)
                 .opacity(appeared ? 1 : 0)
 
@@ -109,6 +126,10 @@ private struct WelcomeStep: View {
             withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) { appeared = true }
         }
     }
+
+    private var snapPill: some View { Pill(text: "拍照识词", emoji: "📸", style: .tinted(Pastel.peach)) }
+    private var levelPill: some View { Pill(text: "按水平推荐", emoji: "✨", style: .tinted(Pastel.lavender)) }
+    private var planPill: some View { Pill(text: "每日计划", emoji: "⏰", style: .tinted(Pastel.mint)) }
 }
 
 // MARK: - 母语
