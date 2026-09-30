@@ -55,3 +55,18 @@ enum StudyReminder {
         )
     }
 }
+
+extension Scan {
+    /// 这个场景里现在能学的词：已到期的、还没学的新词
+    func studyCounts(today: Date = Calendar.current.startOfDay(for: Date())) -> (due: Int, new: Int) {
+        var due = 0, new = 0
+        for word in words where !word.excludedFromReview {
+            if word.state == .new {
+                new += 1
+            } else if word.dueDate <= today {
+                due += 1
+            }
+        }
+        return (due, new)
+    }
+}

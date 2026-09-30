@@ -23,8 +23,8 @@ struct ScanProcessingView: View {
 
         var title: String {
             switch self {
-            case .reading:  "正在识别文字…"
-            case .choosing: "正在挑选适合你的词…"
+            case .reading:  String(localized: "正在识别文字…")
+            case .choosing: String(localized: "正在挑选适合你的词…")
             }
         }
     }
@@ -99,19 +99,23 @@ struct ScanProcessingView: View {
         do {
             ocr = try await OCRService.recognize(cgImage)
         } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? "文字识别失败，请重试"
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? String(localized: "文字识别失败，请重试")
             return
         }
 
         step = .choosing
-        let level = UserSettings.current(in: context).level
+        let settings = UserSettings.current(in: context)
         var draft = WordLibrary.ScanDraft(image: normalized, ocr: ocr, extraction: nil)
         do {
-            draft.extraction = try await ClaudeAPIService.shared.extractWords(from: ocr.fullText, level: level)
+            draft.extraction = try await ClaudeAPIService.shared.extractWords(
+                from: ocr.fullText,
+                level: settings.level,
+                language: settings.nativeLanguage
+            )
         } catch is CancellationError {
             return
         } catch {
-            draft.aiError = (error as? LocalizedError)?.errorDescription ?? "AI 推荐暂时不可用"
+            draft.aiError = (error as? LocalizedError)?.errorDescription ?? String(localized: "AI 推荐暂时不可用")
         }
         onFinished(draft)
     }

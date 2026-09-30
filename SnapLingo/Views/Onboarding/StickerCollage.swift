@@ -11,13 +11,13 @@ struct StickerCollage: View {
 
     var body: some View {
         ZStack {
-            sticker(emoji: "☕️", color: Pastel.peach, word: "flat white", gloss: "馥芮白")
+            sticker(emoji: "☕️", color: Pastel.peach, word: "flat white", gloss: String(localized: "馥芮白", comment: "Meaning of 'flat white' (a coffee)"))
                 .rotationEffect(.degrees(-9))
                 .offset(x: -104, y: 30)
-            sticker(emoji: "🏠", color: Pastel.lavender, word: "bond", gloss: "押金")
+            sticker(emoji: "🏠", color: Pastel.lavender, word: "bond", gloss: String(localized: "押金", comment: "Meaning of 'bond' (rental deposit)"))
                 .rotationEffect(.degrees(8))
                 .offset(x: 104, y: 18)
-            sticker(emoji: "🛒", color: Pastel.mint, word: "receipt", gloss: "收据")
+            sticker(emoji: "🛒", color: Pastel.mint, word: "receipt", gloss: String(localized: "收据", comment: "Meaning of 'receipt'"))
                 .rotationEffect(.degrees(-2))
                 .offset(y: float ? -40 : -32)
         }

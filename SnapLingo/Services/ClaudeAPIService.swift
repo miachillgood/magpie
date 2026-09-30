@@ -46,14 +46,14 @@ enum ClaudeAPIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noAPIKey:     "还没有配置 Claude API Key"
-        case .unauthorized: "API Key 无效，请检查配置"
-        case .rateLimited:  "请求太频繁了，稍等一下再试"
-        case .overloaded:   "服务有点忙，稍后再试"
-        case .network:      "网络连接失败，请检查网络"
-        case .decoding:     "返回的数据看不懂，请重试"
-        case .truncated:    "内容太长被截断了，请重试"
-        case .api(let code, _): "服务出错了（\(code)）"
+        case .noAPIKey:     String(localized: "还没有配置 Claude API Key")
+        case .unauthorized: String(localized: "API Key 无效，请检查配置")
+        case .rateLimited:  String(localized: "请求太频繁了，稍等一下再试")
+        case .overloaded:   String(localized: "服务有点忙，稍后再试")
+        case .network:      String(localized: "网络连接失败，请检查网络")
+        case .decoding:     String(localized: "返回的数据看不懂，请重试")
+        case .truncated:    String(localized: "内容太长被截断了，请重试")
+        case .api(let code, _): String(localized: "服务出错了（\(code)）")
         }
     }
 
@@ -79,29 +79,32 @@ final class ClaudeAPIService: Sendable {
 
     // MARK: 1. 从场景文字里挑词
 
-    func extractWords(from text: String, level: CEFRLevel) async throws -> SceneExtraction {
+    func extractWords(from text: String, level: CEFRLevel, language: NativeLanguage) async throws -> SceneExtraction {
         let sceneList = SceneType.allCases
-            .map { "- \($0.rawValue)：\($0.promptHint)" }
+            .map { "- \($0.rawValue): \($0.promptHint)" }
             .joined(separator: "\n")
+        let native = language.promptName
 
         let system = """
-        你是一位帮助中文母语者在英语国家生活的英语老师。用户拍下了生活中的英文文字，你要从中挑出值得学的单词。
+        You are an English teacher helping people whose native language is \(native) live in an English-speaking country. \
+        The user photographed English text from daily life; pick the words worth learning from it.
 
-        用户当前水平：CEFR \(level.code)（\(level.displayName)）。
+        The user's current level: CEFR \(level.code).
 
-        挑词规则：
-        1. 挑 12–20 个对理解这个场景有用的实用词，覆盖从 \(level.code) 往上两级的难度，也可以保留少量更简单的词。
-        2. 排除人名、品牌名、纯数字、单个字母、明显的 OCR 错误。
-        3. 同一个词只出现一次；词组（如 "gluten free"）可以作为一个条目。
-        4. word 是原文里的写法，lemma 是词典原形（小写，名词单数、动词原形）。
-        5. cefr 是这个词义在日常英语里的大致等级。
-        6. gloss 是结合这个场景的简短中文释义，不超过 8 个字。
-        7. part_of_speech 用英文缩写：n. / v. / adj. / adv. / phr. 等。
+        Rules for picking words:
+        1. Pick 12–20 practical words that help understand this scene, ranging from \(level.code) up to two levels above; a few easier words are fine.
+        2. Exclude personal names, brand names, bare numbers, single letters and obvious OCR errors.
+        3. Each word appears once; a phrase (e.g. "gluten free") may be one entry.
+        4. `word` is the spelling in the text; `lemma` is the dictionary form (lowercase, singular noun, base verb).
+        5. `cefr` is the rough level of this sense in everyday English.
+        6. `gloss` is a short meaning in \(native) that fits this scene, \(language.lengthLimit(characters: 8, words: 4)).
+        7. `part_of_speech` uses English abbreviations: n. / v. / adj. / adv. / phr. etc.
 
-        场景 scene 从下面选一个最贴切的：
+        Pick the one `scene` that fits best:
         \(sceneList)
 
-        title 是给这个场景起的简短中文标题（不超过 10 个字），尽量具体，比如“Countdown 超市货架”“租房合同”“咖啡店菜单”。
+        `title` is a short, specific title for this scene in \(native) (\(language.lengthLimit(characters: 10, words: 5))). \
+        Keep shop or brand names in their original spelling, e.g. "Countdown" + a word for supermarket shelf, or a word for rental contract, or "Little Bird" + a word for café menu.
         """
 
         let schema: [String: Any] = [
@@ -144,9 +147,9 @@ final class ClaudeAPIService: Sendable {
 
         let raw: Raw = try await callJSON(
             system: system,
-            user: "场景里识别出的英文文字：\n\n\(text.prefix(6000))",
+            user: "English text recognized in the scene:\n\n\(text.prefix(6000))",
             schema: schema,
-            maxTokens: 3000
+            maxTokens: language.usesCharacterCount ? 3000 : 3600
         )
 
         var seen = Set<String>()
@@ -167,25 +170,28 @@ final class ClaudeAPIService: Sendable {
     // MARK: 2. 批量生成解释
 
     /// 一次请求解释多个词；返回以 key 为索引的结果
-    func explainWords(_ items: [ExplainItem], scene: SceneType) async throws -> [String: WordExplanation] {
+    func explainWords(_ items: [ExplainItem], scene: SceneType, language: NativeLanguage) async throws -> [String: WordExplanation] {
         guard !items.isEmpty else { return [:] }
+        let native = language.promptName
 
         let system = """
-        你是一位帮助中文母语者在英语国家生活的英语老师。请为每个单词写一张简洁实用的学习卡片。
+        You are an English teacher helping people whose native language is \(native) live in an English-speaking country. \
+        Write a short, practical study card for each word. Write every explanatory field in \(native).
 
-        要求：
-        - explanation：结合所给语境的中文解释，不超过 30 个字，避免语法术语。
-        - example_sentence：一个在\(scene.displayName)场景里真实会用到的英文例句，不超过 15 个词。
-        - example_translation：例句的中文翻译。
-        - scene_note：在国外生活时和这个词有关的实用提示（例如常见搭配、容易误解的地方、当地习惯），不超过 30 个字；没有就留空字符串。
-        - phonetic：国际音标，例如 /ˈrɛnt/。
-        - lemma、part_of_speech（n. / v. / adj. 等）、cefr（大致等级）、gloss（不超过 8 个字的简短释义）。
-        - key 原样返回。
+        Fields:
+        - explanation: what the word means in the given context, in \(native), \(language.lengthLimit(characters: 30, words: 20)), no grammar jargon.
+        - example_sentence: one natural English sentence someone would really hear or read in a \(scene.promptName) setting, at most 15 words.
+        - example_translation: the \(native) translation of that example sentence.
+        - scene_note: one practical tip in \(native) for living abroad related to this word (common collocations, easy misunderstandings, local customs), \(language.lengthLimit(characters: 30, words: 20)); use an empty string if there is nothing useful.
+        - phonetic: IPA, e.g. /ˈrɛnt/.
+        - lemma, part_of_speech (n. / v. / adj. etc.), cefr (rough level), gloss (a short meaning in \(native), \(language.lengthLimit(characters: 8, words: 4))).
+        - key: copy the quoted key exactly, without the quotes.
         """
 
         let list = items.enumerated().map { index, item in
-            let context = item.context.isEmpty ? "" : "\n   语境：\(item.context.prefix(160))"
-            return "\(index + 1). key=\(item.key) 单词：\(item.word)\(context)"
+            // 值都加引号，模型才不会把后面的 word 当成 key 的一部分
+            let context = item.context.isEmpty ? "" : "\n   context: \"\(item.context.prefix(160))\""
+            return "\(index + 1). key: \"\(item.key)\", word: \"\(item.word)\"\(context)"
         }.joined(separator: "\n")
 
         let entrySchema: [String: Any] = [
@@ -230,14 +236,16 @@ final class ClaudeAPIService: Sendable {
 
         let raw: Raw = try await callJSON(
             system: system,
-            user: "场景：\(scene.displayName)\n\n需要解释的单词：\n\(list)",
+            user: "Scene: \(scene.promptName)\n\nWords to explain:\n\(list)",
             schema: schema,
-            maxTokens: min(8000, 600 + items.count * 320)
+            // 拉丁文字的释义比中日韩长，预算给多一点，避免被截断
+            maxTokens: min(8000, 600 + items.count * (language.usesCharacterCount ? 320 : 420))
         )
 
         var result: [String: WordExplanation] = [:]
+        let requested = items.map(\.key)
         for card in raw.cards {
-            result[card.key.normalizedWordKey] = WordExplanation(
+            result[Self.matchKey(card.key, lemma: card.lemma, requested: requested)] = WordExplanation(
                 lemma: card.lemma,
                 partOfSpeech: card.part_of_speech,
                 cefr: CEFRLevel(code: card.cefr),
@@ -250,6 +258,17 @@ final class ClaudeAPIService: Sendable {
             )
         }
         return result
+    }
+
+    /// 模型偶尔会把 key 改写一点（多带一个词、换成原形），尽量对回我们发出去的 key
+    nonisolated static func matchKey(_ returned: String, lemma: String, requested: [String]) -> String {
+        let key = returned.normalizedWordKey
+        if requested.contains(key) { return key }
+        let lemmaKey = lemma.normalizedWordKey
+        if requested.contains(lemmaKey) { return lemmaKey }
+        // 最长的前缀匹配：“bond word” → “bond”
+        if let prefix = requested.filter({ key.hasPrefix($0 + " ") }).max(by: { $0.count < $1.count }) { return prefix }
+        return key
     }
 
     // MARK: - 底层调用

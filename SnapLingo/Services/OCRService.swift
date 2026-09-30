@@ -20,9 +20,9 @@ nonisolated enum OCRError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .imageConversionFailed: "图片处理失败，请换一张试试"
-        case .noTextFound:           "没有找到英文文字。靠近一点、保持光线充足再拍一次吧"
-        case .failed:                "文字识别失败，请重试"
+        case .imageConversionFailed: String(localized: "图片处理失败，请换一张试试")
+        case .noTextFound:           String(localized: "没有找到英文文字。靠近一点、保持光线充足再拍一次吧")
+        case .failed:                String(localized: "文字识别失败，请重试")
         }
     }
 }

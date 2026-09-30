@@ -6,14 +6,14 @@
 import SwiftUI
 import SwiftData
 
-/// 首次启动：欢迎 → 水平自测 → 每日节奏 → 提醒
+/// 首次启动：欢迎 → 母语 → 水平自测 → 每日节奏 → 提醒
 struct OnboardingView: View {
     @Bindable var settings: UserSettings
     @Environment(\.modelContext) private var context
     @State private var step: Step = .welcome
 
     private enum Step: Int, CaseIterable {
-        case welcome, level, pace, reminder
+        case welcome, language, level, pace, reminder
     }
 
     var body: some View {
@@ -23,7 +23,9 @@ struct OnboardingView: View {
                 Group {
                     switch step {
                     case .welcome:
-                        WelcomeStep { go(.level) }
+                        WelcomeStep { go(.language) }
+                    case .language:
+                        LanguageStep(selection: $settings.nativeLanguage) { go(.level) }
                     case .level:
                         LevelTestView(onSkip: { go(.pace) }) { score in
                             settings.levelScore = score
@@ -106,6 +108,62 @@ private struct WelcomeStep: View {
         .onAppear {
             withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) { appeared = true }
         }
+    }
+}
+
+// MARK: - 母语
+
+private struct LanguageStep: View {
+    @Binding var selection: NativeLanguage
+    var onContinue: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("你的母语是？")
+                    .font(.display)
+                Text("单词的释义和例句翻译会用这种语言。随时可以在“我的”里改。")
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, Spacing.xl)
+
+            ScrollView {
+                VStack(spacing: Spacing.xs + 2) {
+                    ForEach(NativeLanguage.allCases) { language in
+                        let isOn = selection == language
+                        Button {
+                            withAnimation(.snappy) { selection = language }
+                        } label: {
+                            HStack(spacing: Spacing.md) {
+                                Text(verbatim: language.endonym)
+                                    .font(.headline.weight(.heavy))
+                                Spacer()
+                                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
+                                    .font(.title2)
+                                    .foregroundStyle(isOn ? Theme.ink : Theme.ink.opacity(0.2))
+                                    .contentTransition(.symbolEffect(.replace))
+                            }
+                            .padding(.horizontal, Spacing.md)
+                            .frame(height: 58)
+                            .background(Theme.card, in: .rect(cornerRadius: Radius.card - 4, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Radius.card - 4, style: .continuous)
+                                    .strokeBorder(isOn ? Theme.ink : .clear, lineWidth: 2.5)
+                            )
+                        }
+                        .buttonStyle(.pressable)
+                        .foregroundStyle(Theme.ink)
+                    }
+                }
+                .padding(2)
+            }
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+            .sensoryFeedback(.selection, trigger: selection)
+
+            PrimaryButton(title: "继续", trailingSymbol: "arrow.right", action: onContinue)
+        }
+        .padding(Spacing.lg)
     }
 }
 
@@ -261,13 +319,17 @@ private struct ReminderStep: View {
 
 private struct ReminderPreset: Identifiable {
     var emoji: String
-    var title: String
+    var title: LocalizedStringKey
     var hour: Int
     var minute: Int
     var color: Color
 
-    var id: String { title }
-    var timeText: String { String(format: "%02d:%02d", hour, minute) }
+    var id: Int { hour * 60 + minute }
+    /// 按地区显示时间：08:00 / 8:00 AM
+    var timeText: String {
+        let date = Calendar.current.date(from: DateComponents(hour: hour, minute: minute)) ?? Date()
+        return date.formatted(date: .omitted, time: .shortened)
+    }
 
     static let all = [
         ReminderPreset(emoji: "🌅", title: "早上", hour: 8, minute: 0, color: Pastel.peach),

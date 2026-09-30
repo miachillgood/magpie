@@ -8,7 +8,8 @@ import PhotosUI
 import SwiftUI
 import VisionKit
 
-/// 取景页：支持的设备用 VisionKit 实时文字高亮，否则从相册选图
+/// 取景页：黑底 + 日期 + 取景框 + 底部三个按钮（关闭 / 黄色快门 / 相册）。
+/// 支持的设备用 VisionKit 实时高亮文字；不支持时按快门打开系统相机，没有相机就打开相册
 struct ScanCameraView: View {
     var onCapture: (UIImage) -> Void
 
@@ -17,6 +18,7 @@ struct ScanCameraView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var isCapturing = false
     @State private var showingSystemCamera = false
+    @State private var showingPhotoPicker = false
     @State private var loadError: String?
     /// 先确认相机权限再决定是否实时取景（未授权时 isAvailable 为 false）
     @State private var cameraChecked = false
@@ -26,34 +28,43 @@ struct ScanCameraView: View {
         cameraChecked && DataScannerViewController.isSupported && DataScannerViewController.isAvailable
     }
 
+    private var systemCameraAvailable: Bool {
+        UIImagePickerController.isSourceTypeAvailable(.camera) && !cameraDenied
+    }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             if liveScanAvailable {
                 LiveTextScanner(controller: scanner)
                     .ignoresSafeArea()
-            } else if cameraChecked {
-                fallback
+            }
+            VStack(spacing: 0) {
+                Text(HomeDates.dateText(for: Date()))
+                    .font(.system(size: 30, weight: .regular, design: .serif))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 16)
+                    .accessibilityAddTraits(.isHeader)
+
+                Spacer(minLength: 20)
+                viewfinder
+                Spacer(minLength: 20)
+
+                controls
+                    .padding(.bottom, 16)
             }
         }
         .task { await checkCamera() }
-        .overlay(alignment: .top) { hint }
-        .overlay(alignment: .bottom) {
-            if liveScanAvailable { controls }
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("关闭", systemImage: "xmark") { dismiss() }
-            }
-        }
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarVisibility(.hidden, for: .navigationBar)
         .environment(\.colorScheme, .dark)
-        .statusBarHidden()
         .sensoryFeedback(.impact(weight: .medium), trigger: isCapturing) { _, new in new }
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
             Task { await load(item) }
         }
+        .photosPicker(isPresented: $showingPhotoPicker, selection: $photoItem, matching: .images)
         .fullScreenCover(isPresented: $showingSystemCamera) {
             SystemCameraPicker { image in
                 showingSystemCamera = false
@@ -68,126 +79,106 @@ struct ScanCameraView: View {
         }
     }
 
-    // MARK: - 提示
+    // MARK: - 取景框
 
-    @ViewBuilder
-    private var hint: some View {
+    private var viewfinder: some View {
+        ViewfinderCorners()
+            .stroke(.white, style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
+            .aspectRatio(0.8, contentMode: .fit)
+            .overlay(alignment: .bottom) {
+                VStack(spacing: 10) {
+                    Text(hintText)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .contentTransition(.numericText())
+                        .animation(.snappy, value: scanner.recognizedCount)
+                    if cameraDenied && UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        Button("相机权限已关闭，去设置开启") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                    }
+                }
+                .padding(.horizontal, 36)
+                .padding(.bottom, 30)
+            }
+            .padding(.horizontal, 52)
+    }
+
+    private var hintText: String {
         if liveScanAvailable {
-            Text(scanner.recognizedCount > 0 ? "找到 \(scanner.recognizedCount) 段文字，按下快门" : "对准身边的英文文字")
-                .font(.subheadline.weight(.semibold))
-                .contentTransition(.numericText())
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.xs)
-                .glassEffect(.regular, in: .capsule)
-                .padding(.top, Spacing.xs)
-                .animation(.snappy, value: scanner.recognizedCount)
+            return scanner.recognizedCount > 0
+                ? String(localized: "找到 \(scanner.recognizedCount) 段文字\n按下快门", comment: "Camera hint while live text detection sees text")
+                : String(localized: "请把英文放进框里")
         }
+        if systemCameraAvailable { return String(localized: "按下快门\n拍一张有英文的照片") }
+        return String(localized: "按下快门\n从相册选一张有英文的照片")
     }
 
     // MARK: - 底部按钮
 
     private var controls: some View {
-        HStack(alignment: .center) {
+        HStack {
+            Button { dismiss() } label: {
+                circleLabel("xmark")
+            }
+            .buttonStyle(.pressable)
+            .accessibilityLabel("关闭")
+
+            Spacer()
+
+            shutter
+
+            Spacer()
+
             PhotosPicker(selection: $photoItem, matching: .images) {
-                Image(systemName: "photo.on.rectangle")
-                    .font(.title2)
-                    .frame(width: 56, height: 56)
+                circleLabel("photo")
             }
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
+            .buttonStyle(.pressable)
             .accessibilityLabel("从相册选择")
-
-            Spacer()
-
-            if liveScanAvailable {
-                Button {
-                    capture()
-                } label: {
-                    ZStack {
-                        Circle().fill(.white).frame(width: 64, height: 64)
-                        Circle().strokeBorder(.white.opacity(0.6), lineWidth: 4).frame(width: 78, height: 78)
-                    }
-                    .scaleEffect(isCapturing ? 0.9 : 1)
-                }
-                .buttonStyle(.plain)
-                .disabled(isCapturing)
-                .accessibilityLabel("拍照")
-            }
-
-            Spacer()
-
-            // 占位，保持快门居中
-            Color.clear.frame(width: 56, height: 56)
         }
-        .padding(.horizontal, Spacing.xl)
-        .padding(.bottom, Spacing.lg)
-
+        .padding(.horizontal, 34)
     }
 
-    // MARK: - 不支持实时取景时
+    private func circleLabel(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 20, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 56, height: 56)
+            .background(Color.white.opacity(0.12), in: .circle)
+    }
 
-    private var fallback: some View {
-        VStack(spacing: Spacing.lg) {
-            ZStack {
-                Text("📸")
-                    .font(.system(size: 64))
-                    .frame(width: 140, height: 140)
-                    .background(Color.white.opacity(0.08), in: .circle)
-                WordSticker(word: "menu", gloss: "菜单")
-                    .rotationEffect(.degrees(-8))
-                    .offset(x: -70, y: 52)
-                WordSticker(word: "exit", gloss: "出口")
-                    .rotationEffect(.degrees(7))
-                    .offset(x: 72, y: -48)
-            }
-            .environment(\.colorScheme, .light)
-            .padding(.bottom, Spacing.sm)
-
-            VStack(spacing: Spacing.xs) {
-                Text("选一张有英文的照片")
-                    .font(.title2.weight(.heavy))
-                Text("菜单、路牌、包装、通知单都可以")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.6))
-            }
-            VStack(spacing: Spacing.sm) {
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    Label("从相册选择", systemImage: "photo.on.rectangle")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color(hex: 0x1C1B20))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color(hex: 0xF6F2EA), in: .capsule)
-                }
-                .buttonStyle(.pressable)
-
-                if UIImagePickerController.isSourceTypeAvailable(.camera) && !cameraDenied {
-                    Button {
-                        showingSystemCamera = true
-                    } label: {
-                        Label("拍照", systemImage: "camera")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(Color.white.opacity(0.12), in: .capsule)
-                    }
-                    .buttonStyle(.pressable)
-                }
-            }
-            .padding(.horizontal, Spacing.xl)
-
-            if cameraDenied {
-                Button("相机权限已关闭，去设置开启") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.6))
-            }
+    /// 黄色快门（和底部导航同一张图）；黄色色块是偏的，按黑色圆的圆心居中
+    private var shutter: some View {
+        let width: CGFloat = 118
+        let height = width * 778 / 864
+        return Button { shutterTapped() } label: {
+            Image("TabShutter")
+                .resizable()
+                .frame(width: width, height: height)
+                .offset(x: (0.5 - 0.4711) * width, y: (0.5 - 0.5495) * height)
+                .scaleEffect(isCapturing ? 0.9 : 1)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isCapturing)
+                .frame(width: 84, height: 84)
+                .contentShape(.circle)
         }
-        .foregroundStyle(.white)
+        .buttonStyle(.pressable)
+        .disabled(isCapturing)
+        .accessibilityLabel("拍照")
+    }
+
+    private func shutterTapped() {
+        if liveScanAvailable {
+            capture()
+        } else if systemCameraAvailable {
+            showingSystemCamera = true
+        } else {
+            showingPhotoPicker = true
+        }
     }
 
     private func checkCamera() async {
@@ -219,13 +210,41 @@ struct ScanCameraView: View {
         defer { photoItem = nil }
         do {
             guard let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else {
-                loadError = "这张照片无法打开，换一张试试。"
+                loadError = String(localized: "这张照片无法打开，换一张试试。")
                 return
             }
             onCapture(image)
         } catch {
-            loadError = "读取照片失败：\(error.localizedDescription)"
+            loadError = String(localized: "读取照片失败：\(error.localizedDescription)")
         }
+    }
+}
+
+// MARK: - 取景框
+
+/// 四个圆角的取景框角
+struct ViewfinderCorners: Shape {
+    var length: CGFloat = 38
+    var radius: CGFloat = 20
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY + length))
+        path.addArc(tangent1End: CGPoint(x: rect.minX, y: rect.minY), tangent2End: CGPoint(x: rect.minX + length, y: rect.minY), radius: radius)
+        path.addLine(to: CGPoint(x: rect.minX + length, y: rect.minY))
+
+        path.move(to: CGPoint(x: rect.maxX - length, y: rect.minY))
+        path.addArc(tangent1End: CGPoint(x: rect.maxX, y: rect.minY), tangent2End: CGPoint(x: rect.maxX, y: rect.minY + length), radius: radius)
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + length))
+
+        path.move(to: CGPoint(x: rect.maxX, y: rect.maxY - length))
+        path.addArc(tangent1End: CGPoint(x: rect.maxX, y: rect.maxY), tangent2End: CGPoint(x: rect.maxX - length, y: rect.maxY), radius: radius)
+        path.addLine(to: CGPoint(x: rect.maxX - length, y: rect.maxY))
+
+        path.move(to: CGPoint(x: rect.minX + length, y: rect.maxY))
+        path.addArc(tangent1End: CGPoint(x: rect.minX, y: rect.maxY), tangent2End: CGPoint(x: rect.minX, y: rect.maxY - length), radius: radius)
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - length))
+        return path
     }
 }
 

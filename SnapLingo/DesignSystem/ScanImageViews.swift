@@ -23,6 +23,19 @@ final class ImageCache {
     func remove(_ key: String) {
         cache.removeObject(forKey: key as NSString)
     }
+
+    func removeAll() {
+        cache.removeAllObjects()
+    }
+
+    /// 已经处理好的图（比如裁出来的单词小图）
+    func cached(_ key: String) -> UIImage? {
+        cache.object(forKey: key as NSString)
+    }
+
+    func store(_ image: UIImage, for key: String) {
+        cache.setObject(image, forKey: key as NSString)
+    }
 }
 
 extension Scan {
@@ -179,7 +192,7 @@ struct SceneCard: View {
     }
 
     private var subtitle: String {
-        let count = "\(scan.words.count) 个词"
+        let count = String(localized: "\(scan.words.count) 个词")
         guard showsDate else { return count }
         return "\(scan.createdAt.formatted(.dateTime.month().day())) · \(count)"
     }

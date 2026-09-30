@@ -24,23 +24,23 @@ enum CEFRLevel: Int, Codable, CaseIterable, Comparable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .a1: "入门"
-        case .a2: "基础"
-        case .b1: "进阶"
-        case .b2: "中高级"
-        case .c1: "高级"
-        case .c2: "精通"
+        case .a1: String(localized: "入门", comment: "English level name for CEFR A1")
+        case .a2: String(localized: "基础", comment: "English level name for CEFR A2")
+        case .b1: String(localized: "进阶", comment: "English level name for CEFR B1")
+        case .b2: String(localized: "中高级", comment: "English level name for CEFR B2")
+        case .c1: String(localized: "高级", comment: "English level name for CEFR C1")
+        case .c2: String(localized: "精通", comment: "English level name for CEFR C2")
         }
     }
 
     var summary: String {
         switch self {
-        case .a1: "能看懂最常见的标识和价格"
-        case .a2: "能应付购物、点餐等日常场景"
-        case .b1: "能读懂大部分生活通知和说明"
-        case .b2: "能处理租房、银行等正式文件"
-        case .c1: "能读懂合同条款和专业材料"
-        case .c2: "几乎和母语者一样"
+        case .a1: String(localized: "能看懂最常见的标识和价格")
+        case .a2: String(localized: "能应付购物、点餐等日常场景")
+        case .b1: String(localized: "能读懂大部分生活通知和说明")
+        case .b2: String(localized: "能处理租房、银行等正式文件")
+        case .c1: String(localized: "能读懂合同条款和专业材料")
+        case .c2: String(localized: "几乎和母语者一样")
         }
     }
 

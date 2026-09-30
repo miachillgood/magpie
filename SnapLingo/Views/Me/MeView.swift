@@ -2,170 +2,97 @@
 //  MeView.swift
 //  SnapLingo
 //
+//  「我的」：头像和昵称、可选的 Apple 登录、水平、足迹、设置、账号、数据。
+//  视觉和复习页一致：顶部主题色斑点底纹，往下是浅灰底 + 白卡片。
+//
 
-import SwiftUI
+import AuthenticationServices
 import SwiftData
+import SwiftUI
 
 struct MeView: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \UserSettings.createdAt) private var settingsRows: [UserSettings]
     @Query private var words: [VocabWord]
-    @Query private var scans: [Scan]
+    @Query(sort: \Scan.createdAt) private var scans: [Scan]
     @Query(sort: \ReviewLog.reviewedAt) private var logs: [ReviewLog]
+
     @State private var showingLevelTest = false
-    @State private var notificationsDenied = false
-    #if DEBUG
-    @State private var confirmingReset = false
-    #endif
+    @State private var showingAvatarPicker = false
+    @State private var editingNickname = false
+    @State private var nicknameDraft = ""
+    @State private var signInError: String?
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let settings = settingsRows.first {
-                    form(settings)
-                } else {
-                    ProgressView()
-                }
+        Group {
+            if let settings = settingsRows.first {
+                content(settings)
+            } else {
+                ProgressView()
             }
-            .navigationTitle("我的")
-            .appTabBar()
         }
+        .background(Theme.mist.ignoresSafeArea())
     }
 
-    private func form(_ settings: UserSettings) -> some View {
-        @Bindable var settings = settings
-        let activity = Dictionary(grouping: logs) { Calendar.current.startOfDay(for: $0.reviewedAt) }
-            .mapValues(\.count)
+    private func content(_ settings: UserSettings) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                ProfileHeader(
+                    settings: settings,
+                    onAvatar: { showingAvatarPicker = true },
+                    onName: {
+                        nicknameDraft = settings.nickname
+                        editingNickname = true
+                    },
+                    onSignIn: { result in signIn(result, settings: settings) }
+                )
+                .padding(.top, 14)
 
-        return Form {
-            // 水平
-            Section {
                 LevelCard(settings: settings) { showingLevelTest = true }
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-            }
+                    .padding(.top, 24)
 
-            // 统计
-            Section {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm), GridItem(.flexible(), spacing: Spacing.sm)], spacing: Spacing.sm) {
-                    StatTile(value: DailyPlanner.streak(events: logs), label: "连续天数", emoji: "🔥", color: Pastel.peach)
-                    StatTile(value: words.count, label: "单词", emoji: "📚", color: Pastel.butter)
-                    StatTile(value: scans.count, label: "场景", emoji: "📸", color: Pastel.sky)
-                    StatTile(value: words.filter { $0.state == .mastered }.count, label: "已掌握", emoji: "🏅", color: Pastel.mint)
-                }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-            } header: {
-                header("学习记录")
-            }
+                FootprintCard(
+                    days: MeStats.daysSinceFirst(scans.map(\.createdAt)),
+                    scenes: scans.count,
+                    words: words.count,
+                    streak: DailyPlanner.streak(events: logs),
+                    longest: DailyPlanner.longestStreak(events: logs)
+                )
+                .padding(.top, 14)
 
-            Section {
-                ActivityHeatmapView(activity: activity)
-                    .padding(.vertical, Spacing.xs)
-            }
+                SettingsCard(settings: settings, wordCount: words.count)
+                    .padding(.top, 30)
 
-            // 每日计划
-            Section {
-                Picker(selection: $settings.newWordsPerDay) {
-                    ForEach([5, 10, 15, 20, 30], id: \.self) { count in
-                        Text("\(count) 个").tag(count)
+                if settings.isSignedIn {
+                    AccountCard(settings: settings) {
+                        nicknameDraft = settings.nickname
+                        editingNickname = true
                     }
-                } label: {
-                    row("✨", Pastel.peach, "每天学新词")
+                    .padding(.top, 30)
                 }
-                Picker(selection: $settings.maxReviewsPerDay) {
-                    ForEach([30, 50, 100, 200, 500], id: \.self) { count in
-                        Text("\(count) 个").tag(count)
-                    }
-                } label: {
-                    row("🔁", Pastel.lavender, "每天最多复习")
-                }
-            } header: {
-                header("每日计划")
-            } footer: {
-                Text("到期的复习优先；新词从最近拍的场景开始安排。")
-            }
 
-            // 提醒
-            Section {
-                Toggle(isOn: Binding(
-                    get: { settings.reminderEnabled },
-                    set: { enabled in Task { await setReminder(enabled, settings: settings) } }
-                )) {
-                    row("🔔", Pastel.butter, "每日提醒")
-                }
-                if settings.reminderEnabled {
-                    DatePicker(selection: $settings.reminderTime, displayedComponents: .hourAndMinute) {
-                        row("⏰", Pastel.sky, "提醒时间")
-                    }
-                }
-            } header: {
-                header("提醒")
-            } footer: {
-                if notificationsDenied {
-                    Text("通知权限已关闭，请在“设置”中允许 SnapLingo 发送通知。")
-                }
-            }
-            .onChange(of: settings.reminderHour) { StudyReminder.refresh(context: context) }
-            .onChange(of: settings.reminderMinute) { StudyReminder.refresh(context: context) }
+                DataCard(words: words)
+                    .padding(.top, 30)
 
-            // 发音
-            Section {
-                Picker(selection: $settings.accentRaw) {
-                    ForEach(SpeechAccent.allCases) { accent in
-                        Text(accent.title).tag(accent.rawValue)
-                    }
-                } label: {
-                    row("🗣️", Pastel.mint, "口音")
-                }
-                Button {
-                    SpeechService.shared.accent = settings.accent
-                    SpeechService.shared.speak("Could I get a flat white, please?")
-                } label: {
-                    row("🔊", Pastel.pink, "试听一句")
-                }
-                .foregroundStyle(Theme.ink)
-            } header: {
-                header("发音")
+                Text("SnapLingo \(Bundle.main.shortVersion) · 把生活里遇见的英文变成每天几分钟的复习")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.homeMuted)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 28)
+                    .padding(.bottom, 40)
             }
-            .onChange(of: settings.accentRaw) { SpeechService.shared.accent = settings.accent }
-
-            Section {
-                LabeledContent {
-                    Text(Bundle.main.appVersion)
-                } label: {
-                    row("ℹ️", Pastel.mist, "版本")
-                }
-                Text("SnapLingo 把你在国外生活中看到的英文变成每天几分钟的复习。照片和单词只保存在这台设备上。")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } header: {
-                header("关于")
-            }
-
-            #if DEBUG
-            Section {
-                Button {
-                    DemoData.seed(into: context)
-                } label: {
-                    row("🪄", Pastel.lavender, "导入示例数据")
-                }
-                .foregroundStyle(Theme.ink)
-                Button(role: .destructive) {
-                    confirmingReset = true
-                } label: {
-                    row("🗑️", Pastel.pink, "清空所有数据")
-                }
-                .confirmationDialog("清空所有场景、单词和学习记录？", isPresented: $confirmingReset, titleVisibility: .visible) {
-                    Button("清空", role: .destructive) { DemoData.wipe(context) }
-                }
-            } header: {
-                header("开发")
-            }
-            #endif
+            .padding(.horizontal, 20)
+            .background(alignment: .top) { ThemeWash().padding(.horizontal, -20) }
         }
-        .scrollContentBackground(.hidden)
-        .background(PaperBackground())
+        .scrollIndicators(.hidden)
+        .sheet(isPresented: $showingAvatarPicker) {
+            AvatarPickerSheet(settings: settings)
+                .presentationDetents([.height(360)])
+                .presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $showingLevelTest) {
             NavigationStack {
                 LevelTestView { score in
@@ -181,99 +108,58 @@ struct MeView: View {
                 }
             }
         }
-        .onChange(of: settings.newWordsPerDay) { try? context.save(); StudyReminder.refresh(context: context) }
-        .onChange(of: settings.maxReviewsPerDay) { try? context.save() }
-    }
-
-    private func row(_ emoji: String, _ color: Color, _ title: String) -> some View {
-        HStack(spacing: Spacing.sm) {
-            EmojiTile(emoji: emoji, color: color, size: 32)
-            Text(title)
-                .font(.body.weight(.medium))
+        .alert("昵称", isPresented: $editingNickname) {
+            TextField("给自己起个名字", text: $nicknameDraft)
+            Button("取消", role: .cancel) {}
+            Button("保存") {
+                settings.nickname = nicknameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+                try? context.save()
+            }
+        }
+        .alert("登录没有成功", isPresented: Binding(get: { signInError != nil }, set: { if !$0 { signInError = nil } })) {
+            Button("好", role: .cancel) {}
+        } message: {
+            Text(signInError ?? "")
         }
     }
 
-    private func header(_ title: String) -> some View {
-        Text(title)
-            .font(.subheadline.weight(.heavy))
-            .foregroundStyle(Theme.ink.opacity(0.6))
-            .textCase(nil)
-    }
-
-    private func setReminder(_ enabled: Bool, settings: UserSettings) async {
-        if enabled {
-            let granted = await NotificationService.requestAuthorization()
-            notificationsDenied = !granted
-            settings.reminderEnabled = granted
-        } else {
-            settings.reminderEnabled = false
-        }
-        try? context.save()
-        StudyReminder.refresh(context: context)
-    }
-}
-
-// MARK: - 水平卡片
-
-private struct LevelCard: View {
-    var settings: UserSettings
-    var onRetest: () -> Void
-
-    var body: some View {
-        let level = settings.level
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            HStack(spacing: Spacing.md) {
-                Text(level.code)
-                    .font(.system(size: 34, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 84, height: 84)
-                    .background(Theme.card.opacity(0.85), in: .rect(cornerRadius: Radius.card, style: .continuous))
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("我的水平 · \(level.displayName)")
-                        .font(.headline.weight(.heavy))
-                    Text(level.summary)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink.opacity(0.65))
-                }
-            }
-            if let next = level.next {
-                VStack(alignment: .leading, spacing: 6) {
-                    GeometryReader { proxy in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.card.opacity(0.7))
-                            Capsule().fill(Theme.ink)
-                                .frame(width: max(proxy.size.width * CEFRLevel.progressWithinLevel(score: settings.levelScore), 10))
-                        }
-                    }
-                    .frame(height: 8)
-                    Text("距离 \(next.code) 还差一点点，选词和复习时的表现会让等级慢慢提升")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.ink.opacity(0.6))
-                }
-            }
-            Button(action: onRetest) {
-                Label("重新测一次", systemImage: "arrow.clockwise")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Theme.ink)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Theme.card, in: .capsule)
+    private var header: some View {
+        HStack {
+            Text("我的")
+                .font(.system(size: 30, weight: .heavy))
+                .foregroundStyle(Theme.homeInk)
+                .accessibilityAddTraits(.isHeader)
+            Spacer()
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Theme.homeInk)
+                    .frame(width: 42, height: 42)
+                    .background(Theme.sheet, in: .circle)
+                    .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
             }
             .buttonStyle(.pressable)
+            .accessibilityLabel("关闭")
         }
-        .padding(Spacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: [Pastel.lavender, Pastel.pink], startPoint: .topLeading, endPoint: .bottomTrailing),
-            in: .rect(cornerRadius: Radius.hero, style: .continuous)
-        )
+        .frame(height: 50)
+        .padding(.top, 12)
+        .padding(.horizontal, 4)
+    }
+
+    private func signIn(_ result: Result<ASAuthorization, Error>, settings: UserSettings) {
+        if case .failed(let message) = AppleAccount.handle(result, settings: settings, context: context) {
+            signInError = message
+        }
     }
 }
 
 extension Bundle {
     var appVersion: String {
-        let version = infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = infoDictionary?["CFBundleVersion"] as? String ?? "1"
-        return "\(version) (\(build))"
+        return "\(shortVersion) (\(build))"
+    }
+
+    var shortVersion: String {
+        infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
 }

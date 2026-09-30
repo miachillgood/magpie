@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// 单词行：场景 emoji + 衬线单词 + 释义，右侧难度和状态
+/// 单词行：场景线条图标 + 衬线单词 + 释义，右侧状态
 struct WordRow: View {
     var word: VocabWord
     var showsScene = true
@@ -13,8 +13,12 @@ struct WordRow: View {
     var body: some View {
         HStack(spacing: Spacing.sm) {
             if showsScene {
-                let scene = word.latestScan?.scene ?? .general
-                EmojiTile(emoji: scene.emoji, color: scene.pastel, size: 46)
+                Image(systemName: (word.latestScan?.scene ?? .general).symbol)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Theme.homeInk)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.placeChip, in: .rect(cornerRadius: 13, style: .continuous))
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -29,7 +33,7 @@ struct WordRow: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text(word.meaning.isEmpty ? "正在生成解释…" : word.meaning)
+                Text(word.meaning.isEmpty ? String(localized: "正在生成解释…") : word.meaning)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -37,10 +41,7 @@ struct WordRow: View {
 
             Spacer(minLength: Spacing.xs)
 
-            VStack(alignment: .trailing, spacing: 5) {
-                CEFRBadge(level: word.cefr)
-                stateIndicator
-            }
+            stateIndicator
         }
         .accessibilityElement(children: .combine)
     }
@@ -56,16 +57,19 @@ struct WordRow: View {
             if word.dueDate <= Calendar.current.startOfDay(for: Date()) && !word.excludedFromReview {
                 Text("今天复习")
                     .font(.caption2.weight(.heavy))
-                    .foregroundStyle(Theme.brand)
+                    .foregroundStyle(Theme.homeInk)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Theme.marker, in: .capsule)
             } else {
                 Text(word.dueDate, format: .dateTime.month().day())
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
         case .mastered:
-            Text("🏅")
-                .font(.caption)
-                .accessibilityLabel("已掌握")
+            Text("已掌握")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
         }
     }
 }

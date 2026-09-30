@@ -8,9 +8,8 @@ import SwiftUI
 enum AppTab: Hashable {
     /// 照片墙（首页）
     case home
+    /// 复习（包含词库）
     case review
-    case words
-    case me
 }
 
 /// 学习会话的范围
@@ -19,6 +18,10 @@ enum StudyScope: Hashable {
     case today(extraNew: Int)
     /// 只学某一个场景的词
     case scan(UUID)
+    /// 某一天拍到的词（还没到期的也会过一遍，但不改变复习安排）
+    case day(Date)
+    /// 指定的几个词（比如「总是记不住的词」）；还没到期的同样只是再看一遍
+    case words([UUID])
 }
 
 struct StudyRequest: Identifiable, Hashable {
@@ -34,8 +37,6 @@ final class AppCoordinator {
     /// 今天还有要学 / 要复习的词（底部“复习”图标上的小红点）
     var reviewPending = false
     var studyRequest: StudyRequest?
-    /// 跳到词库时预选的筛选
-    var wordsFilter: WordsFilter = .all
 
     func startScan() {
         showingScan = true
@@ -43,11 +44,6 @@ final class AppCoordinator {
 
     func startStudy(_ scope: StudyScope = .today(extraNew: 0)) {
         studyRequest = StudyRequest(scope: scope)
-    }
-
-    func showWords(_ filter: WordsFilter) {
-        wordsFilter = filter
-        selectedTab = .words
     }
 }
 
@@ -62,7 +58,7 @@ enum WordsFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all:      "全部"
+        case .all:      String(localized: "全部", comment: "Word filter: all words")
         case .new:      WordState.new.displayName
         case .learning: WordState.learning.displayName
         case .mastered: WordState.mastered.displayName

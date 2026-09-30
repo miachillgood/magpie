@@ -1,0 +1,79 @@
+{
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "Bundle display name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SnapLingo"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SnapLingo"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "Privacy - Camera Usage Description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SnapLingo uses the camera to photograph English around you and pick out words for you to learn."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SnapLingo usa la cámara para fotografiar el inglés a tu alrededor y elegir palabras para que las aprendas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "身の回りの英語を撮影して、あなたが覚えるべき単語を選ぶためにカメラを使います。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주변의 영어를 촬영해서 배울 단어를 골라 주기 위해 카메라를 사용해요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O SnapLingo usa a câmera para fotografar o inglês ao seu redor e escolher palavras para você aprender."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SnapLingo 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SnapLingo 需要使用相機拍下身邊的英文，幫你從中挑出要學的單字。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

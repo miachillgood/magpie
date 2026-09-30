@@ -27,7 +27,7 @@ struct PhotoStack: View {
     var animated = true
 
     /// 设计稿坐标系里的高度
-    static let designHeight: CGFloat = 214
+    static let designHeight: CGFloat = 172
 
     private struct Slot {
         var x, y, w, h, rotation: CGFloat
@@ -38,7 +38,7 @@ struct PhotoStack: View {
             ForEach(Array(placed.enumerated()), id: \.offset) { index, item in
                 Group {
                     if let scan = item.scan {
-                        PolaroidPhoto(scan: scan, scale: scale, border: style == .fan ? 6 : 7)
+                        PolaroidPhoto(scan: scan, scale: scale, border: style == .fan ? 5 : 6)
                     } else {
                         EmptyPhotoSlot(scale: scale)
                     }
@@ -63,8 +63,18 @@ struct PhotoStack: View {
                     .offset(y: -10 * scale)
                     .animation(animated ? .easeOut(duration: 0.4).delay(0.75) : nil, value: appeared)
                     .accessibilityHidden(true)
-                HandwrittenLabel(text: label, size: 27 * scale, revealed: appeared)
-                    .animation(animated ? .easeOut(duration: 0.7).delay(0.8) : nil, value: appeared)
+                VStack(alignment: .trailing, spacing: 0) {
+                    HandwrittenLabel(text: label, size: 25 * scale, revealed: appeared)
+                        .animation(animated ? .easeOut(duration: 0.7).delay(0.8) : nil, value: appeared)
+                    Squiggle()
+                        .trim(from: 0, to: appeared ? 1 : 0)
+                        .stroke(Color(hex: 0xF2B928), style: StrokeStyle(lineWidth: 2.5 * scale, lineCap: .round))
+                        .frame(width: 70 * scale, height: 7 * scale)
+                        .rotationEffect(.degrees(-8))
+                        .padding(.trailing, 6 * scale)
+                        .animation(animated ? .easeOut(duration: 0.5).delay(1.3) : nil, value: appeared)
+                        .accessibilityHidden(true)
+                }
             }
             .padding(.trailing, labelTrailing * scale)
             .offset(y: labelTop * scale)
@@ -79,9 +89,9 @@ struct PhotoStack: View {
     private var placed: [(scan: Scan?, slot: Slot)] {
         switch style {
         case .pile:
-            let main = Slot(x: 18, y: 18, w: 182, h: 174, rotation: -7)
-            let middle = Slot(x: 152, y: 24, w: 132, h: 150, rotation: 2)
-            let right = Slot(x: 262, y: 72, w: 114, h: 132, rotation: 8)
+            let main = Slot(x: 64, y: 26, w: 138, h: 128, rotation: -8)
+            let middle = Slot(x: 176, y: 34, w: 106, h: 112, rotation: 4)
+            let right = Slot(x: 250, y: 58, w: 102, h: 106, rotation: 9)
             switch photos.count {
             case 0: return [(nil, main)]
             case 1: return [(photos[0], main)]
@@ -90,10 +100,10 @@ struct PhotoStack: View {
             }
         case .fan:
             let slots = [
-                Slot(x: 20, y: 72, w: 112, h: 124, rotation: -12),
-                Slot(x: 94, y: 48, w: 116, h: 130, rotation: -4),
-                Slot(x: 172, y: 42, w: 116, h: 130, rotation: 4),
-                Slot(x: 252, y: 64, w: 112, h: 124, rotation: 12)
+                Slot(x: 40, y: 60, w: 92, h: 100, rotation: -12),
+                Slot(x: 104, y: 40, w: 94, h: 106, rotation: -4),
+                Slot(x: 180, y: 36, w: 94, h: 106, rotation: 4),
+                Slot(x: 254, y: 54, w: 92, h: 100, rotation: 12)
             ]
             let shown = Array(photos.prefix(4))
             // 张数不够时用中间的位置，保持居中
@@ -101,17 +111,17 @@ struct PhotoStack: View {
             return shown.enumerated().map { index, scan in (scan, slots[min(start + index, 3)]) }
         case .emptySlot:
             let behind = [
-                Slot(x: 170, y: 40, w: 134, h: 146, rotation: 6),
-                Slot(x: 244, y: 60, w: 118, h: 138, rotation: 10)
+                Slot(x: 178, y: 38, w: 104, h: 114, rotation: 6),
+                Slot(x: 242, y: 56, w: 96, h: 108, rotation: 10)
             ]
             let photosBehind = photos.prefix(2).enumerated().map { index, scan in (Optional(scan), behind[index]) }
-            return photosBehind + [(nil, Slot(x: 26, y: 12, w: 184, h: 176, rotation: -6))]
+            return photosBehind + [(nil, Slot(x: 62, y: 22, w: 140, h: 132, rotation: -6))]
         }
     }
 
     /// 手写标签离右边和顶部的距离（设计稿坐标）
-    private var labelTrailing: CGFloat { style == .fan ? 24 : 18 }
-    private var labelTop: CGFloat { style == .fan ? 10 : 4 }
+    private var labelTrailing: CGFloat { style == .fan ? 28 : 22 }
+    private var labelTop: CGFloat { style == .fan ? 0 : -4 }
 
     private var accessibilityText: String {
         let titles = photos.prefix(3).map(\.displayTitle)
@@ -129,10 +139,10 @@ struct PolaroidPhoto: View {
 
     var body: some View {
         ScanThumbnail(scan: scan)
-            .clipShape(.rect(cornerRadius: (20 - border + 2) * scale, style: .continuous))
+            .clipShape(.rect(cornerRadius: (16 - border + 2) * scale, style: .continuous))
             .padding(border * scale)
-            .background(Theme.sheet, in: .rect(cornerRadius: 20 * scale, style: .continuous))
-            .shadow(color: .black.opacity(0.16), radius: 15 * scale, y: 12 * scale)
+            .background(Theme.sheet, in: .rect(cornerRadius: 16 * scale, style: .continuous))
+            .shadow(color: .black.opacity(0.16), radius: 12 * scale, y: 9 * scale)
     }
 }
 
@@ -141,10 +151,10 @@ private struct EmptyPhotoSlot: View {
     var scale: CGFloat
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 20 * scale, style: .continuous)
+        RoundedRectangle(cornerRadius: 16 * scale, style: .continuous)
             .fill(Theme.sheet.opacity(0.75))
             .overlay {
-                RoundedRectangle(cornerRadius: 20 * scale, style: .continuous)
+                RoundedRectangle(cornerRadius: 16 * scale, style: .continuous)
                     .strokeBorder(Theme.homeInk.opacity(0.22), style: StrokeStyle(lineWidth: 2.5, dash: [7, 6]))
             }
             .overlay {

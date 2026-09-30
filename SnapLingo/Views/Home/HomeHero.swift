@@ -2,8 +2,9 @@
 //  HomeHero.swift
 //  SnapLingo
 //
-//  首页上半部分：字标 + 连续天数、照片堆、带胶囊的大字句子、单词胶囊、黑色按钮。
-//  打开时依次出现：照片落下 → 句子浮起 → 荧光笔划过 → 箭头画出 → 胶囊弹出。
+//  首页上半部分：字标 + 连续天数、照片堆、句子、单词胶囊、黑色按钮。
+//  比例刻意收小，让下面的照片墙在第一屏就露出来。
+//  打开时依次出现：照片落下 → 句子浮起 → 荧光笔框住数字 → 闪光线 → 胶囊弹出。
 //
 
 import SwiftUI
@@ -12,18 +13,33 @@ import SwiftUI
 
 /// 句子里的一段
 enum HeadlinePiece: Hashable {
+    /// 灰色小字，单独一行（今天在）
+    case caption(String)
     case text(String)
-    /// 蓝色胶囊：场景图标 + 地点
-    case place(String, String)
-    /// 荧光笔：大数字 + 单位
-    case marker(String, String)
+    /// 场景图标 + 蓝色胶囊里的地点关键词 + 其余部分（Little Bird｜咖啡菜单）
+    case place(symbol: String, highlight: String, rest: String)
+    /// 荧光笔框住的数字
+    case marker(String)
     case emoji(String)
 
     var plainText: String {
         switch self {
-        case .text(let text), .emoji(let text): text
-        case .place(_, let title): title
-        case .marker(let number, let unit): number + unit
+        case .caption(let text), .text(let text), .emoji(let text), .marker(let text): text
+        case .place(_, let highlight, let rest): highlight + rest
+        }
+    }
+
+    var isCaption: Bool {
+        if case .caption = self { true } else { false }
+    }
+
+    /// 把一句本地化后的话拆成文字和荧光笔数字：`**5**` 是要框住的部分。
+    /// 各语言可以按自己的语序放数字（捡到 **5** 个新词 / Picked up **5** new words / **5**個の新しい単語）
+    static func phrase(_ text: String) -> [HeadlinePiece] {
+        text.components(separatedBy: "**").enumerated().compactMap { index, part in
+            let trimmed = part.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { return nil }
+            return index.isMultiple(of: 2) ? .text(trimmed) : .marker(trimmed)
         }
     }
 }
@@ -56,21 +72,34 @@ struct HomeHeroContent {
     var lines: [[HeadlinePiece]]
     var chips: [HeroChip]
     var chipsNote: String?
-    /// 句子行数多的状态字号稍小一点，保证按钮留在第一屏
-    var headlineScale: CGFloat = 1
     var action: HomeHeroAction
     var actionTitle: String
     var actionSymbol: String
     var photos: [Scan]
     var stackStyle: PhotoStack.Style
 
+    /// 读屏用的整句
     var sentence: String {
-        lines.map { $0.map(\.plainText).joined() }.joined()
+        lines.map { $0.map(\.plainText).joined(separator: " ") }.joined(separator: " ")
     }
 
     /// 相机图标放在文字前面，箭头放在后面
     var symbolLeads: Bool {
         if case .scan = action { true } else { false }
+    }
+
+    /// 把场景名拆成“关键词 + 其余”：英文店名放进胶囊，后面的中日韩文字照常显示
+    static func place(symbol: String, title: String, suffix: String = "") -> HeadlinePiece {
+        let suffix = suffix.trimmingCharacters(in: .whitespaces).isEmpty ? "" : suffix
+        let trimmed = title.trimmingCharacters(in: .whitespaces)
+        if let range = trimmed.range(of: #"^[A-Za-z0-9'&.\- ]+?(?=\s*[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}])"#, options: .regularExpression) {
+            let highlight = String(trimmed[range]).trimmingCharacters(in: .whitespaces)
+            let rest = String(trimmed[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+            if !highlight.isEmpty && !rest.isEmpty {
+                return .place(symbol: symbol, highlight: highlight, rest: rest + suffix)
+            }
+        }
+        return .place(symbol: symbol, highlight: trimmed, rest: suffix)
     }
 }
 
@@ -78,9 +107,13 @@ struct HomeHeroContent {
 
 struct HomeHero: View {
     var content: HomeHeroContent
-    var streak: Int
+    /// 斑点底纹的颜色（用户在「我的」里选的主题色）
+    var background: Color
+    /// 至少占多高：让底纹占掉第一屏的大部分，下面的照片墙只露出一截
+    var minHeight: CGFloat
     var metrics: HomeMetrics
     var onAction: (HomeHeroAction) -> Void
+    var onProfile: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
@@ -92,6 +125,9 @@ struct HomeHero: View {
             header
                 .padding(.horizontal, metrics.sidePadding)
 
+            // 屏幕高、内容放得下时，多出来的空间平均分到这几段留白里
+            Spacer(minLength: metrics.gap(4))
+
             PhotoStack(
                 photos: content.photos,
                 style: content.stackStyle,
@@ -101,31 +137,30 @@ struct HomeHero: View {
                 animated: !reduceMotion
             )
             .frame(maxWidth: .infinity)
-            .padding(.top, metrics.gap(8))
+
+            Spacer(minLength: metrics.gap(14))
 
             headline
                 .padding(.horizontal, metrics.sidePadding)
-                .padding(.top, metrics.gap(24))
 
             chips
                 .padding(.horizontal, metrics.sidePadding)
-                .padding(.top, metrics.gap(18))
+                .padding(.top, metrics.gap(16))
+
+            Spacer(minLength: metrics.gap(22))
 
             actionButton
                 .frame(maxWidth: .infinity)
-                .padding(.top, metrics.gap(30))
+
+            Spacer(minLength: metrics.gap(26))
         }
         .padding(.top, 4)
-        .padding(.bottom, metrics.gap(36))
-        .background(alignment: .top) {
-            // 奶油色底一直铺到状态栏后面，柔光叠在上面
-            ZStack(alignment: .top) {
-                Theme.cream
-                MoodGlow(mood: content.mood, drifting: !reduceMotion)
-                    .frame(height: 760)
-            }
-            .padding(.top, -160)
-            .allowsHitTesting(false)
+        .frame(minHeight: minHeight, alignment: .top)
+        .background {
+            // 斑点纸底一直铺到状态栏后面；往下多铺一截，垫在白色照片墙的圆角后面
+            SpeckleBackground(base: background)
+                .padding(.top, -160)
+                .padding(.bottom, -60)
         }
         .onAppear {
             guard !appeared else { return }
@@ -154,8 +189,18 @@ struct HomeHero: View {
                 .foregroundStyle(Theme.homeInk)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
-            if streak > 0 {
-                StreakPill(days: streak)
+            HStack(spacing: 8) {
+                Button(action: onProfile) {
+                    Image(systemName: "person")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.homeInk)
+                        .frame(width: 36, height: 36)
+                        .background(Theme.sheet, in: .circle)
+                        .overlay(Circle().strokeBorder(Theme.homeInk.opacity(0.06)))
+                        .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
+                }
+                .buttonStyle(.pressable)
+                .accessibilityLabel("我的")
             }
         }
         .frame(height: 44)
@@ -164,26 +209,22 @@ struct HomeHero: View {
     // MARK: 句子
 
     private var headline: some View {
-        let size = metrics.headlineSize * content.headlineScale
-        return VStack(alignment: .leading, spacing: 8 * metrics.heightScale) {
+        VStack(alignment: .leading, spacing: 6 * k) {
             ForEach(Array(content.lines.enumerated()), id: \.offset) { index, line in
-                HeadlineLine(pieces: line, size: size, scale: k, appeared: appeared, reduceMotion: reduceMotion)
-                    .opacity(appeared ? 1 : 0)
-                    .offset(y: appeared ? 0 : 14)
-                    .animation(motion(.smooth(duration: 0.55), delay: 0.3 + 0.1 * Double(index)), value: appeared)
+                HeadlineLine(
+                    pieces: line,
+                    size: metrics.headlineSize,
+                    scale: k,
+                    isLast: index == content.lines.count - 1,
+                    appeared: appeared,
+                    reduceMotion: reduceMotion
+                )
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 12)
+                .animation(motion(.smooth(duration: 0.5), delay: 0.3 + 0.08 * Double(index)), value: appeared)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .bottomTrailing) {
-            HandArrow()
-                .trim(from: 0, to: appeared ? 1 : 0)
-                .stroke(Theme.homeInk, style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
-                .frame(width: 48 * k, height: 54 * k)
-                .padding(.trailing, 6)
-                .padding(.bottom, 4)
-                .animation(motion(.easeOut(duration: 0.6), delay: 1.0), value: appeared)
-                .accessibilityHidden(true)
-        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(content.sentence)
         .accessibilityAddTraits(.isHeader)
@@ -191,103 +232,141 @@ struct HomeHero: View {
 
     // MARK: 单词胶囊
 
-    private static let chipRotations: [Double] = [-2, 1.5, -1, 2, -1.5, 1]
-    private static let chipOffsets: [CGFloat] = [0, 4, 0, 2, 5, 0]
+    private static let chipRotations: [Double] = [-1.5, 1, -1, 1.5]
+    private static let chipFills: [Color] = [Theme.sheet, Theme.placeChip, Theme.sheet, Theme.marker.opacity(0.55)]
 
     private var chips: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             if let note = content.chipsNote {
                 Text(note)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.homeMuted)
             }
-            FlowLayout(spacing: 10) {
-                ForEach(Array(content.chips.prefix(metrics.maxChips).enumerated()), id: \.offset) { index, chip in
-                    chipView(chip)
-                        .rotationEffect(.degrees(Self.chipRotations[index % 6]))
-                        .offset(y: Self.chipOffsets[index % 6])
-                        .scaleEffect(appeared ? 1 : 0.6)
-                        .opacity(appeared ? 1 : 0)
-                        .animation(motion(.spring(response: 0.45, dampingFraction: 0.6), delay: 0.75 + 0.07 * Double(index)), value: appeared)
+            // 只排一行：放不下就少放一个
+            ViewThatFits(in: .horizontal) {
+                ForEach(Array(stride(from: min(content.chips.count, metrics.maxChips), through: 1, by: -1)), id: \.self) { count in
+                    chipRow(count)
                 }
             }
         }
     }
 
+    private func chipRow(_ count: Int) -> some View {
+        HStack(spacing: 8) {
+            ForEach(Array(content.chips.prefix(count).enumerated()), id: \.offset) { index, chip in
+                chipView(chip, fill: Self.chipFills[index % 4])
+                    .rotationEffect(.degrees(Self.chipRotations[index % 4]))
+                    .scaleEffect(appeared ? 1 : 0.6)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(motion(.spring(response: 0.45, dampingFraction: 0.6), delay: 0.7 + 0.06 * Double(index)), value: appeared)
+            }
+        }
+        .fixedSize()
+    }
+
     @ViewBuilder
-    private func chipView(_ chip: HeroChip) -> some View {
+    private func chipView(_ chip: HeroChip, fill: Color) -> some View {
         switch chip {
         case .word(let word):
-            Button { onAction(.openWord(word)) } label: { chipLabel(chip.title) }
+            Button { onAction(.openWord(word)) } label: { chipLabel(chip.title, fill: fill) }
                 .buttonStyle(.pressable)
                 .accessibilityHint("查看这个词")
         case .text(let text):
-            chipLabel(text)
+            chipLabel(text, fill: fill)
         }
     }
 
-    private func chipLabel(_ text: String) -> some View {
+    private func chipLabel(_ text: String, fill: Color) -> some View {
         Text(text)
             .font(.system(size: metrics.chipSize, weight: .medium))
             .foregroundStyle(Theme.homeInk)
             .lineLimit(1)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background(Theme.sheet, in: .capsule)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(fill, in: .capsule)
             .overlay(Capsule().strokeBorder(Theme.homeInk.opacity(0.05)))
-            .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+            .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
     }
 
     // MARK: 按钮
 
     private var actionButton: some View {
         Button { onAction(content.action) } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 if content.symbolLeads { Image(systemName: content.actionSymbol) }
                 Text(content.actionTitle)
                 if !content.symbolLeads { Image(systemName: content.actionSymbol) }
             }
-            .font(.system(size: 17, weight: .bold))
+            .font(.system(size: 16, weight: .bold))
             .foregroundStyle(Theme.cream)
-            .frame(width: min(230 * k, metrics.width - metrics.sidePadding * 2), height: 56)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            // 中文按钮是固定的 190 宽；西语、葡语这类长文字按内容变宽，但不超过屏幕
+            .padding(.horizontal, 26)
+            .frame(minWidth: 190 * k)
+            .frame(maxWidth: metrics.width - metrics.sidePadding * 2)
+            .frame(height: 48)
+            .fixedSize(horizontal: true, vertical: false)
             .background(Theme.homeInk, in: .capsule)
-            .shadow(color: .black.opacity(0.22), radius: 12, y: 10)
+            .shadow(color: .black.opacity(0.2), radius: 10, y: 8)
             .contentShape(.capsule)
         }
         .buttonStyle(.pressable)
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 12)
-        .animation(motion(.smooth(duration: 0.5), delay: 1.1), value: appeared)
+        .offset(y: appeared ? 0 : 10)
+        .animation(motion(.smooth(duration: 0.5), delay: 0.95), value: appeared)
         .sensoryFeedback(.impact(weight: .light), trigger: appeared)
     }
 }
 
 // MARK: - 一行句子
 
-/// 每一行都不换行：文字保持原样，地点胶囊放不下时先缩小字号、再用“…”截断，
-/// 这样句子总是固定的行数，按钮不会被挤出第一屏
+/// 每一行都不换行：文字放不下时整行字号依次缩小（西语、葡语的句子比中文长），
+/// 地点胶囊放不下时先缩小字号、再用“…”截断，这样句子总是固定的行数
 private struct HeadlineLine: View {
     var pieces: [HeadlinePiece]
     var size: CGFloat
     var scale: CGFloat
+    var isLast: Bool
     var appeared: Bool
     var reduceMotion: Bool
 
-    var body: some View {
-        HStack(spacing: 10 * scale) { segments }
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
+    private static let fitFactors: [CGFloat] = [1, 0.88, 0.76, 0.66]
 
-    @ViewBuilder
-    private var segments: some View {
-        ForEach(Array(pieces.enumerated()), id: \.offset) { _, piece in
-            segment(piece)
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            ForEach(Self.fitFactors, id: \.self) { factor in
+                row(size: size * factor)
+            }
         }
     }
 
+    private func row(size: CGFloat) -> some View {
+        HStack(alignment: .center, spacing: 8 * scale) {
+            ForEach(Array(pieces.enumerated()), id: \.offset) { _, piece in
+                segment(piece, size: size)
+            }
+            if isLast && !pieces.contains(where: \.isCaption) {
+                SparkleLines()
+                    .trim(from: 0, to: appeared ? 1 : 0)
+                    .stroke(Color(hex: 0xF2B928), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .frame(width: 22 * scale, height: 22 * scale)
+                    .rotationEffect(.degrees(75))
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.4).delay(1.0), value: appeared)
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     @ViewBuilder
-    private func segment(_ piece: HeadlinePiece) -> some View {
+    private func segment(_ piece: HeadlinePiece, size: CGFloat) -> some View {
         switch piece {
+        case .caption(let text):
+            Text(text)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.homeMuted)
+                .fixedSize()
         case .text(let text):
             Text(text)
                 .font(.system(size: size, weight: .heavy))
@@ -297,123 +376,42 @@ private struct HeadlineLine: View {
             Text(emoji)
                 .font(.system(size: size * 1.05))
                 .fixedSize()
-        case .place(let symbol, let title):
-            HStack(spacing: 8 * scale) {
-                Image(systemName: symbol)
-                    .font(.system(size: size * 0.7, weight: .semibold))
-                Text(title)
+        case .place(let symbol, let highlight, let rest):
+            Image(systemName: symbol)
+                .font(.system(size: size * 0.85, weight: .semibold))
+                .foregroundStyle(Theme.homeInk)
+                .fixedSize()
+            Text(highlight)
+                .font(.system(size: size, weight: .heavy))
+                .foregroundStyle(Theme.homeInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 10 * scale)
+                .padding(.vertical, 2 * scale)
+                // 白色胶囊：任何主题色的斑点底上都清楚
+                .background(Theme.sheet, in: .capsule)
+                .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
+                .scaleEffect(appeared ? 1 : 0.8, anchor: .leading)
+                .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.6).delay(0.4), value: appeared)
+                .layoutPriority(-1)
+            if !rest.isEmpty {
+                Text(rest)
                     .font(.system(size: size, weight: .heavy))
+                    .foregroundStyle(Theme.homeInk)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.62)
+                    .layoutPriority(-2)
             }
-            .foregroundStyle(Theme.homeInk)
-            .padding(.leading, 14 * scale)
-            .padding(.trailing, 18 * scale)
-            .frame(height: size * 1.45)
-            .background(Theme.placeChip, in: .capsule)
-            .layoutPriority(-1)
-            .scaleEffect(appeared ? 1 : 0.7, anchor: .leading)
-            .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.6).delay(0.45), value: appeared)
-        case .marker(let number, let unit):
-            HStack(alignment: .firstTextBaseline, spacing: 6 * scale) {
-                Text(number)
-                    .font(.brand(size * 1.33))
-                Text(unit)
-                    .font(.system(size: size, weight: .heavy))
-            }
-            .foregroundStyle(Theme.homeInk)
-            .padding(.horizontal, 10 * scale)
-            .background {
-                MarkerHighlight(drawn: appeared)
-                    .padding(.top, 8 * scale)
-                    .padding(.bottom, 2 * scale)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.55).delay(0.7), value: appeared)
-            }
-            .fixedSize()
+        case .marker(let number):
+            Text(number)
+                .font(.brand(size * 1.3))
+                .foregroundStyle(Theme.homeInk)
+                .padding(.horizontal, 9 * scale)
+                .background {
+                    MarkerHighlight(drawn: appeared, cornerScale: 0.5)
+                        .padding(.vertical, -1)
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.45).delay(0.65), value: appeared)
+                }
+                .fixedSize()
         }
-    }
-}
-
-// MARK: - 连续天数
-
-struct StreakPill: View {
-    var days: Int
-
-    var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: "flame.fill")
-                .symbolRenderingMode(.multicolor)
-            Text("连续 \(days) 天")
-                .contentTransition(.numericText())
-        }
-        .font(.system(size: 13, weight: .bold))
-        .foregroundStyle(Theme.homeInk)
-        .padding(.horizontal, 13)
-        .frame(height: 34)
-        .background(Theme.streakFill, in: .capsule)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("连续学习 \(days) 天")
-    }
-}
-
-// MARK: - 柔光背景
-
-/// 每种状态一种柔光色：刚拍完暖橘、待复习天蓝、还没拍淡紫、本周回顾薄荷绿
-struct MoodGlow: View {
-    var mood: HomeMood
-    var drifting: Bool
-
-    @Environment(\.colorScheme) private var scheme
-    @State private var drift = false
-
-    private struct Light {
-        var color: UInt32
-        var center: UnitPoint
-        var opacity: Double
-    }
-
-    private var lights: (Light, Light) {
-        switch mood {
-        case .captured:
-            (Light(color: 0xFFD9A0, center: UnitPoint(x: 1, y: 0.05), opacity: 0.6),
-             Light(color: 0xF8C7A2, center: UnitPoint(x: 0, y: 0.45), opacity: 0.5))
-        case .review:
-            (Light(color: 0xAFCBF6, center: UnitPoint(x: 0.5, y: 0.05), opacity: 0.65),
-             Light(color: 0xC9DDFA, center: UnitPoint(x: 0, y: 0.5), opacity: 0.6))
-        case .empty:
-            (Light(color: 0xD4C3F8, center: UnitPoint(x: 1, y: 0.12), opacity: 0.65),
-             Light(color: 0xE6DDFC, center: UnitPoint(x: 0, y: 0.45), opacity: 0.65))
-        case .weekly:
-            (Light(color: 0xB1DFBE, center: UnitPoint(x: 0, y: 0.22), opacity: 0.65),
-             Light(color: 0xFFE69C, center: UnitPoint(x: 1, y: 0.08), opacity: 0.55))
-        }
-    }
-
-    var body: some View {
-        GeometryReader { proxy in
-            let radius = max(proxy.size.width, 1) * 0.95
-            let dim = scheme == .dark ? 0.35 : 1
-            ZStack {
-                glow(lights.0, radius: radius, dim: dim)
-                glow(lights.1, radius: radius * 0.9, dim: dim)
-            }
-            .offset(x: drift ? 12 : -6, y: drift ? -10 : 4)
-            .scaleEffect(drift ? 1.06 : 1)
-        }
-        .onAppear {
-            guard drifting else { return }
-            withAnimation(.easeInOut(duration: 9).repeatForever(autoreverses: true)) { drift = true }
-        }
-        .accessibilityHidden(true)
-    }
-
-    private func glow(_ light: Light, radius: CGFloat, dim: Double) -> some View {
-        let color = Color(hex: light.color)
-        return RadialGradient(
-            colors: [color.opacity(light.opacity * dim), color.opacity(0)],
-            center: light.center,
-            startRadius: 0,
-            endRadius: radius
-        )
     }
 }

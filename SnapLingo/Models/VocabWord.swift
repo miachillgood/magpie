@@ -20,9 +20,9 @@ enum WordState: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .new:      "待学"
-        case .learning: "学习中"
-        case .mastered: "已掌握"
+        case .new:      String(localized: "待学", comment: "Word learning state")
+        case .learning: String(localized: "学习中", comment: "Word learning state")
+        case .mastered: String(localized: "已掌握", comment: "Word learning state")
         }
     }
 

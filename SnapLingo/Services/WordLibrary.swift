@@ -104,6 +104,22 @@ enum WordLibrary {
         try? context.save()
     }
 
+    /// 清空所有场景、单词和学习记录（设置和个人资料保留）。
+    /// 逐条删除：多对多关系下批量删除会静默失败
+    static func wipeAll(_ context: ModelContext) {
+        func deleteAll<T: PersistentModel>(_ type: T.Type) {
+            for item in (try? context.fetch(FetchDescriptor<T>())) ?? [] {
+                context.delete(item)
+            }
+        }
+        deleteAll(VocabWord.self)
+        deleteAll(Scan.self)
+        deleteAll(ReviewLog.self)
+        deleteAll(WordFamiliarity.self)
+        try? context.save()
+        ImageCache.shared.removeAll()
+    }
+
     // MARK: - 状态
 
     static func setMastered(_ word: VocabWord, _ mastered: Bool, context: ModelContext) {
@@ -148,14 +164,33 @@ final class ExplanationQueue {
     private(set) var isRunning = false
     private(set) var lastError: String?
     private let batchSize = 12
+    /// 正在跑的时候又有新的请求（比如刚换了母语），跑完这一轮后再跑一轮
+    private var rerunRequested = false
 
     func run(context: ModelContext) {
-        guard !isRunning else { return }
+        guard !isRunning else {
+            rerunRequested = true
+            return
+        }
         isRunning = true
         Task {
-            await process(context: context)
+            repeat {
+                rerunRequested = false
+                await process(context: context)
+            } while rerunRequested
             isRunning = false
         }
+    }
+
+    /// 换了母语后，把所有词的释义重新生成一遍。
+    /// 旧释义先保留着显示，新的到了再替换；简短释义清空，好让新语言的覆盖进来
+    func regenerateAll(context: ModelContext) {
+        for word in (try? context.fetch(FetchDescriptor<VocabWord>())) ?? [] {
+            word.gloss = ""
+            word.explanationStatus = .pending
+        }
+        try? context.save()
+        run(context: context)
     }
 
     private func process(context: ModelContext) async {
@@ -167,13 +202,14 @@ final class ExplanationQueue {
 
         // 按场景分组，让解释贴合场景
         let groups = Dictionary(grouping: pending) { $0.latestScan?.scene ?? .general }
+        let language = UserSettings.current(in: context).nativeLanguage
         lastError = nil
 
         for (scene, words) in groups {
             for chunk in stride(from: 0, to: words.count, by: batchSize).map({ Array(words[$0..<min($0 + batchSize, words.count)]) }) {
                 let items = chunk.map { ExplainItem(key: $0.normalizedForm, word: $0.word, context: $0.contextSnippet) }
                 do {
-                    let results = try await ClaudeAPIService.shared.explainWords(items, scene: scene)
+                    let results = try await ClaudeAPIService.shared.explainWords(items, scene: scene, language: language)
                     for word in chunk {
                         guard let exp = results[word.normalizedForm] else {
                             word.explanationStatus = .failed
@@ -185,6 +221,9 @@ final class ExplanationQueue {
                         if word.partOfSpeech.isEmpty { word.partOfSpeech = exp.partOfSpeech }
                     }
                 } catch {
+                    #if DEBUG
+                    print("ExplanationQueue failed for \(scene.rawValue) (\(chunk.count) words):", error)
+                    #endif
                     chunk.forEach { $0.explanationStatus = .failed }
                     lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 }

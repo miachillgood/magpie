@@ -157,7 +157,7 @@ struct WordPickerView: View {
                 HStack(spacing: 6) {
                     Text(scene.displayName)
                     Text("·")
-                    Text("你的水平 \(level.code)")
+                    Text("你的水平：\(level.displayName)")
                 }
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.secondary)
@@ -170,7 +170,7 @@ struct WordPickerView: View {
 
     private func groupSection(_ group: CandidateGroup, items: [ClassifiedCandidate]) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(title: group.title, emoji: group.emoji, subtitle: subtitle(for: group)) {
+            SectionHeader(title: LocalizedStringKey(group.title), emoji: group.emoji, subtitle: subtitle(for: group)) {
                 if group == .recommended || group == .advanced || group == .known {
                     let keys = Set(items.map(\.id))
                     let allOn = keys.isSubset(of: selected)
@@ -197,11 +197,10 @@ struct WordPickerView: View {
         }
     }
 
-    private func subtitle(for group: CandidateGroup) -> String {
+    private func subtitle(for group: CandidateGroup) -> LocalizedStringKey {
         switch group {
         case .recommended:
-            let upper = level.next.map { "–\($0.code)" } ?? ""
-            return "\(level.code)\(upper) 难度，现在学正合适"
+            return "和你的水平差不多或稍难一点，现在学正合适"
         case .advanced: return "比你现在的水平难一些"
         case .known: return "取消勾选会让推荐更懂你"
         case .saved: return "会把这个场景加到它们的记忆里"
@@ -223,7 +222,7 @@ struct WordPickerView: View {
         .padding(.bottom, Spacing.xs)
     }
 
-    private var saveTitle: String {
+    private var saveTitle: LocalizedStringKey {
         if newSelectionCount == 0 { return isNewScan ? "只保存场景" : "选择要加入的词" }
         return "保存 \(newSelectionCount) 个词"
     }
@@ -401,11 +400,6 @@ private struct CandidateChip: View {
                             .font(.caption2.weight(.semibold))
                             .opacity(0.75)
                     }
-                }
-                if let cefr = candidate.cefr {
-                    Text(cefr.code)
-                        .font(.caption2.weight(.heavy).monospaced())
-                        .opacity(0.5)
                 }
             }
             .padding(.leading, 12)

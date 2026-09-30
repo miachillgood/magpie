@@ -83,6 +83,10 @@ enum Theme {
     static let shutterRing = Color(hex: 0xFFD84A)
     /// 连续天数胶囊
     static let streakFill = Color(light: UIColor(hex: 0xFFEFB8), dark: UIColor(hex: 0x3A3217))
+    /// 复习页主题色下面过渡到的浅灰
+    static let mist = Color(light: UIColor(hex: 0xF1F1EF), dark: UIColor(hex: 0x121212))
+    /// 日期圆点：拍过东西的日子（按词数调深浅）
+    static let dayDot = Color(light: UIColor(hex: 0x6E97D6), dark: UIColor(hex: 0x8FB3EC))
 }
 
 // MARK: - 马卡龙色

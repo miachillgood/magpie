@@ -215,7 +215,9 @@ private struct CardFront: View {
 
             VStack(spacing: Spacing.sm) {
                 Pill(
-                    text: card.isNew ? "新词" : (card.attempt > 0 ? "再试一次" : "复习"),
+                    text: card.isNew
+                        ? String(localized: "card.tag.new", defaultValue: "新词", comment: "Tag on a single flashcard: this is a new word (singular)")
+                        : (card.attempt > 0 ? String(localized: "再试一次") : (card.isPractice ? String(localized: "再看一遍") : String(localized: "复习"))),
                     emoji: card.isNew ? "✨" : "🔁",
                     style: .tinted(card.isNew ? Theme.brandSoft : Pastel.lavender)
                 )
@@ -255,7 +257,7 @@ private struct CardBack: View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 WordHeader(word: word, compact: true)
 
-                Text(word.explanationStatus == .ready ? word.explanation : (word.gloss.isEmpty ? "解释还在生成中，先凭印象评分吧" : word.gloss))
+                Text(word.explanationStatus == .ready ? word.explanation : (word.gloss.isEmpty ? String(localized: "解释还在生成中，先凭印象评分吧") : word.gloss))
                     .font(.title2.weight(.bold))
                     .foregroundStyle(Theme.ink)
 
@@ -329,13 +331,15 @@ private struct RatingButton: View {
     }
 
     private var intervalText: String {
-        guard let interval else { return rating == .again ? "再看一遍" : "本轮练习" }
-        if rating == .again { return "稍后再来" }
+        guard let interval else {
+            return rating == .again ? String(localized: "再看一遍") : String(localized: "本轮练习", comment: "Rating button subtitle: practice only, schedule unchanged")
+        }
+        if rating == .again { return String(localized: "稍后再来", comment: "Rating button subtitle: see it again later in this session") }
         switch interval {
-        case 1: return "明天"
-        case 2..<14: return "\(interval) 天后"
-        case 14..<60: return "\(interval / 7) 周后"
-        default: return "\(interval / 30) 个月后"
+        case 1: return String(localized: "明天")
+        case 2..<14: return String(localized: "\(interval) 天后", comment: "Rating button subtitle: next review in N days")
+        case 14..<60: return String(localized: "\(interval / 7) 周后", comment: "Rating button subtitle: next review in N weeks")
+        default: return String(localized: "\(interval / 30) 个月后", comment: "Rating button subtitle: next review in N months")
         }
     }
 }

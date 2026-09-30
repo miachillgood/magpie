@@ -35,33 +35,68 @@ enum HomeMood: String, CaseIterable, Sendable {
 }
 
 enum HomeDates {
-    private static let weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
-
     /// 一周内的日子叫“今天 / 昨天 / 周六”，再早的返回 nil（只显示日期）
-    static func dayName(for date: Date, now: Date = Date(), calendar: Calendar = .current) -> String? {
+    static func dayName(for date: Date, now: Date = Date(), calendar: Calendar = .current, locale: Locale = .current) -> String? {
         let days = daysBetween(date, now, calendar: calendar)
         switch days {
-        case 0: return "今天"
-        case 1: return "昨天"
-        case 2...6: return weekdays[calendar.component(.weekday, from: date) - 1]
+        case 0: return String(localized: "今天")
+        case 1: return String(localized: "昨天")
+        case 2...6: return weekday(for: date, calendar: calendar, locale: locale)
         default: return nil
         }
     }
 
-    /// “9 月 28 日”；不是今年时带上年份
-    static func dateText(for date: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
-        let parts = calendar.dateComponents([.year, .month, .day], from: date)
-        let text = "\(parts.month ?? 0) 月 \(parts.day ?? 0) 日"
-        guard parts.year != calendar.component(.year, from: now) else { return text }
-        return "\(parts.year ?? 0) 年 " + text
+    /// 星期几：周六 / Saturday / 土曜日 / 토요일 / sábado
+    static func weekday(for date: Date, calendar: Calendar = .current, locale: Locale = .current) -> String {
+        // 中文用“周六”，其它语言用完整写法
+        let width: Date.FormatStyle.Symbol.Weekday = locale.language.languageCode == .chinese ? .abbreviated : .wide
+        return date.formatted(style(calendar: calendar, locale: locale).weekday(width))
+    }
+
+    /// 最窄的星期写法，放在一周的小圆环上面：六 / S / 土 / 토
+    static func narrowWeekday(for date: Date, calendar: Calendar = .current, locale: Locale = .current) -> String {
+        date.formatted(style(calendar: calendar, locale: locale).weekday(.narrow))
+    }
+
+    /// 月份名：9月 / September / 9月 / 9월 / Septiembre（中文用“9月”，不用“九月”）
+    static func monthName(for date: Date, calendar: Calendar = .current, locale: Locale = .current) -> String {
+        let width: Date.FormatStyle.Symbol.Month = locale.language.languageCode == .chinese ? .abbreviated : .wide
+        let name = date.formatted(style(calendar: calendar, locale: locale).month(width))
+        return name.prefix(1).uppercased(with: locale) + name.dropFirst()
+    }
+
+    /// 以后的日子怎么叫：明天 / 后天 / 周四 / 10月8日
+    static func upcomingName(for date: Date, now: Date = Date(), calendar: Calendar = .current, locale: Locale = .current) -> String {
+        let days = daysBetween(now, date, calendar: calendar)
+        switch days {
+        case 0: return String(localized: "今天")
+        case 1: return String(localized: "明天")
+        case 2: return String(localized: "后天", comment: "The day after tomorrow")
+        case 3...6: return weekday(for: date, calendar: calendar, locale: locale)
+        default: return dateText(for: date, now: now, calendar: calendar, locale: locale)
+        }
+    }
+
+    /// “9月28日” / “Sep 28”；不是今年时带上年份
+    static func dateText(for date: Date, now: Date = Date(), calendar: Calendar = .current, locale: Locale = .current) -> String {
+        var format = style(calendar: calendar, locale: locale).month(.abbreviated).day()
+        if calendar.component(.year, from: date) != calendar.component(.year, from: now) {
+            format = format.year()
+        }
+        return date.formatted(format)
     }
 
     /// 句子开头的“什么时候”：刚刚 / 今天 / 昨天 / 周六 / 9 月 23 日
-    static func whenPhrase(for date: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
+    static func whenPhrase(for date: Date, now: Date = Date(), calendar: Calendar = .current, locale: Locale = .current) -> String {
         if calendar.isDate(date, inSameDayAs: now), now.timeIntervalSince(date) < 90 * 60 {
-            return "刚刚"
+            return String(localized: "刚刚", comment: "Just now (happened within the last hour or so)")
         }
-        return dayName(for: date, now: now, calendar: calendar) ?? dateText(for: date, now: now, calendar: calendar)
+        return dayName(for: date, now: now, calendar: calendar, locale: locale)
+            ?? dateText(for: date, now: now, calendar: calendar, locale: locale)
+    }
+
+    private static func style(calendar: Calendar, locale: Locale) -> Date.FormatStyle {
+        Date.FormatStyle(date: .omitted, time: .omitted, locale: locale, calendar: calendar, timeZone: calendar.timeZone)
     }
 
     /// 按天分组，新的日子在前，组内保持原顺序

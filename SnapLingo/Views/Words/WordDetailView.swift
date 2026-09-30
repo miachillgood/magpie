@@ -99,7 +99,7 @@ struct WordDetailView: View {
     private var progressCard: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
-                Text("\(word.state.emoji) \(word.state.displayName)")
+                Text(verbatim: "\(word.state.emoji) \(word.state.displayName)")
                     .font(.headline.weight(.heavy))
                 Spacer()
                 Text(nextReviewText)
@@ -110,7 +110,7 @@ struct WordDetailView: View {
                 HStack(spacing: Spacing.sm) {
                     stat("\(logs.count)", "复习次数", Pastel.sky)
                     stat("\(logs.filter { $0.rating.isSuccess }.count * 100 / max(logs.count, 1))%", "记住率", Pastel.mint)
-                    stat("\(word.intervalDays)天", "当前间隔", Pastel.lavender)
+                    stat(String(localized: "\(word.intervalDays) 天", comment: "Current review interval in days"), "当前间隔", Pastel.lavender)
                 }
                 HStack(spacing: 4) {
                     ForEach(logs.prefix(14).reversed()) { log in
@@ -124,7 +124,7 @@ struct WordDetailView: View {
         .card(padding: Spacing.lg)
     }
 
-    private func stat(_ value: String, _ label: String, _ color: Color) -> some View {
+    private func stat(_ value: String, _ label: LocalizedStringKey, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value).font(.headline.weight(.heavy).monospacedDigit())
             Text(label).font(.caption.weight(.semibold)).foregroundStyle(Theme.ink.opacity(0.6))
@@ -135,13 +135,14 @@ struct WordDetailView: View {
     }
 
     private var nextReviewText: String {
-        if word.excludedFromReview { return "不再复习" }
+        if word.excludedFromReview { return String(localized: "不再复习") }
         switch word.state {
-        case .new: return "还没开始学"
+        case .new: return String(localized: "还没开始学")
         default:
             let today = Calendar.current.startOfDay(for: Date())
-            if word.dueDate <= today { return "今天复习" }
-            return "下次 " + word.dueDate.formatted(.relative(presentation: .named))
+            if word.dueDate <= today { return String(localized: "今天复习") }
+            let relative = word.dueDate.formatted(.relative(presentation: .named))
+            return String(localized: "下次 \(relative)", comment: "Next review, e.g. 'Next: in 3 days'")
         }
     }
 
@@ -190,7 +191,6 @@ struct WordHeader: View {
                             .font(.subheadline.italic())
                             .foregroundStyle(.secondary)
                     }
-                    CEFRBadge(level: word.cefr)
                 }
             }
             Spacer(minLength: 0)
@@ -300,9 +300,9 @@ struct ExplanationCard: View {
         .card(padding: Spacing.lg, radius: Radius.hero)
     }
 
-    private func block<Content: View>(title: String, emoji: String, @ViewBuilder content: () -> Content) -> some View {
+    private func block<Content: View>(title: LocalizedStringKey, emoji: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text("\(emoji) \(title)")
+            HStack(spacing: 4) { Text(verbatim: emoji); Text(title) }
                 .font(.caption.weight(.heavy))
                 .foregroundStyle(.secondary)
             content()

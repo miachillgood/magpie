@@ -17,10 +17,10 @@ enum ReviewRating: Int, Codable, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .again: "忘了"
-        case .hard:  "模糊"
-        case .good:  "认识"
-        case .easy:  "太简单"
+        case .again: String(localized: "忘了", comment: "Flashcard rating button")
+        case .hard:  String(localized: "模糊", comment: "Flashcard rating button")
+        case .good:  String(localized: "认识", comment: "Flashcard rating button")
+        case .easy:  String(localized: "太简单", comment: "Flashcard rating button")
         }
     }
 

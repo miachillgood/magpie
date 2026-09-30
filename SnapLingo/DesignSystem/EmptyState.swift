@@ -9,9 +9,9 @@ import SwiftUI
 struct IllustratedEmptyState: View {
     var emoji: String
     var color: Color
-    var title: String
-    var message: String
-    var buttonTitle: String?
+    var title: LocalizedStringKey
+    var message: LocalizedStringKey
+    var buttonTitle: LocalizedStringKey?
     var action: (() -> Void)?
 
     @State private var bounce = false

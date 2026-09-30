@@ -120,8 +120,11 @@ struct LevelTestView: View {
         let level = test.estimatedLevel
         return VStack(spacing: Spacing.lg) {
             Spacer()
-            Text(level.code)
-                .font(.system(size: 72, weight: .heavy, design: .rounded))
+            Text(level.displayName)
+                .font(.system(size: 44, weight: .heavy))
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .padding(.horizontal, 16)
                 .foregroundStyle(Theme.ink)
                 .frame(width: 180, height: 180)
                 .background(Pastel.lavender, in: .circle)
@@ -135,7 +138,7 @@ struct LevelTestView: View {
                     .font(.body)
                     .foregroundStyle(.secondary)
             }
-            Text("✨ 扫描时会优先推荐 \(level.code)\(level.next.map { "–\($0.code)" } ?? "") 难度的词")
+            Text("扫描时会优先推荐和你水平相当、稍微难一点的词")
                 .font(.subheadline.weight(.semibold))
                 .card()
             Spacer()

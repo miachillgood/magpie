@@ -102,12 +102,12 @@ struct MeshBackdrop: View {
 
 /// 主按钮：墨黑胶囊
 struct PrimaryButton: View {
-    var title: String
+    var title: LocalizedStringKey
     var symbol: String?
     var trailingSymbol: String?
     var action: () -> Void
 
-    init(title: String, symbol: String? = nil, trailingSymbol: String? = nil, action: @escaping () -> Void) {
+    init(title: LocalizedStringKey, symbol: String? = nil, trailingSymbol: String? = nil, action: @escaping () -> Void) {
         self.title = title
         self.symbol = symbol
         self.trailingSymbol = trailingSymbol
@@ -134,7 +134,7 @@ struct PrimaryButton: View {
 
 /// 次按钮：白色胶囊
 struct SecondaryButton: View {
-    var title: String
+    var title: LocalizedStringKey
     var symbol: String?
     var action: () -> Void
 
@@ -216,16 +216,33 @@ struct Pill: View {
         case ink
     }
 
-    var text: String
+    private var label: Text
     var symbol: String?
     var emoji: String?
     var style: Style = .neutral
+
+    init(text: LocalizedStringKey, symbol: String? = nil, emoji: String? = nil, style: Style = .neutral) {
+        self.init(label: Text(text), symbol: symbol, emoji: emoji, style: style)
+    }
+
+    /// 已经本地化好的文字（场景名、状态名）原样显示；字面量仍然走上面的本地化版本
+    @_disfavoredOverload
+    init<S: StringProtocol>(text: S, symbol: String? = nil, emoji: String? = nil, style: Style = .neutral) {
+        self.init(label: Text(text), symbol: symbol, emoji: emoji, style: style)
+    }
+
+    private init(label: Text, symbol: String?, emoji: String?, style: Style) {
+        self.label = label
+        self.symbol = symbol
+        self.emoji = emoji
+        self.style = style
+    }
 
     var body: some View {
         HStack(spacing: 4) {
             if let emoji { Text(emoji) }
             if let symbol { Image(systemName: symbol).imageScale(.small) }
-            Text(text)
+            label
         }
         .font(.caption.weight(.bold))
         .lineLimit(1)
@@ -252,23 +269,6 @@ struct Pill: View {
         case .tinted(let color): color
         case .solid(let color): color
         case .ink: Theme.ink
-        }
-    }
-}
-
-/// CEFR 等级徽章
-struct CEFRBadge: View {
-    var level: CEFRLevel?
-
-    var body: some View {
-        if let level {
-            Text(level.code)
-                .font(.caption2.weight(.heavy).monospaced())
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3)
-                .background(Theme.insetFill, in: .capsule)
-                .accessibilityLabel("难度 \(level.code)")
         }
     }
 }
@@ -303,9 +303,9 @@ struct WordSticker: View {
 // MARK: - 区块标题
 
 struct SectionHeader<Trailing: View>: View {
-    var title: String
+    var title: LocalizedStringKey
     var emoji: String?
-    var subtitle: String?
+    var subtitle: LocalizedStringKey?
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
@@ -327,7 +327,7 @@ struct SectionHeader<Trailing: View>: View {
 }
 
 extension SectionHeader where Trailing == EmptyView {
-    init(title: String, emoji: String? = nil, subtitle: String? = nil) {
+    init(title: LocalizedStringKey, emoji: String? = nil, subtitle: LocalizedStringKey? = nil) {
         self.init(title: title, emoji: emoji, subtitle: subtitle) { EmptyView() }
     }
 }
@@ -336,7 +336,7 @@ extension SectionHeader where Trailing == EmptyView {
 
 struct StatTile: View {
     var value: Int
-    var label: String
+    var label: LocalizedStringKey
     var emoji: String
     var color: Color = Pastel.sand
     var suffix: String = ""
@@ -369,17 +369,35 @@ struct StatTile: View {
 // MARK: - 筛选芯片
 
 struct FilterChip: View {
-    var title: String
+    private var title: Text
     var emoji: String?
     var count: Int?
     var isSelected: Bool
     var action: () -> Void
 
+    init(title: LocalizedStringKey, emoji: String? = nil, count: Int? = nil, isSelected: Bool, action: @escaping () -> Void) {
+        self.init(label: Text(title), emoji: emoji, count: count, isSelected: isSelected, action: action)
+    }
+
+    /// 已经本地化好的文字（筛选项名）原样显示；字面量仍然走上面的本地化版本
+    @_disfavoredOverload
+    init<S: StringProtocol>(title: S, emoji: String? = nil, count: Int? = nil, isSelected: Bool, action: @escaping () -> Void) {
+        self.init(label: Text(title), emoji: emoji, count: count, isSelected: isSelected, action: action)
+    }
+
+    private init(label: Text, emoji: String?, count: Int?, isSelected: Bool, action: @escaping () -> Void) {
+        self.title = label
+        self.emoji = emoji
+        self.count = count
+        self.isSelected = isSelected
+        self.action = action
+    }
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 if let emoji { Text(emoji) }
-                Text(title)
+                title
                 if let count {
                     Text("\(count)")
                         .foregroundStyle(isSelected ? Theme.onInk.opacity(0.6) : .secondary)

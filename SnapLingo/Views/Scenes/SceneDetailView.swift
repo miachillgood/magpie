@@ -18,16 +18,15 @@ struct SceneDetailView: View {
     @State private var confirmingDelete = false
     @State private var showingOCRText = false
     @State private var showsStickers = true
+    @State private var selectedWordID: UUID?
 
     private var sortedWords: [VocabWord] {
         scan.words.sorted { $0.addedAt > $1.addedAt }
     }
 
     private var studyableCount: Int {
-        let today = Calendar.current.startOfDay(for: Date())
-        return scan.words.filter { word in
-            !word.excludedFromReview && (word.state == .new || word.dueDate <= today)
-        }.count
+        let counts = scan.studyCounts()
+        return counts.due + counts.new
     }
 
     var body: some View {
@@ -44,13 +43,7 @@ struct SceneDetailView: View {
             .padding(.horizontal, Spacing.lg)
             .padding(.bottom, 40)
         }
-        .background(alignment: .top) {
-            scan.scene.pastel
-                .frame(height: 380)
-                .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
-                .ignoresSafeArea()
-        }
-        .background(PaperBackground())
+        .background(Theme.cream.ignoresSafeArea())
         .navigationTitle(scan.displayTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -62,7 +55,7 @@ struct SceneDetailView: View {
                     }
                     Picker(selection: $scan.sceneRaw) {
                         ForEach(SceneType.allCases) { scene in
-                            Text("\(scene.emoji) \(scene.displayName)").tag(scene.rawValue)
+                            Label(scene.displayName, systemImage: scene.symbol).tag(scene.rawValue)
                         }
                     } label: {
                         Label("场景类型", systemImage: "tag")
@@ -106,7 +99,7 @@ struct SceneDetailView: View {
         }
     }
 
-    // MARK: - 照片 + 单词贴纸
+    // MARK: - 照片 + 荧光笔
 
     @ViewBuilder
     private var photo: some View {
@@ -116,7 +109,7 @@ struct SceneDetailView: View {
                 .scaledToFit()
                 .overlay {
                     if showsStickers {
-                        StickerLayer(scan: scan)
+                        WordMarkLayer(scan: scan, selected: $selectedWordID)
                             .transition(.opacity)
                     }
                 }
@@ -126,9 +119,12 @@ struct SceneDetailView: View {
                 .softShadow()
                 .overlay(alignment: .bottomTrailing) {
                     Button {
-                        withAnimation(.snappy) { showsStickers.toggle() }
+                        withAnimation(.snappy) {
+                            showsStickers.toggle()
+                            selectedWordID = nil
+                        }
                     } label: {
-                        Image(systemName: showsStickers ? "tag.fill" : "tag")
+                        Image(systemName: showsStickers ? "highlighter" : "eye.slash")
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(Theme.ink)
                             .frame(width: 38, height: 38)
@@ -136,7 +132,7 @@ struct SceneDetailView: View {
                             .softShadow()
                     }
                     .padding(18)
-                    .accessibilityLabel(showsStickers ? "隐藏单词贴纸" : "显示单词贴纸")
+                    .accessibilityLabel(showsStickers ? "隐藏照片上的单词标记" : "显示照片上的单词标记")
                 }
                 .padding(.top, Spacing.xs)
         }
@@ -144,7 +140,12 @@ struct SceneDetailView: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: Spacing.sm) {
-            EmojiTile(emoji: scan.scene.emoji, color: scan.scene.pastel, size: 52)
+            Image(systemName: scan.scene.symbol)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(Theme.homeInk)
+                .frame(width: 52, height: 52)
+                .background(Theme.placeChip, in: .rect(cornerRadius: 16, style: .continuous))
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(scan.displayTitle)
                     .font(.title2.weight(.heavy))
@@ -176,7 +177,7 @@ struct SceneDetailView: View {
     @ViewBuilder
     private var wordsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(title: "保存的词", emoji: "📝", subtitle: "\(scan.words.count) 个")
+            SectionHeader(title: "保存的词", subtitle: "\(scan.words.count) 个")
             if scan.words.isEmpty {
                 Text("还没有从这个场景保存单词。")
                     .font(.subheadline)
@@ -217,27 +218,57 @@ struct SceneDetailView: View {
     }
 }
 
-/// 在原图上把已保存的单词做成贴纸，点一下进入单词详情
-private struct StickerLayer: View {
+/// 在原图上用荧光笔标出保存的词（不遮住原文）。点一下弹出释义，再点释义进入单词详情
+private struct WordMarkLayer: View {
     var scan: Scan
+    @Binding var selected: UUID?
 
     var body: some View {
         GeometryReader { proxy in
-            let anchors = SceneAnchors.anchors(for: scan)
-            let byID = Dictionary(uniqueKeysWithValues: scan.words.map { ($0.id, $0) })
-            ForEach(Array(anchors.enumerated()), id: \.element.id) { index, anchor in
-                if let word = byID[anchor.id] {
-                    NavigationLink(value: word) {
-                        WordSticker(word: anchor.word, gloss: anchor.gloss, compact: proxy.size.width < 300)
+            let spots = WordCrops.spots(for: scan, limit: 60)
+            ZStack(alignment: .topLeading) {
+                // 点照片空白处收起释义
+                Color.clear
+                    .contentShape(.rect)
+                    .onTapGesture { withAnimation(.snappy) { selected = nil } }
+
+                ForEach(spots) { spot in
+                    let rect = frame(of: spot.rect, in: proxy.size)
+                    RoundedRectangle(cornerRadius: max(3, rect.height * 0.25), style: .continuous)
+                        .fill(Theme.marker.opacity(selected == spot.id ? 0.95 : 0.6))
+                        .blendMode(.multiply)
+                        .frame(width: rect.width, height: rect.height)
+                        .padding(6)
+                        .contentShape(.rect)
+                        .onTapGesture {
+                            withAnimation(.snappy) { selected = selected == spot.id ? nil : spot.id }
+                        }
+                        .position(x: rect.midX, y: rect.midY)
+                        .accessibilityLabel(spot.word.word)
+                        .accessibilityAddTraits(.isButton)
+                }
+
+                if let id = selected, let spot = spots.first(where: { $0.id == id }) {
+                    let rect = frame(of: spot.rect, in: proxy.size)
+                    NavigationLink(value: spot.word) {
+                        WordSticker(word: spot.word.word, gloss: HomeView.shortGloss(spot.word.gloss) ?? "", highlighted: true)
                     }
                     .buttonStyle(.pressable)
-                    .rotationEffect(.degrees(index.isMultiple(of: 2) ? -2 : 2))
                     .position(
-                        x: min(max(anchor.point.x * proxy.size.width, 60), proxy.size.width - 60),
-                        y: min(max(anchor.point.y * proxy.size.height - 16, 18), proxy.size.height - 18)
+                        x: min(max(rect.midX, 80), proxy.size.width - 80),
+                        y: rect.minY - 24 < 20 ? rect.maxY + 24 : rect.minY - 24
                     )
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
+                    .accessibilityHint("查看这个词")
                 }
             }
         }
+        .sensoryFeedback(.selection, trigger: selected)
+    }
+
+    /// 归一化坐标 → 视图坐标，四周稍微放大一点
+    private func frame(of rect: CGRect, in size: CGSize) -> CGRect {
+        CGRect(x: rect.minX * size.width, y: rect.minY * size.height, width: rect.width * size.width, height: rect.height * size.height)
+            .insetBy(dx: -3, dy: -2)
     }
 }

@@ -31,12 +31,6 @@ struct RootTabView: View {
             Tab("复习", systemImage: "rectangle.on.rectangle.angled", value: AppTab.review) {
                 ReviewView().hidingSystemTabBar()
             }
-            Tab("词库", systemImage: "book.closed", value: AppTab.words) {
-                WordsView().hidingSystemTabBar()
-            }
-            Tab("我的", systemImage: "person", value: AppTab.me) {
-                MeView().hidingSystemTabBar()
-            }
         }
         .fullScreenCover(isPresented: $coordinator.showingScan) {
             ScanFlowView()
@@ -47,11 +41,30 @@ struct RootTabView: View {
         .onChange(of: hasStudyWork, initial: true) { _, pending in
             coordinator.reviewPending = pending
         }
+        #if DEBUG
+        .task { openDebugScreen() }
+        #endif
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard phase == .active else { return }
-            SpeechService.shared.accent = UserSettings.current(in: context).accent
+            let settings = UserSettings.current(in: context)
+            SpeechService.shared.accent = settings.accent
             ExplanationQueue.shared.run(context: context)
             StudyReminder.refresh(context: context)
+            Task { await AppleAccount.refreshCredentialState(settings: settings, context: context) }
         }
     }
+
+    #if DEBUG
+    /// 截图用：-screen review / camera / study 直接打开对应页面（我的页在 HomeView 里处理）
+    private func openDebugScreen() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-screen"), index + 1 < arguments.count else { return }
+        switch arguments[index + 1] {
+        case "review": coordinator.selectedTab = .review
+        case "camera": coordinator.startScan()
+        case "study": coordinator.startStudy()
+        default: break
+        }
+    }
+    #endif
 }

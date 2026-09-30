@@ -16,18 +16,14 @@ enum StudyPace: Int, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .relaxed:  "轻松"
-        case .standard: "标准"
-        case .intense:  "进取"
+        case .relaxed:  String(localized: "轻松", comment: "Study pace: relaxed")
+        case .standard: String(localized: "标准", comment: "Study pace: standard")
+        case .intense:  String(localized: "进取", comment: "Study pace: intense")
         }
     }
 
     var detail: String {
-        switch self {
-        case .relaxed:  "每天 5 个新词，约 5 分钟"
-        case .standard: "每天 10 个新词，约 10 分钟"
-        case .intense:  "每天 20 个新词，约 20 分钟"
-        }
+        String(localized: "每天 \(rawValue) 个新词，约 \(rawValue) 分钟")
     }
 
     var symbol: String {
@@ -50,15 +46,10 @@ enum SpeechAccent: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
+    /// 国家名，跟随界面语言（新西兰 / New Zealand / ニュージーランド）
     var title: String {
-        switch self {
-        case .newZealand: "新西兰"
-        case .australia:  "澳大利亚"
-        case .britain:    "英国"
-        case .america:    "美国"
-        case .canada:     "加拿大"
-        case .ireland:    "爱尔兰"
-        }
+        let region = String(rawValue.suffix(2))
+        return Locale.current.localizedString(forRegionCode: region) ?? region
     }
 
     /// 根据当前地区选择默认口音
@@ -89,7 +80,24 @@ final class UserSettings {
     var accentRaw: String = SpeechAccent.regionDefault.rawValue
     var createdAt: Date = Date()
 
+    // 个人资料（只存在这台手机上）
+    var nickname: String = ""
+    @Attribute(.externalStorage) var avatarData: Data?
+    /// 通过 Apple 登录后的用户标识；为空表示没登录
+    var appleUserID: String = ""
+    var appleEmail: String = ""
+
+    /// 母语：释义、例句翻译用什么语言生成
+    var nativeLanguageRaw: String = NativeLanguage().rawValue
+
     init() {}
+
+    var nativeLanguage: NativeLanguage {
+        get { NativeLanguage(rawValue: nativeLanguageRaw) ?? NativeLanguage() }
+        set { nativeLanguageRaw = newValue.rawValue }
+    }
+
+    var isSignedIn: Bool { !appleUserID.isEmpty }
 
     var level: CEFRLevel { CEFRLevel.from(score: levelScore) }
 

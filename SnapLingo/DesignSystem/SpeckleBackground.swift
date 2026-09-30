@@ -1,0 +1,122 @@
+//
+//  SpeckleBackground.swift
+//  SnapLingo
+//
+//  带细小斑点的纸感底纹（像水磨石 / 再生纸）：一块低饱和的实色，上面撒深浅两种小斑点。
+//  斑点位置用固定的随机种子生成，每次打开都一样，不会跳动。
+//
+
+import SwiftUI
+
+struct SpeckleBackground: View {
+    var base: Color
+    /// 每多少平方点放一颗斑点（越小越密）
+    var areaPerSpeck: CGFloat = 170
+
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        Canvas(opaque: false, rendersAsynchronously: true) { context, size in
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(base))
+            let dark = scheme == .dark
+            var random = SeededRandom(seed: 0x5A1E_1260)
+            let count = Int(size.width * size.height / areaPerSpeck)
+            for _ in 0..<count {
+                let x = random.next() * size.width
+                let y = random.next() * size.height
+                let kind = random.next()
+                let radius = 0.45 + random.next() * random.next() * 1.6
+                // 大部分是深色小点，少量浅色点，偶尔一颗稍大的“碎石”
+                let color: Color
+                if kind < 0.62 {
+                    color = dark ? .white.opacity(0.10 + random.next() * 0.08) : .black.opacity(0.09 + random.next() * 0.10)
+                } else if kind < 0.92 {
+                    color = dark ? .black.opacity(0.30) : .white.opacity(0.55 + random.next() * 0.3)
+                } else {
+                    color = dark ? .white.opacity(0.14) : Color(hex: 0x6B4A34).opacity(0.16)
+                }
+                let stretch = 0.75 + random.next() * 0.6
+                let rect = CGRect(x: x - radius, y: y - radius * stretch, width: radius * 2, height: radius * 2 * stretch)
+                context.fill(Path(ellipseIn: rect), with: .color(color))
+            }
+        }
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
+    }
+}
+
+/// 页面顶部的主题色斑点底纹，往下很快过渡成透明（露出下面的浅灰）；复习页和「我的」共用
+struct ThemeWash: View {
+    var height: CGFloat = 560
+    @AppStorage(HomeTheme.storageKey) private var themeRaw = HomeTheme.sky.rawValue
+
+    var body: some View {
+        SpeckleBackground(base: HomeTheme(storedValue: themeRaw).base)
+            .frame(height: height)
+            .mask {
+                LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: 0.5),
+                        .init(color: .clear, location: 0.82)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .padding(.top, -160)
+            .allowsHitTesting(false)
+    }
+}
+
+/// 可重复的伪随机数（线性同余），返回 0..<1
+private struct SeededRandom {
+    private var state: UInt64
+
+    init(seed: UInt64) { state = seed }
+
+    mutating func next() -> CGFloat {
+        state = state &* 6364136223846793005 &+ 1442695040888963407
+        return CGFloat((state >> 33) % 1_000_000) / 1_000_000
+    }
+}
+
+/// 首页顶部斑点底纹的主题色，在「我的」里选；默认灰蓝
+enum HomeTheme: String, CaseIterable, Identifiable {
+    case sky
+    case sand
+    case lilac
+    case sage
+    case blush
+    case stone
+
+    static let storageKey = "homeTheme"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .sky: String(localized: "灰蓝", comment: "Theme color name (a muted color)")
+        case .sand: String(localized: "暖沙", comment: "Theme color name (a muted color)")
+        case .lilac: String(localized: "灰紫", comment: "Theme color name (a muted color)")
+        case .sage: String(localized: "灰绿", comment: "Theme color name (a muted color)")
+        case .blush: String(localized: "灰粉", comment: "Theme color name (a muted color)")
+        case .stone: String(localized: "石灰", comment: "Theme color name (a muted color)")
+        }
+    }
+
+    var base: Color {
+        switch self {
+        case .sky: Color(light: UIColor(hex: 0xD8E2EC), dark: UIColor(hex: 0x252E38))
+        case .sand: Color(light: UIColor(hex: 0xF1DCC6), dark: UIColor(hex: 0x3A2E24))
+        case .lilac: Color(light: UIColor(hex: 0xE2DBEB), dark: UIColor(hex: 0x2D2836))
+        case .sage: Color(light: UIColor(hex: 0xDAE4D0), dark: UIColor(hex: 0x28311F))
+        case .blush: Color(light: UIColor(hex: 0xF0DADA), dark: UIColor(hex: 0x382628))
+        case .stone: Color(light: UIColor(hex: 0xE4E1DA), dark: UIColor(hex: 0x2C2A27))
+        }
+    }
+
+    init(storedValue: String) {
+        self = HomeTheme(rawValue: storedValue) ?? .sky
+    }
+}

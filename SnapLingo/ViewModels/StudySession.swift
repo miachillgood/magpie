@@ -13,6 +13,8 @@ final class StudySession {
         let id = UUID()
         let word: VocabWord
         let isNew: Bool
+        /// 还没到期、顺便再看一遍的词：评分不改变复习安排
+        var isPractice = false
         /// 第几次出现（0 = 第一次）
         let attempt: Int
 
@@ -33,12 +35,14 @@ final class StudySession {
     private(set) var ratingCount = 0
     let initialCount: Int
 
-    init(scope: StudyScope, reviews: [VocabWord], news: [VocabWord]) {
+    init(scope: StudyScope, reviews: [VocabWord], news: [VocabWord], practice: [VocabWord] = []) {
         self.scope = scope
         let reviewCards = reviews.map { Card(word: $0, isNew: false, attempt: 0) }
         let newCards = news.map { Card(word: $0, isNew: true, attempt: 0) }
-        self.queue = reviewCards + newCards
-        self.initialCount = reviewCards.count + newCards.count
+        let practiceCards = practice.map { Card(word: $0, isNew: false, isPractice: true, attempt: 0) }
+        let cards = reviewCards + newCards + practiceCards
+        self.queue = cards
+        self.initialCount = cards.count
         self.newWordIDs = Set(news.map(\.id))
     }
 
@@ -53,7 +57,7 @@ final class StudySession {
 
     /// 某个评分会把下次复习安排到几天后（本轮重试的卡不改排期）
     func previewInterval(for rating: ReviewRating) -> Int? {
-        guard let card = current, card.attempt == 0 else { return nil }
+        guard let card = current, card.attempt == 0, !card.isPractice else { return nil }
         return SpacedRepetition.schedule(card.word.srs, rating: rating, on: Date()).intervalDays
     }
 
@@ -62,7 +66,10 @@ final class StudySession {
         let word = card.word
         let now = Date()
 
-        if card.attempt == 0 {
+        if card.attempt == 0 && card.isPractice {
+            // 顺便再看一遍：只记本轮结果，不改排期、不写复习记录
+            firstRatings[word.id] = rating
+        } else if card.attempt == 0 {
             let settings = UserSettings.current(in: context)
             let wasNew = word.state == .new
             let next = SpacedRepetition.schedule(word.srs, rating: rating, on: now)
@@ -81,7 +88,7 @@ final class StudySession {
         }
 
         if rating == .again && card.attempt + 1 < StudySession.maxAttempts {
-            let retry = Card(word: word, isNew: card.isNew, attempt: card.attempt + 1)
+            let retry = Card(word: word, isNew: card.isNew, isPractice: card.isPractice, attempt: card.attempt + 1)
             let index = min(position + 1 + StudySession.retryGap, queue.count)
             queue.insert(retry, at: index)
         }
@@ -115,17 +122,38 @@ final class StudySession {
             )
 
         case .scan(let scanID):
-            let today = Calendar.current.startOfDay(for: now)
             let descriptor = FetchDescriptor<Scan>(predicate: #Predicate { $0.id == scanID })
             let scanWords = (try? context.fetch(descriptor).first)?.words ?? []
-            let active = scanWords.filter { !$0.excludedFromReview }
-            let reviews = active
-                .filter { $0.state != .new && $0.dueDate <= today }
-                .sorted { $0.dueDate < $1.dueDate }
-            let news = active
-                .filter { $0.state == .new }
-                .sorted { $0.addedAt < $1.addedAt }
-            return StudySession(scope: scope, reviews: reviews, news: news)
+            let parts = split(scanWords, now: now)
+            return StudySession(scope: scope, reviews: parts.reviews, news: parts.news)
+
+        case .day(let day):
+            let calendar = Calendar.current
+            let start = calendar.startOfDay(for: day)
+            let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
+            let descriptor = FetchDescriptor<Scan>(predicate: #Predicate { $0.createdAt >= start && $0.createdAt < end })
+            // 场景和单词是多对多，同一个词可能出现在这天的好几个场景里
+            var seen = Set<UUID>()
+            let dayWords = ((try? context.fetch(descriptor)) ?? [])
+                .flatMap(\.words)
+                .filter { seen.insert($0.id).inserted }
+            let parts = split(dayWords, now: now)
+            return StudySession(scope: scope, reviews: parts.reviews, news: parts.news, practice: parts.notDue)
+
+        case .words(let ids):
+            let byID = Dictionary(words.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            let parts = split(ids.compactMap { byID[$0] }, now: now)
+            return StudySession(scope: scope, reviews: parts.reviews, news: parts.news, practice: parts.notDue)
         }
+    }
+
+    /// 到期的（最逾期的在前）、新词（先保存的在前）、还没到期的学过的词
+    private static func split(_ words: [VocabWord], now: Date) -> (reviews: [VocabWord], news: [VocabWord], notDue: [VocabWord]) {
+        let today = Calendar.current.startOfDay(for: now)
+        let active = words.filter { !$0.excludedFromReview }
+        let reviews = active.filter { $0.isDue(today: today) }.sorted { $0.dueDate < $1.dueDate }
+        let news = active.filter { $0.state == .new }.sorted { $0.addedAt < $1.addedAt }
+        let notDue = active.filter { $0.state != .new && $0.dueDate > today }.sorted { $0.dueDate < $1.dueDate }
+        return (reviews, news, notDue)
     }
 }

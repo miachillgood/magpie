@@ -33,18 +33,8 @@ enum DemoData {
         }
     }
 
-    /// 逐条删除（多对多关系下批量删除会静默失败）
     static func wipe(_ context: ModelContext) {
-        func deleteAll<T: PersistentModel>(_ type: T.Type) {
-            for item in (try? context.fetch(FetchDescriptor<T>())) ?? [] {
-                context.delete(item)
-            }
-        }
-        deleteAll(VocabWord.self)
-        deleteAll(Scan.self)
-        deleteAll(ReviewLog.self)
-        deleteAll(WordFamiliarity.self)
-        try? context.save()
+        WordLibrary.wipeAll(context)
     }
 
     // MARK: - 示例内容
@@ -175,13 +165,16 @@ enum DemoData {
             word.repetitions = index % 3 + 1
             word.intervalDays = [1, 3, 8, 25][index % 4]
             word.state = word.intervalDays >= SpacedRepetition.masteredThreshold ? .mastered : .learning
+            // 有几个词忘过几次，好让「总是记不住的词」有内容
+            if index % 3 == 1 && word.state == .learning { word.lapses = index % 4 + 1 }
             word.dueDate = index % 2 == 0 ? today : (calendar.date(byAdding: .day, value: index % 5 + 1, to: today) ?? today)
         }
 
         // 最近 3 周的学习记录（热力图和连续天数）
         for dayOffset in 1...20 where dayOffset % 6 != 0 {
             guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { continue }
-            for item in 0..<(dayOffset % 4 + 2) {
+            // 每天复习量不一样：有的天没做完，有的天满环
+            for item in 0..<[3, 6, 10, 12][dayOffset % 4] {
                 let word = created[(dayOffset + item) % created.count]
                 context.insert(ReviewLog(wordID: word.id, word: word.word, rating: item % 4 == 0 ? .hard : .good, wasNew: false, intervalAfter: 3, reviewedAt: day))
             }

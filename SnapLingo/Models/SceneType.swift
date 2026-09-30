@@ -23,17 +23,17 @@ enum SceneType: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .restaurant:  "餐厅"
-        case .supermarket: "超市"
-        case .shopping:    "购物"
-        case .housing:     "租房"
-        case .campus:      "校园"
-        case .medical:     "医疗"
-        case .transport:   "交通"
-        case .bank:        "银行"
-        case .legal:       "文件"
-        case .signage:     "标识"
-        case .general:     "日常"
+        case .restaurant:  String(localized: "餐厅", comment: "Scene type name (short)")
+        case .supermarket: String(localized: "超市", comment: "Scene type name (short)")
+        case .shopping:    String(localized: "购物", comment: "Scene type name (short)")
+        case .housing:     String(localized: "租房", comment: "Scene type name (short)")
+        case .campus:      String(localized: "校园", comment: "Scene type name (short)")
+        case .medical:     String(localized: "医疗", comment: "Scene type name (short)")
+        case .transport:   String(localized: "交通", comment: "Scene type name (short)")
+        case .bank:        String(localized: "银行", comment: "Scene type name (short)")
+        case .legal:       String(localized: "文件", comment: "Scene type name (short)")
+        case .signage:     String(localized: "标识", comment: "Scene type name (short)")
+        case .general:     String(localized: "日常", comment: "Scene type name (short)")
         }
     }
 
@@ -53,20 +53,37 @@ enum SceneType: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// 写给 Claude 的判定说明
+    /// 写给 Claude 的场景名（英文，只给模型看）
+    var promptName: String {
+        switch self {
+        case .restaurant:  "restaurant or café"
+        case .supermarket: "supermarket"
+        case .shopping:    "shopping"
+        case .housing:     "housing and renting"
+        case .campus:      "campus"
+        case .medical:     "medical"
+        case .transport:   "transport"
+        case .bank:        "banking and tax"
+        case .legal:       "legal and government"
+        case .signage:     "public signs"
+        case .general:     "everyday"
+        }
+    }
+
+    /// 写给 Claude 的判定说明（英文，只给模型看）
     var promptHint: String {
         switch self {
-        case .restaurant:  "菜单、咖啡单、外卖单、饮品单"
-        case .supermarket: "食品包装、货架标签、成分表、营养成分、超市促销"
-        case .shopping:    "商店标签、衣物洗涤标、退换货政策、电子产品包装"
-        case .housing:     "租房广告、租约、房屋检查单、水电账单、公寓通知"
-        case .campus:      "课程表、作业要求、图书馆、学校通知、学生卡"
-        case .medical:     "药品说明、处方、诊所单据、保健品、疫苗、医疗保险"
-        case .transport:   "公交/火车时刻表、车票、停车标志、机场指引"
-        case .bank:        "银行卡、账单、转账单、税务信件"
-        case .legal:       "合同、条款、政府文件、法律声明、签证材料"
-        case .signage:     "路牌、公告、警示标语、营业时间、指示牌"
-        case .general:     "以上都不符合时"
+        case .restaurant:  "menus, coffee menus, takeaway receipts, drink lists"
+        case .supermarket: "food packaging, shelf labels, ingredient lists, nutrition facts, supermarket promotions"
+        case .shopping:    "store tags, clothing care labels, return policies, electronics packaging"
+        case .housing:     "rental listings, tenancy agreements, property inspection sheets, utility bills, building notices"
+        case .campus:      "timetables, assignment briefs, library, school notices, student cards"
+        case .medical:     "medicine leaflets, prescriptions, clinic forms, supplements, vaccines, health insurance"
+        case .transport:   "bus/train timetables, tickets, parking signs, airport directions"
+        case .bank:        "bank cards, statements, transfer forms, tax letters"
+        case .legal:       "contracts, terms, government documents, legal notices, visa paperwork"
+        case .signage:     "street signs, notices, warning signs, opening hours, directions"
+        case .general:     "when nothing above fits"
         }
     }
 

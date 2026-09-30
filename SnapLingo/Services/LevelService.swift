@@ -21,10 +21,10 @@ enum CandidateGroup: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .recommended: "推荐给你"
-        case .advanced:    "进阶挑战"
-        case .known:       "可能已经认识"
-        case .saved:       "已在词库"
+        case .recommended: String(localized: "推荐给你", comment: "Word picker group title")
+        case .advanced:    String(localized: "进阶挑战", comment: "Word picker group title")
+        case .known:       String(localized: "可能已经认识", comment: "Word picker group title")
+        case .saved:       String(localized: "已在词库", comment: "Word picker group title")
         }
     }
 

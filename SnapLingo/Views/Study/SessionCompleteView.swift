@@ -91,17 +91,18 @@ struct SessionCompleteView: View {
     }
 
     private var title: String {
-        if session.completedCount == 0 { return "今天没有要学的词" }
-        return plan.hasWork ? "这一轮完成！" : "今日计划完成！"
+        if session.completedCount == 0 { return String(localized: "今天没有要学的词") }
+        return plan.hasWork ? String(localized: "这一轮完成！") : String(localized: "今日计划完成！")
     }
 
     private var subtitle: String {
         if let nextDay {
             if Calendar.current.isDateInTomorrow(nextDay.date) {
-                return "明天有 \(nextDay.count) 个词要复习，记得回来。"
+                return String(localized: "明天有 \(nextDay.count) 个词要复习，记得回来。")
             }
-            return "下次复习在 \(nextDay.date.formatted(.dateTime.month().day()))，共 \(nextDay.count) 个词。"
+            let day = nextDay.date.formatted(.dateTime.month().day())
+            return String(localized: "下次复习在 \(day)，共 \(nextDay.count) 个词。")
         }
-        return "去扫描一个新场景，积累更多单词吧。"
+        return String(localized: "去扫描一个新场景，积累更多单词吧。")
     }
 }

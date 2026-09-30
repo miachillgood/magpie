@@ -23,6 +23,18 @@ protocol StudyEvent {
 }
 
 extension VocabWord: PlannableWord {}
+
+extension PlannableWord {
+    /// 学过、没被排除、今天或之前到期
+    func isDue(today: Date) -> Bool {
+        !excludedFromReview && state != .new && dueDate <= today
+    }
+
+    /// 现在可以学：新词，或已经到期
+    func isStudyable(today: Date) -> Bool {
+        !excludedFromReview && (state == .new || dueDate <= today)
+    }
+}
 extension ReviewLog: StudyEvent {}
 
 /// 今日计划
@@ -115,6 +127,23 @@ enum DailyPlanner {
             cursor = previous
         }
         return count
+    }
+
+    /// 历史上最长连续学习了几天
+    static func longestStreak<E: StudyEvent>(events: [E], calendar: Calendar = .current) -> Int {
+        let days = Set(events.map { calendar.startOfDay(for: $0.reviewedAt) }).sorted()
+        var best = 0, run = 0
+        var previous: Date?
+        for day in days {
+            if let previous, let next = calendar.date(byAdding: .day, value: 1, to: previous), calendar.isDate(next, inSameDayAs: day) {
+                run += 1
+            } else {
+                run = 1
+            }
+            best = max(best, run)
+            previous = day
+        }
+        return best
     }
 
     /// 未来几天的复习量（第 0 天包含已逾期的）

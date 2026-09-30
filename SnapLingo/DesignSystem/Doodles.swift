@@ -35,13 +35,49 @@ struct SparkleLines: Shape {
     }
 }
 
+/// 分隔线中间的小星：四笔交叉（像手画的 ✳）
+struct StarBurst: Shape {
+    func path(in rect: CGRect) -> Path {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        var path = Path()
+        for step in 0..<4 {
+            let angle = Double(step) * .pi / 4
+            let dx = CGFloat(cos(angle)) * radius, dy = CGFloat(sin(angle)) * radius
+            path.move(to: CGPoint(x: center.x - dx, y: center.y - dy))
+            path.addLine(to: CGPoint(x: center.x + dx, y: center.y + dy))
+        }
+        return path
+    }
+}
+
+/// 手写标签下面那道波浪线（100 × 10 的比例）
+struct Squiggle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let waves = 4
+        let step = rect.width / CGFloat(waves)
+        path.move(to: CGPoint(x: 0, y: rect.midY))
+        for index in 0..<waves {
+            let x = CGFloat(index) * step
+            path.addQuadCurve(
+                to: CGPoint(x: x + step, y: rect.midY),
+                control: CGPoint(x: x + step / 2, y: index.isMultiple(of: 2) ? rect.minY : rect.maxY)
+            )
+        }
+        return path
+    }
+}
+
 /// 荧光笔划过的底色：四个角不一样圆，微微倾斜，出现时从左往右划开
 struct MarkerHighlight: View {
     var drawn: Bool
     var color: Color = Theme.marker
+    /// 圆角缩放：框单个数字时用小一点的圆角
+    var cornerScale: CGFloat = 1
 
     var body: some View {
-        UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 22, bottomTrailingRadius: 16, topTrailingRadius: 20, style: .continuous)
+        UnevenRoundedRectangle(topLeadingRadius: 14 * cornerScale, bottomLeadingRadius: 22 * cornerScale, bottomTrailingRadius: 16 * cornerScale, topTrailingRadius: 20 * cornerScale, style: .continuous)
             .fill(color)
             .rotationEffect(.degrees(-1.5))
             .scaleEffect(x: drawn ? 1 : 0.001, anchor: .leading)

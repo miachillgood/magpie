@@ -2,205 +2,246 @@
 //  ReviewView.swift
 //  SnapLingo
 //
-//  “复习”标签页：今日计划、待学的词、未来一周的复习量。
+//  「复习」标签页（词库也合并在这里）：
+//  今日复习是主角，场景是特色，日期是一条轻量的线索，熟悉程度只在词库里当筛选。
 //
 
 import SwiftUI
 import SwiftData
-import Charts
 
 struct ReviewView: View {
     @Environment(AppCoordinator.self) private var coordinator
+    @Query(sort: \Scan.createdAt, order: .reverse) private var scans: [Scan]
     @Query private var words: [VocabWord]
     @Query(sort: \ReviewLog.reviewedAt) private var logs: [ReviewLog]
     @Query(sort: \UserSettings.createdAt) private var settingsRows: [UserSettings]
+    @State private var path = NavigationPath()
+    @State private var pickedDay: PickedDay?
+    @Namespace private var zoom
 
-    private var settings: UserSettings? { settingsRows.first }
+    var body: some View {
+        NavigationStack(path: $path) {
+            GeometryReader { proxy in
+                let scale = min(max(proxy.size.width / 390, 0.86), 1.15)
+                let side: CGFloat = proxy.size.width < 380 ? 20 : 24
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        header
+                            .padding(.horizontal, side)
+                            .padding(.top, 4)
+                        if words.isEmpty {
+                            emptyState
+                                .padding(.horizontal, side)
+                                .padding(.top, 60)
+                        } else {
+                            content(scale: scale, side: side)
+                        }
+                    }
+                    .padding(.bottom, 30)
+                    .background(alignment: .top) { ThemeWash() }
+                }
+                .scrollIndicators(.hidden)
+            }
+            .background(Theme.mist.ignoresSafeArea())
+            .toolbarVisibility(.hidden, for: .navigationBar)
+            .appTabBar()
+            .navigationDestination(for: ReviewRoute.self) { route in
+                switch route {
+                case .library(let filter, let searching):
+                    WordsView(initialFilter: filter, startsSearching: searching)
+                case .month(let month):
+                    MonthCalendarView(month: month) { pickedDay = PickedDay(date: $0) }
+                }
+            }
+            .libraryDestinations(zoom: zoom)
+            .sheet(item: $pickedDay) { picked in
+                DayReviewSheet(
+                    day: picked.date,
+                    onStudy: { studyDay(picked.date) },
+                    onOpenScan: { scan in
+                        pickedDay = nil
+                        path.append(scan)
+                    },
+                    onOpenWord: { word in
+                        pickedDay = nil
+                        path.append(word)
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+        }
+    }
+
+    // MARK: - 数据
+
+    private var today: Date { Calendar.current.startOfDay(for: Date()) }
 
     private var plan: DailyPlan {
-        guard let settings else { return .empty }
+        guard let settings = settingsRows.first else { return .empty }
         return StudyStore.plan(settings: settings, words: words, logs: logs)
     }
 
-    private var backlogCount: Int { words.filter { $0.state == .new && !$0.excludedFromReview }.count }
-
-    var body: some View {
-        NavigationStack {
-            Group {
-                if words.isEmpty {
-                    IllustratedEmptyState(
-                        emoji: "🗂️",
-                        color: Pastel.sky,
-                        title: "还没有要复习的词",
-                        message: "拍一个英文场景，挑几个词，之后每天在这里按计划复习。",
-                        buttonTitle: "扫描一个场景"
-                    ) { coordinator.startScan() }
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: Spacing.xl) {
-                            PlanCard(plan: plan, backlog: backlogCount)
-                            if backlogCount > plan.newIDs.count {
-                                backlogRow
-                            }
-                            if words.contains(where: { $0.state != .new }) {
-                                ForecastCard(days: DailyPlanner.forecast(words: words))
-                            }
-                        }
-                        .padding(.horizontal, Spacing.lg)
-                        .padding(.top, Spacing.sm)
-                        .padding(.bottom, 40)
-                    }
-                }
-            }
-            .background(PaperBackground())
-            .navigationTitle("复习")
-            .appTabBar()
+    /// 今天要学的词来自哪些场景，词多的在前
+    private func sources(for plan: DailyPlan) -> [Scan] {
+        let planned = Set(plan.reviewIDs + plan.newIDs)
+        var counts: [UUID: (scan: Scan, count: Int)] = [:]
+        for word in words where planned.contains(word.id) {
+            guard let scan = word.latestScan else { continue }
+            counts[scan.id, default: (scan, 0)].count += 1
         }
+        return counts.values
+            .sorted { $0.count != $1.count ? $0.count > $1.count : $0.scan.createdAt > $1.scan.createdAt }
+            .map(\.scan)
     }
 
-    private var backlogRow: some View {
-        Button {
-            coordinator.showWords(.new)
-        } label: {
-            HStack(spacing: Spacing.sm) {
-                EmojiTile(emoji: "📥", color: Pastel.peach, size: 48)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(backlogCount) 个词待学")
-                        .font(.headline.weight(.heavy))
-                        .contentTransition(.numericText())
-                    Text("每天按计划学一部分，不会一下子太多")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "arrow.right")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Theme.ink.opacity(0.4))
-            }
-            .card(padding: Spacing.sm + 2)
-        }
-        .buttonStyle(.pressable)
-        .foregroundStyle(Theme.ink)
-    }
-}
-
-// MARK: - 今日计划卡片
-
-private struct PlanCard: View {
-    @Environment(AppCoordinator.self) private var coordinator
-    var plan: DailyPlan
-    var backlog: Int
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) {
-            HStack(spacing: Spacing.lg) {
-                ZStack {
-                    PlanRingView(newProgress: plan.newProgress, reviewProgress: plan.reviewProgress, lineWidth: 13)
-                        .frame(width: 108, height: 108)
-                    if plan.isComplete {
-                        Text("🎉").font(.system(size: 34))
-                            .transition(.scale.combined(with: .opacity))
-                    } else {
-                        VStack(spacing: -2) {
-                            Text("\(plan.remaining)")
-                                .font(.system(size: 28, weight: .heavy, design: .rounded))
-                                .contentTransition(.numericText())
-                            Text("待完成")
-                                .font(.caption2.weight(.bold))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text(headline)
-                        .font(.title3.weight(.heavy))
-                    ProgressLine(color: Theme.newWords, title: "新词", done: plan.newDone, target: plan.newTarget)
-                    ProgressLine(color: Theme.reviews, title: "复习", done: plan.reviewsDone, target: plan.reviewTarget)
-                }
-            }
-
-            if plan.hasWork {
-                PrimaryButton(title: plan.doneToday > 0 ? "继续学习" : "开始今日学习", trailingSymbol: "arrow.right") {
-                    coordinator.startStudy()
-                }
-            } else if backlog > 0 {
-                SecondaryButton(title: "再学 5 个新词", symbol: "plus") {
-                    coordinator.startStudy(.today(extraNew: 5))
-                }
-            } else {
-                SecondaryButton(title: "扫描一个新场景", symbol: "camera.viewfinder") {
-                    coordinator.startScan()
-                }
-            }
-        }
-        .card(padding: Spacing.lg, radius: Radius.hero)
-        .animation(.spring, value: plan)
+    /// 明天以后最近的两个有复习的日子
+    private var upcoming: [ForecastDay] {
+        Array(DailyPlanner.forecast(words: words, days: 14).dropFirst().filter { $0.count > 0 }.prefix(2))
     }
 
-    private var headline: String {
-        if plan.isComplete { return "今日计划完成" }
-        if !plan.hasWork { return "今天没有要学的词" }
-        return "今日计划"
+    private var backlog: Int {
+        words.filter { $0.state == .new && !$0.excludedFromReview }.count
     }
-}
 
-private struct ProgressLine: View {
-    var color: Color
-    var title: String
-    var done: Int
-    var target: Int
-
-    var body: some View {
-        HStack(spacing: Spacing.xs) {
-            Capsule().fill(color).frame(width: 14, height: 6)
-            Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
-            Text("\(done)/\(target)")
-                .font(.subheadline.weight(.heavy).monospacedDigit())
-                .contentTransition(.numericText())
-        }
-        .accessibilityElement(children: .combine)
+    private var recentDays: [ReviewDay] {
+        ReviewDays.recent(
+            count: 7,
+            captures: scans.map { CaptureRecord(date: $0.createdAt, wordIDs: Set($0.words.map(\.id))) },
+            reviewDates: logs.map(\.reviewedAt)
+        )
     }
-}
 
-// MARK: - 未来一周
-
-private struct ForecastCard: View {
-    var days: [ForecastDay]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            SectionHeader(title: "未来一周", emoji: "📊", subtitle: "每天要复习的词")
-            Chart(days) { day in
-                BarMark(
-                    x: .value("日期", day.date, unit: .day),
-                    y: .value("复习", max(day.count, 0))
-                )
-                .foregroundStyle(Calendar.current.isDateInToday(day.date) ? Theme.brand : Theme.reviews.opacity(0.55))
-                .clipShape(.rect(cornerRadius: 8, style: .continuous))
-                .annotation(position: .top, spacing: 3) {
-                    if day.count > 0 {
-                        Text("\(day.count)")
-                            .font(.caption2.weight(.heavy))
-                            .foregroundStyle(.secondary)
-                    }
-                }
+    /// 该复习的场景排在前面（到期 + 新词多的在前，一样多时新拍的在前）
+    private var sceneCards: [Scan] {
+        let today = today
+        return scans
+            .filter { !$0.words.isEmpty }
+            .map { scan -> (scan: Scan, score: Int) in
+                let counts = scan.studyCounts(today: today)
+                return (scan, counts.due * 2 + counts.new)
             }
-            .chartXAxis {
-                AxisMarks(values: .stride(by: .day)) { value in
-                    AxisValueLabel {
-                        if let date = value.as(Date.self) {
-                            Text(Calendar.current.isDateInToday(date) ? "今天" : date.formatted(.dateTime.weekday(.narrow)))
-                                .font(.caption2.weight(.bold))
-                        }
-                    }
-                }
+            .sorted { $0.score != $1.score ? $0.score > $1.score : $0.scan.createdAt > $1.scan.createdAt }
+            .prefix(12)
+            .map(\.scan)
+    }
+
+    /// 总是记不住的词：忘过的、还在复习的，按忘记次数排，最多 5 个
+    private var hardestWords: [VocabWord] {
+        let ids = MeStats.hardestWordIDs(words.map { LapseRecord(id: $0.id, lapses: $0.lapses, excludedFromReview: $0.excludedFromReview, addedAt: $0.addedAt) })
+        let byID = Dictionary(words.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return ids.compactMap { byID[$0] }
+    }
+
+    private var libraryCounts: [WordsFilter: Int] {
+        Dictionary(uniqueKeysWithValues: [WordsFilter.new, .learning, .mastered].map { filter in
+            (filter, words.filter(filter.matches).count)
+        })
+    }
+
+    // MARK: - 布局
+
+    private var header: some View {
+        HStack {
+            Text("复习")
+                .font(.system(size: 30, weight: .heavy))
+                .foregroundStyle(Theme.homeInk)
+                .accessibilityAddTraits(.isHeader)
+            Spacer()
+            Button {
+                path.append(ReviewRoute.library(.all, searching: true))
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.homeInk)
+                    .frame(width: 42, height: 42)
+                    .background(Theme.sheet, in: .circle)
+                    .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
             }
-            .chartYAxis(.hidden)
-            .frame(height: 130)
+            .buttonStyle(.pressable)
+            .accessibilityLabel("搜索词库")
         }
-        .card(padding: Spacing.lg, radius: Radius.hero)
+        .frame(height: 50)
+    }
+
+    @ViewBuilder
+    private func content(scale: CGFloat, side: CGFloat) -> some View {
+        let plan = plan
+        TodayReviewCard(
+            plan: plan,
+            sources: sources(for: plan),
+            upcoming: upcoming,
+            backlog: backlog,
+            scale: scale,
+            onStart: { coordinator.startStudy() },
+            onMore: { coordinator.startStudy(.today(extraNew: 5)) }
+        )
+        .padding(.horizontal, side)
+        .padding(.top, 16)
+
+        RecentDaysStrip(
+            days: recentDays,
+            dailyGoal: settingsRows.first?.newWordsPerDay ?? 8,
+            onPick: { pickedDay = PickedDay(date: $0) },
+            onMonth: { path.append(ReviewRoute.month(Date())) }
+        )
+        .padding(.horizontal, side)
+        .padding(.top, 30)
+
+        let cards = sceneCards
+        if !cards.isEmpty {
+            SceneReviewRow(scans: cards, sidePadding: side, zoom: zoom)
+                .padding(.top, 32)
+        }
+
+        let hardest = hardestWords
+        if !hardest.isEmpty {
+            HardestWordsCard(words: hardest) {
+                coordinator.startStudy(.words(hardest.map(\.id)))
+            }
+            .padding(.horizontal, side - 4)
+            .padding(.top, 26)
+        }
+
+        LibraryEntryCard(total: words.count, counts: libraryCounts)
+            .padding(.horizontal, side - 4)
+            .padding(.top, 26)
+            .overlay(alignment: .topTrailing) {
+                JournalStickerView(kind: .tapePlain).offset(x: 6, y: 14)
+            }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 14) {
+            Text("还没有要复习的词")
+                .font(.system(size: 22, weight: .heavy))
+            Text("拍一个英文场景，挑几个词，之后每天在这里按计划复习。")
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.homeMuted)
+                .multilineTextAlignment(.center)
+            Button { coordinator.startScan() } label: {
+                Label("去拍一个", systemImage: "camera")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Theme.cream)
+                    .padding(.horizontal, 24)
+                    .frame(height: 50)
+                    .background(Theme.homeInk, in: .capsule)
+            }
+            .buttonStyle(.pressable)
+            .padding(.top, 6)
+        }
+        .foregroundStyle(Theme.homeInk)
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - 动作
+
+    /// 先收起半屏页，再打开学习（两个弹出层不能同时出现）
+    private func studyDay(_ day: Date) {
+        pickedDay = nil
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            coordinator.startStudy(.day(day))
+        }
     }
 }

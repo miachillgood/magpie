@@ -35,11 +35,11 @@ enum NotificationService {
             if offset == 0 && completedToday { continue }
 
             let content = UNMutableNotificationContent()
-            content.title = "今天的单词在等你"
+            content.title = String(localized: "今天的单词在等你")
             if offset == 0 && pendingCount > 0 {
-                content.body = "还有 \(pendingCount) 个词，花几分钟就能完成今日计划。"
+                content.body = String(localized: "还有 \(pendingCount) 个词，花几分钟就能完成今日计划。")
             } else {
-                content.body = "复习几分钟，再拍下身边的一个英文场景吧。"
+                content.body = String(localized: "复习几分钟，再拍下身边的一个英文场景吧。")
             }
             content.sound = .default
 

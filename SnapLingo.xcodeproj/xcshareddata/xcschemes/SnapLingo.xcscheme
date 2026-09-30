@@ -24,6 +24,8 @@
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"
+      language = "zh-Hans"
+      region = "CN"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
