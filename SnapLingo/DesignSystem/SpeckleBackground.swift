@@ -109,12 +109,12 @@ enum HomeTheme: String, CaseIterable, Identifiable {
 
     var base: Color {
         switch self {
-        case .sky: Color(light: UIColor(hex: 0xD8E2EC), dark: UIColor(hex: 0x252E38))
-        case .sand: Color(light: UIColor(hex: 0xF1DCC6), dark: UIColor(hex: 0x3A2E24))
-        case .lilac: Color(light: UIColor(hex: 0xE2DBEB), dark: UIColor(hex: 0x2D2836))
-        case .sage: Color(light: UIColor(hex: 0xDAE4D0), dark: UIColor(hex: 0x28311F))
-        case .blush: Color(light: UIColor(hex: 0xF0DADA), dark: UIColor(hex: 0x382628))
-        case .stone: Color(light: UIColor(hex: 0xE4E1DA), dark: UIColor(hex: 0x2C2A27))
+        case .sky: Color(light: UIColor(hex: 0xCED9DE), dark: UIColor(hex: 0x32393A))
+        case .sand: Color(light: UIColor(hex: 0xE4D2C0), dark: UIColor(hex: 0x433526))
+        case .lilac: Color(light: UIColor(hex: 0xDDD0D2), dark: UIColor(hex: 0x312221))
+        case .sage: Color(light: UIColor(hex: 0xCDD2C8), dark: UIColor(hex: 0x363830))
+        case .blush: Color(light: UIColor(hex: 0xE8D2D0), dark: UIColor(hex: 0x463733))
+        case .stone: Color(light: UIColor(hex: 0xEEE7D8), dark: UIColor(hex: 0x383530))
         }
     }
 

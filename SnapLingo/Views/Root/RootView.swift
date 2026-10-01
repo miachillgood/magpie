@@ -17,6 +17,9 @@ struct RootView: View {
                 if settings.onboardingCompleted {
                     RootTabView()
                         .transition(.opacity)
+                        #if DEBUG
+                        .modifier(LevelResultPreview())
+                        #endif
                 } else {
                     OnboardingView(settings: settings)
                         .transition(.opacity)

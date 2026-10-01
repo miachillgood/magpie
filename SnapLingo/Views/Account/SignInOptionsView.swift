@@ -30,7 +30,7 @@ struct SignInOptionsView: View {
                         .overlay(alignment: .topTrailing) {
                             HStack(alignment: .top, spacing: 0) {
                                 SparkleLines()
-                                    .stroke(Color(hex: 0xF2B928), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                                    .stroke(Theme.sparkle, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                                     .frame(width: 26, height: 26)
                                 Text(verbatim: "Hi!")
                                     .font(.handwriting(28))
@@ -115,7 +115,7 @@ private struct BenefitRow: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.homeInk)
                 .frame(width: dense ? 30 : 34, height: dense ? 30 : 34)
-                .background(Color(hex: 0xFBE8D2), in: .rect(cornerRadius: 11, style: .continuous))
+                .background(Pastel.peach, in: .rect(cornerRadius: 11, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 15, weight: .bold))

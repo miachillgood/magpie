@@ -172,7 +172,7 @@ private struct WelcomePhoto: View {
 
                 SparkleLines()
                     .trim(from: 0, to: appeared ? 1 : 0)
-                    .stroke(Color(hex: 0xF2B928), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .stroke(Theme.sparkle, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     .frame(width: 30, height: 30)
                     .offset(x: photoWidth / 2 + 8, y: -photoHeight * 0.34)
                     .animation(motion(.easeOut(duration: 0.4), delay: 0.95), value: appeared)
@@ -218,7 +218,7 @@ private struct BusStopSign: View {
             let s = min(geo.size.width / 270, geo.size.height / 300)
             ZStack(alignment: .topLeading) {
                 LinearGradient(
-                    colors: [Color(red: 0.05, green: 0.25, blue: 0.45), Color(red: 0.06, green: 0.37, blue: 0.62)],
+                    colors: [Color(hex: 0x1E3045), Color(hex: 0x34506B)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )

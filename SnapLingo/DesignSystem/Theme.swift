@@ -2,7 +2,7 @@
 //  Theme.swift
 //  SnapLingo
 //
-//  设计 token：暖白纸张底 + 墨黑按钮 + 珊瑚橙点缀 + 每个场景一种柔和的马卡龙色。
+//  设计 token：阿迪达斯复古色系——奶油白底、墨蓝按钮、焦橙点缀，每个场景一种调淡的复古色。
 //  英文单词用衬线体（像词典），中文标题用粗黑体。
 //
 
@@ -35,32 +35,36 @@ extension UIColor {
     }
 }
 
+/// 阿迪达斯复古色系：奶油白底 + 墨蓝文字和按钮 + 焦橙点缀，芥末黄做高亮，
+/// 场景和小卡片用学院绿、灰蓝、灰粉、鞋底胶棕这些颜色调淡后的底色。
+/// 原色：烟草棕 9A6846 · 芥末黄 D5A536 · 学院绿 315A45 · 复古海军蓝 263A50 · 灰蓝 7896A3 · 砖红 A84E3D ·
+///      酒红 713D43 · 灰粉 C58F8A · 焦橙 C16D3D · 奶油白 EEE7D8 · 鞋底胶棕 B88958 · 鼠尾草绿 87947B
 enum Theme {
-    /// 品牌色：珊瑚橙（AccentColor，含深色模式）
+    /// 品牌色：焦橙（AccentColor，含深色模式）
     static let brand = Color("AccentColor")
-    static let brandSoft = Color(light: UIColor(hex: 0xFFE4D6), dark: UIColor(hex: 0x3D2419))
+    static let brandSoft = Color(light: UIColor(hex: 0xF3E2D8), dark: UIColor(hex: 0x4C3121))
 
-    /// 墨色：主要文字和主按钮
-    static let ink = Color(light: UIColor(hex: 0x1C1B20), dark: UIColor(hex: 0xF6F2EA))
+    /// 墨色：主要文字和主按钮（压暗的海军蓝）
+    static let ink = Color(light: UIColor(hex: 0x1B2A3A), dark: UIColor(hex: 0xEEE7D8))
     /// 墨色按钮上的文字
-    static let onInk = Color(light: .white, dark: UIColor(hex: 0x1C1B20))
+    static let onInk = Color(light: UIColor(hex: 0xF7F2E8), dark: UIColor(hex: 0x1B2A3A))
 
     /// 纸张底色
-    static let paper = Color(light: UIColor(hex: 0xF7F3EC), dark: UIColor(hex: 0x111013))
+    static let paper = Color(light: UIColor(hex: 0xF6F1E7), dark: UIColor(hex: 0x13110E))
     /// 卡片
-    static let card = Color(light: .white, dark: UIColor(hex: 0x1E1D22))
+    static let card = Color(light: UIColor(hex: 0xFFFCF7), dark: UIColor(hex: 0x1E1C19))
     /// 卡片里的小块
-    static let insetFill = Color(light: UIColor(hex: 0xF3EFE8), dark: UIColor(hex: 0x2A2930))
-    static let hairline = Color(light: UIColor(hex: 0x1C1B20, alpha: 0.08), dark: UIColor(white: 1, alpha: 0.1))
-    static let dot = Color(light: UIColor(hex: 0x1C1B20, alpha: 0.07), dark: UIColor(white: 1, alpha: 0.06))
+    static let insetFill = Color(light: UIColor(hex: 0xF0EADF), dark: UIColor(hex: 0x2A2824))
+    static let hairline = Color(light: UIColor(hex: 0x1B2A3A, alpha: 0.08), dark: UIColor(white: 1, alpha: 0.1))
+    static let dot = Color(light: UIColor(hex: 0x1B2A3A, alpha: 0.07), dark: UIColor(white: 1, alpha: 0.06))
 
-    /// 今日计划：新词（品牌色）/ 复习（葡萄紫）
+    /// 今日计划：新词（焦橙）/ 复习（海军蓝）
     static let newWords = Color("AccentColor")
-    static let reviews = Color(light: UIColor(hex: 0x6B5CF0), dark: UIColor(hex: 0x9A8FFF))
+    static let reviews = Color(light: UIColor(hex: 0x263A50), dark: UIColor(hex: 0x93ABB5))
 
     // 语义色
-    static let success = Color(light: UIColor(hex: 0x1FA463), dark: UIColor(hex: 0x3CCB82))
-    static let danger = Color.red
+    static let success = Color(light: UIColor(hex: 0x315A45), dark: UIColor(hex: 0x8EA499))
+    static let danger = Color(light: UIColor(hex: 0xA84E3D), dark: UIColor(hex: 0xB97164))
 
     // 兼容旧名字
     static var pageBackground: Color { paper }
@@ -69,39 +73,51 @@ enum Theme {
     // MARK: 首页（照片墙）
 
     /// 奶油色底
-    static let cream = Color(light: UIColor(hex: 0xFAF6EE), dark: UIColor(hex: 0x14120F))
+    static let cream = Color(light: UIColor(hex: 0xF5F0E5), dark: UIColor(hex: 0x14120F))
     /// 下方的白色底板
-    static let sheet = Color(light: .white, dark: UIColor(hex: 0x1E1C19))
-    /// 墨色（首页用，偏暖）
-    static let homeInk = Color(light: UIColor(hex: 0x1F1A17), dark: UIColor(hex: 0xF6F1EA))
-    static let homeMuted = Color(light: UIColor(hex: 0x8E857D), dark: UIColor(hex: 0x9C948B))
-    /// 荧光笔黄：数字高亮、New! 标签
-    static let marker = Color(light: UIColor(hex: 0xFFE27A), dark: UIColor(hex: 0x6B5418))
-    /// 地点胶囊
-    static let placeChip = Color(light: UIColor(hex: 0xCFE2F7), dark: UIColor(hex: 0x1F3347))
+    static let sheet = Color(light: UIColor(hex: 0xFFFCF7), dark: UIColor(hex: 0x1E1C19))
+    /// 墨色（首页用）
+    static let homeInk = Color(light: UIColor(hex: 0x1B2A3A), dark: UIColor(hex: 0xEEE7D8))
+    static let homeMuted = Color(light: UIColor(hex: 0x877E72), dark: UIColor(hex: 0x9C948B))
+    /// 荧光笔（芥末黄调淡）：数字高亮、New! 标签
+    static let marker = Color(light: UIColor(hex: 0xE4C47C), dark: UIColor(hex: 0x6E5724))
+    /// 地点胶囊（灰蓝调淡）
+    static let placeChip = Color(light: UIColor(hex: 0xD0DADF), dark: UIColor(hex: 0x3B4447))
     /// 快门外圈
-    static let shutterRing = Color(hex: 0xFFD84A)
+    static let shutterRing = Color(hex: 0xD5A536)
+    /// 手画的闪光线
+    static let sparkle = Color(hex: 0xD5A536)
     /// 连续天数胶囊
-    static let streakFill = Color(light: UIColor(hex: 0xFFEFB8), dark: UIColor(hex: 0x3A3217))
-    /// 复习页主题色下面过渡到的浅灰
-    static let mist = Color(light: UIColor(hex: 0xF1F1EF), dark: UIColor(hex: 0x121212))
+    static let streakFill = Color(light: UIColor(hex: 0xF2E4C3), dark: UIColor(hex: 0x52421F))
+    /// 复习页主题色下面过渡到的浅色
+    static let mist = Color(light: UIColor(hex: 0xF2EEE6), dark: UIColor(hex: 0x13110E))
     /// 日期圆点：拍过东西的日子（按词数调深浅）
-    static let dayDot = Color(light: UIColor(hex: 0x6E97D6), dark: UIColor(hex: 0x8FB3EC))
+    static let dayDot = Color(light: UIColor(hex: 0x7896A3), dark: UIColor(hex: 0x93ABB5))
 }
 
-// MARK: - 马卡龙色
+// MARK: - 淡底色（复古色调淡）
 
 enum Pastel {
-    static let peach = Color(light: UIColor(hex: 0xFFE3D3), dark: UIColor(hex: 0x3A2A22))
-    static let mint = Color(light: UIColor(hex: 0xD9F2E1), dark: UIColor(hex: 0x1D3325))
-    static let pink = Color(light: UIColor(hex: 0xFCE0EC), dark: UIColor(hex: 0x3A2231))
-    static let lavender = Color(light: UIColor(hex: 0xE7E2FB), dark: UIColor(hex: 0x2A2641))
-    static let sky = Color(light: UIColor(hex: 0xDCEBFB), dark: UIColor(hex: 0x1E2C3D))
-    static let aqua = Color(light: UIColor(hex: 0xD6F1F0), dark: UIColor(hex: 0x1A3232))
-    static let butter = Color(light: UIColor(hex: 0xFFF0C2), dark: UIColor(hex: 0x3A331B))
-    static let sage = Color(light: UIColor(hex: 0xE3EED6), dark: UIColor(hex: 0x272F21))
-    static let mist = Color(light: UIColor(hex: 0xE4E8EF), dark: UIColor(hex: 0x262A31))
-    static let sand = Color(light: UIColor(hex: 0xEFE8DC), dark: UIColor(hex: 0x2E2B25))
+    /// 焦橙
+    static let peach = Color(light: UIColor(hex: 0xF1DFD4), dark: UIColor(hex: 0x4F3322))
+    /// 学院绿
+    static let mint = Color(light: UIColor(hex: 0xE0E6E3), dark: UIColor(hex: 0x233228))
+    /// 灰粉
+    static let pink = Color(light: UIColor(hex: 0xF0E3E2), dark: UIColor(hex: 0x513E3A))
+    /// 酒红
+    static let lavender = Color(light: UIColor(hex: 0xE5DCDD), dark: UIColor(hex: 0x362424))
+    /// 灰蓝
+    static let sky = Color(light: UIColor(hex: 0xDDE5E8), dark: UIColor(hex: 0x384042))
+    /// 灰蓝和学院绿之间
+    static let aqua = Color(light: UIColor(hex: 0xDAE1E0), dark: UIColor(hex: 0x323E3B))
+    /// 芥末黄
+    static let butter = Color(light: UIColor(hex: 0xF4E8CD), dark: UIColor(hex: 0x564520))
+    /// 鼠尾草绿
+    static let sage = Color(light: UIColor(hex: 0xD9DDD5), dark: UIColor(hex: 0x3D4036))
+    /// 海军蓝
+    static let mist = Color(light: UIColor(hex: 0xE3E5E8), dark: UIColor(hex: 0x1E2328))
+    /// 鞋底胶棕
+    static let sand = Color(light: UIColor(hex: 0xEDE2D5), dark: UIColor(hex: 0x4D3C2A))
 }
 
 extension SceneType {

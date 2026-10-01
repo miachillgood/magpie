@@ -31,6 +31,7 @@ struct LevelTestView: View {
         .animation(.smooth, value: finished)
         .onAppear {
             if items.isEmpty { items = test.nextRound() }
+            if Self.debugResultLevel != nil { finished = true }
         }
         .sensoryFeedback(.selection, trigger: known)
     }
@@ -122,36 +123,17 @@ struct LevelTestView: View {
     // MARK: - 结果
 
     private var result: some View {
-        let level = test.estimatedLevel
-        return VStack(spacing: Spacing.lg) {
-            Spacer()
-            Text(level.displayName)
-                .font(.system(size: 44, weight: .heavy))
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-                .padding(.horizontal, 16)
-                .foregroundStyle(Theme.ink)
-                .frame(width: 180, height: 180)
-                .background(Pastel.lavender, in: .circle)
-                .overlay(alignment: .topTrailing) {
-                    Text("🎯").font(.system(size: 44)).offset(x: 8, y: -4)
-                }
-            VStack(spacing: Spacing.xs) {
-                Text("你的水平：\(level.displayName)")
-                    .font(.title.weight(.heavy))
-                Text(level.summary)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
-            Text("扫描时会优先推荐和你水平相当、稍微难一点的词")
-                .font(.subheadline.weight(.semibold))
-                .card()
-            Spacer()
-            PrimaryButton(title: "好的", symbol: "checkmark") {
-                onFinish(test.score)
-            }
+        LevelResultView(level: Self.debugResultLevel ?? test.estimatedLevel) {
+            onFinish(Self.debugResultLevel?.midScore ?? test.score)
         }
-        .padding(Spacing.lg)
-        .sensoryFeedback(.success, trigger: finished)
+    }
+
+    /// 截图用：启动参数 -levelResult A1 直接打开结果页
+    @MainActor private static var debugResultLevel: CEFRLevel? {
+        #if DEBUG
+        OnboardingDebug.value(after: "-levelResult").flatMap(CEFRLevel.init(code:))
+        #else
+        nil
+        #endif
     }
 }

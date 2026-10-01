@@ -116,7 +116,7 @@ private struct DayRing: View {
     var goal: Int
     var action: () -> Void
 
-    static let ringColor = Color(hex: 0xF2B928)
+    static let ringColor = Theme.sparkle
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false

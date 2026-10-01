@@ -24,8 +24,8 @@ enum JournalSticker: CaseIterable {
 // MARK: - 颜色（都偏淡）
 
 private enum StickerInk {
-    static let yellow = Color(hex: 0xF4D25F).opacity(0.75)
-    static let paleYellow = Color(hex: 0xFBE6A0).opacity(0.85)
+    static let yellow = Color(hex: 0xD5A536).opacity(0.6)
+    static let paleYellow = Color(hex: 0xE4C47C).opacity(0.8)
     static let grey = Color(light: UIColor(hex: 0x1F1A17, alpha: 0.32), dark: UIColor(white: 1, alpha: 0.28))
     static let beige = Color(light: UIColor(hex: 0xEEE7D8), dark: UIColor(hex: 0x3A352C))
     static let paper = Color(light: UIColor(hex: 0xF1EFEA), dark: UIColor(hex: 0x33312D))

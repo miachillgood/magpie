@@ -198,7 +198,7 @@ struct FootprintCard: View {
 
             HStack(spacing: 7) {
                 Image(systemName: "flame")
-                    .foregroundStyle(Color(hex: 0xF2A93B))
+                    .foregroundStyle(Theme.brand)
                 Text("连续 \(streak) 天")
                     .fontWeight(.semibold)
                 Text("· 最长 \(longest) 天")

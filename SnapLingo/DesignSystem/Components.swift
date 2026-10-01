@@ -476,7 +476,7 @@ struct ConfettiView: View {
 
     @State private var startDate: Date?
     @State private var pieces: [Piece] = (0..<70).map { _ in Piece() }
-    private let colors: [Color] = [Color(hex: 0xF45B2A), Color(hex: 0xFFC53D), Color(hex: 0x6B5CF0), Color(hex: 0x1FA463), Color(hex: 0xFF8FB1), Color(hex: 0x3DD6F0)]
+    private let colors: [Color] = [Color(hex: 0xC16D3D), Color(hex: 0xD5A536), Color(hex: 0x315A45), Color(hex: 0x263A50), Color(hex: 0xC58F8A), Color(hex: 0x7896A3)]
 
     struct Piece {
         var x = Double.random(in: 0...1)

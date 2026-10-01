@@ -58,7 +58,7 @@ struct PhotoStack: View {
             HStack(alignment: .top, spacing: 0) {
                 SparkleLines()
                     .trim(from: 0, to: appeared ? 1 : 0)
-                    .stroke(Color(hex: 0xF2B928), style: StrokeStyle(lineWidth: 3 * scale, lineCap: .round))
+                    .stroke(Theme.sparkle, style: StrokeStyle(lineWidth: 3 * scale, lineCap: .round))
                     .frame(width: 30 * scale, height: 30 * scale)
                     .offset(y: -10 * scale)
                     .animation(animated ? .easeOut(duration: 0.4).delay(0.75) : nil, value: appeared)
@@ -68,7 +68,7 @@ struct PhotoStack: View {
                         .animation(animated ? .easeOut(duration: 0.7).delay(0.8) : nil, value: appeared)
                     Squiggle()
                         .trim(from: 0, to: appeared ? 1 : 0)
-                        .stroke(Color(hex: 0xF2B928), style: StrokeStyle(lineWidth: 2.5 * scale, lineCap: .round))
+                        .stroke(Theme.sparkle, style: StrokeStyle(lineWidth: 2.5 * scale, lineCap: .round))
                         .frame(width: 70 * scale, height: 7 * scale)
                         .rotationEffect(.degrees(-8))
                         .padding(.trailing, 6 * scale)

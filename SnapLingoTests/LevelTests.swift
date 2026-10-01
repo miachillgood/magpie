@@ -149,3 +149,21 @@ struct TokenMatcherTests {
         #expect(matcher.occurrences(of: "missing phrase").isEmpty)
     }
 }
+
+@MainActor
+struct LevelResultTests {
+    @Test func everyLevelGetsAThreeTileThreeExampleBand() {
+        #expect(LevelBand(.a1) == .everyday)
+        #expect(LevelBand(.a2) == .everyday)
+        #expect(LevelBand(.b1) == .practical)
+        #expect(LevelBand(.b2) == .practical)
+        #expect(LevelBand(.c1) == .advanced)
+        #expect(LevelBand(.c2) == .advanced)
+        for band in LevelBand.allCases {
+            #expect(band.focus.count == 3)
+            #expect(Set(band.focus.map(\.title)).count == 3)
+            #expect(band.examples.count == 3)
+            #expect(band.examples.allSatisfy { !$0.phrase.isEmpty && !$0.meaning.isEmpty })
+        }
+    }
+}
