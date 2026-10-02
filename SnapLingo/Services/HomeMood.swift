@@ -8,29 +8,27 @@
 
 import Foundation
 
-/// 首页顶部显示哪种状态
+/// 首页顶部显示哪种状态：跟着最近一次拍照的那一天走，不是每天都用也总有内容
 enum HomeMood: String, CaseIterable, Sendable {
-    /// 今天拍过：刚刚在公交站捡到 5 个新词
-    case captured
-    /// 今天还没拍，有要复习的词：昨天在公交站遇见 5 个词，还记得几个？
-    case review
-    /// 周末：这周你在 5 个地方发现了 16 个词
-    case weekly
-    /// 今天还没拍，也没有要复习的：今天还没发现新单词
+    /// 今天拍过：今天在 3 个场景捡到 12 个词
+    case today
+    /// 最近一次是 1–7 天前：周六在公交站捡到 5 个词
+    case recent
+    /// 超过一周没拍：上次是 9 月 20 日，好久不见
+    case away
+    /// 从没拍过：拍下你的第一块招牌
     case empty
 
-    /// 优先级：今天拍过 > 有待复习 > 周末回顾 > 还没拍
-    static func pick(
-        scannedToday: Bool,
-        pendingStudy: Int,
-        scansThisWeek: Int,
-        now: Date = Date(),
-        calendar: Calendar = .current
-    ) -> HomeMood {
-        if scannedToday { return .captured }
-        if pendingStudy > 0 { return .review }
-        if calendar.isDateInWeekend(now) && scansThisWeek > 0 { return .weekly }
-        return .empty
+    /// 超过这么多天算“好久不见”
+    static let awayAfterDays = 7
+
+    static func pick(latestScanDate: Date?, now: Date = Date(), calendar: Calendar = .current) -> HomeMood {
+        guard let latestScanDate else { return .empty }
+        switch HomeDates.daysBetween(latestScanDate, now, calendar: calendar) {
+        case ...0: return .today
+        case 1...awayAfterDays: return .recent
+        default: return .away
+        }
     }
 }
 
@@ -111,7 +109,7 @@ enum HomeDates {
         return order.sorted(by: >).map { ($0, groups[$0] ?? []) }
     }
 
-    private static func daysBetween(_ date: Date, _ now: Date, calendar: Calendar) -> Int {
+    static func daysBetween(_ date: Date, _ now: Date, calendar: Calendar) -> Int {
         let from = calendar.startOfDay(for: date)
         let to = calendar.startOfDay(for: now)
         return calendar.dateComponents([.day], from: from, to: to).day ?? 0

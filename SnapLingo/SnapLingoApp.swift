@@ -19,6 +19,7 @@ struct SnapLingoApp: App {
         #if DEBUG
         DemoData.applyLaunchArguments(to: container.mainContext)
         #endif
+        SpacedRepetitionMigration.run(context: container.mainContext)
     }
 
     var body: some Scene {

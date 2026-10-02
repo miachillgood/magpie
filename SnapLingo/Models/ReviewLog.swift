@@ -6,7 +6,7 @@
 import Foundation
 import SwiftData
 
-/// 评分按钮
+/// 评分。界面上只有“不会 / 会 / 太简单”（见 buttons），“模糊”只出现在旧的复习记录里
 enum ReviewRating: Int, Codable, CaseIterable, Identifiable, Sendable {
     case again = 0
     case hard = 3
@@ -15,11 +15,24 @@ enum ReviewRating: Int, Codable, CaseIterable, Identifiable, Sendable {
 
     var id: Int { rawValue }
 
+    /// 复习时显示的按钮
+    static let buttons: [ReviewRating] = [.again, .good, .easy]
+
+    /// FSRS 的评分 1...4
+    var grade: Int {
+        switch self {
+        case .again: 1
+        case .hard:  2
+        case .good:  3
+        case .easy:  4
+        }
+    }
+
     var title: String {
         switch self {
-        case .again: String(localized: "忘了", comment: "Flashcard rating button")
+        case .again: String(localized: "不会", comment: "Flashcard rating button")
         case .hard:  String(localized: "模糊", comment: "Flashcard rating button")
-        case .good:  String(localized: "认识", comment: "Flashcard rating button")
+        case .good:  String(localized: "会", comment: "Flashcard rating button")
         case .easy:  String(localized: "太简单", comment: "Flashcard rating button")
         }
     }

@@ -254,7 +254,7 @@ struct SettingsCard: View {
             MeCard(padding: 14) {
                 SettingRow(icon: "plus", title: "每天学新词") {
                     Picker("每天学新词", selection: $settings.newWordsPerDay) {
-                        ForEach([5, 10, 15, 20, 30], id: \.self) { count in
+                        ForEach(StudyPace.dailyOptions, id: \.self) { count in
                             Text("\(count) 个").tag(count)
                         }
                     }

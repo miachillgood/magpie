@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import SnapLingo
 
@@ -25,7 +26,7 @@ private struct Word: PlannableWord {
     var excludedFromReview = false
     var dueDate: Date
     var addedAt = Date()
-    var easeFactor = 2.5
+    var difficulty = 5.0
 }
 
 // MARK: - 最近两周 / 整月
@@ -107,5 +108,50 @@ struct UpcomingNameTests {
         #expect(HomeDates.upcomingName(for: date(30), now: now, calendar: calendar, locale: Locale(identifier: "zh-Hans")) == "后天")
         #expect(HomeDates.upcomingName(for: date(1, month: 10), now: now, calendar: calendar, locale: Locale(identifier: "zh-Hans")) == "周四")
         #expect(HomeDates.upcomingName(for: date(8, month: 10), now: now, calendar: calendar, locale: Locale(identifier: "zh-Hans")) == "10月8日")
+    }
+}
+
+@MainActor
+struct TooEasyUndoTests {
+    @Test func undoRestoresWordLogAndCard() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let word = VocabWord(word: "gluten free")
+        context.insert(word)
+        let other = VocabWord(word: "bond")
+        context.insert(other)
+        try context.save()
+        let scoreBefore = UserSettings.current(in: context).levelScore
+
+        let session = StudySession(scope: .today(extraNew: 0), reviews: [], news: [word, other])
+        session.revealed = true
+        session.rate(.easy, context: context)
+
+        #expect(word.excludedFromReview)
+        #expect(session.pendingUndo != nil)
+        #expect(session.current?.word.id == other.id)
+        #expect(try context.fetchCount(FetchDescriptor<ReviewLog>()) == 1)
+
+        session.undoLast(context: context)
+
+        #expect(!word.excludedFromReview)
+        #expect(word.state == .new)
+        #expect(word.introducedAt == nil)
+        #expect(session.current?.word.id == word.id)
+        #expect(session.completedCount == 0)
+        #expect(session.pendingUndo == nil)
+        #expect(try context.fetchCount(FetchDescriptor<ReviewLog>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<WordFamiliarity>()) == 0)
+        #expect(UserSettings.current(in: context).levelScore == scoreBefore)
+    }
+
+    @Test func otherRatingsCannotBeUndone() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let word = VocabWord(word: "bond")
+        context.insert(word)
+        let session = StudySession(scope: .today(extraNew: 0), reviews: [], news: [word])
+        session.rate(.good, context: context)
+        #expect(session.pendingUndo == nil)
     }
 }

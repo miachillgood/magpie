@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import SnapLingo
 
@@ -21,47 +22,77 @@ private func date(_ day: Int, hour: Int = 9) -> Date {
 
 @MainActor
 struct SpacedRepetitionTests {
-    @Test func firstCorrectAnswerIsDueTomorrowAtStartOfDay() {
+    /// 每次都在到期那天复习
+    private func reviewOnDue(_ state: SRSState, _ rating: ReviewRating, seed: UInt64 = 0) -> SRSState {
+        SpacedRepetition.schedule(state, rating: rating, on: state.dueDate.addingTimeInterval(9 * 3600), seed: seed, calendar: calendar)
+    }
+
+    @Test func firstKnowIsDueInTwoDaysAtStartOfDay() {
         let next = SpacedRepetition.schedule(.fresh(on: date(10), calendar: calendar), rating: .good, on: date(10, hour: 23), calendar: calendar)
         #expect(next.state == .learning)
-        #expect(next.intervalDays == 1)
-        #expect(next.dueDate == calendar.startOfDay(for: date(11)))
+        #expect(next.intervalDays == 2)
+        #expect(next.dueDate == calendar.startOfDay(for: date(12)))
+        #expect(next.lastReviewedAt == date(10, hour: 23))
     }
 
     @Test func intervalsGrowAndReachMastered() {
-        var state = SRSState.fresh(on: date(1), calendar: calendar)
-        var intervals: [Int] = []
-        for day in [1, 2, 5, 12] {
-            state = SpacedRepetition.schedule(state, rating: .good, on: date(day), calendar: calendar)
+        var state = SpacedRepetition.schedule(.fresh(on: date(1), calendar: calendar), rating: .good, on: date(1), calendar: calendar)
+        var intervals = [state.intervalDays]
+        while state.state != .mastered && intervals.count < 10 {
+            state = reviewOnDue(state, .good)
             intervals.append(state.intervalDays)
         }
-        #expect(intervals == [1, 3, 8, 20])
-        state = SpacedRepetition.schedule(state, rating: .good, on: date(28), calendar: calendar)
-        #expect(state.intervalDays >= SpacedRepetition.masteredThreshold)
+        #expect(zip(intervals, intervals.dropFirst()).allSatisfy { $0 < $1 })
         #expect(state.state == .mastered)
+        #expect(intervals.count <= 5, "一直记得的话，几次之后就该算掌握了：\(intervals)")
     }
 
-    @Test func forgettingResetsAndCountsLapseOnlyAfterLearning() {
+    @Test func intervalIsWhenRecallDropsToNinetyPercent() {
+        var state = SpacedRepetition.schedule(.fresh(on: date(1), calendar: calendar), rating: .good, on: date(1), calendar: calendar)
+        state = reviewOnDue(state, .good)
+        let r = SpacedRepetition.retrievability(elapsedDays: state.stability, stability: state.stability)
+        #expect(abs(r - SpacedRepetition.desiredRetention) < 0.0001)
+    }
+
+    @Test func forgettingShrinksStabilityAndCountsLapseOnlyAfterLearning() {
         let fresh = SRSState.fresh(on: date(1), calendar: calendar)
         let firstMiss = SpacedRepetition.schedule(fresh, rating: .again, on: date(1), calendar: calendar)
         #expect(firstMiss.lapses == 0)
         #expect(firstMiss.intervalDays == 1)
 
         var learned = SpacedRepetition.schedule(fresh, rating: .good, on: date(1), calendar: calendar)
-        learned = SpacedRepetition.schedule(learned, rating: .good, on: date(2), calendar: calendar)
-        let lapse = SpacedRepetition.schedule(learned, rating: .again, on: date(5), calendar: calendar)
+        learned = reviewOnDue(learned, .good)
+        let lapse = reviewOnDue(learned, .again)
         #expect(lapse.lapses == 1)
         #expect(lapse.repetitions == 0)
-        #expect(lapse.easeFactor < learned.easeFactor)
+        #expect(lapse.stability < learned.stability)
+        #expect(lapse.difficulty > learned.difficulty)
+        #expect(lapse.intervalDays < learned.intervalDays)
         #expect(lapse.state == .learning)
     }
 
-    @Test func easeFactorNeverDropsBelowMinimum() {
+    @Test func difficultyStaysInRange() {
         var state = SRSState.fresh(on: date(1), calendar: calendar)
-        for day in 1...15 {
-            state = SpacedRepetition.schedule(state, rating: .again, on: date(day), calendar: calendar)
-        }
-        #expect(state.easeFactor == SpacedRepetition.minEase)
+        for _ in 0..<15 { state = reviewOnDue(state, .again) }
+        #expect(state.difficulty <= 10)
+        for _ in 0..<15 { state = reviewOnDue(state, .easy) }
+        #expect(state.difficulty >= 1)
+    }
+
+    @Test func fuzzStaysCloseAndIsRepeatable() {
+        var state = SpacedRepetition.schedule(.fresh(on: date(1), calendar: calendar), rating: .good, on: date(1), calendar: calendar)
+        state = reviewOnDue(state, .good)
+        let id = UUID()
+        let intervals = (0..<20).map { reviewOnDue(state, .good, seed: SpacedRepetition.seed(for: id, reviewCount: $0)).intervalDays }
+        let unfuzzed = min(reviewOnDue(state, .good).stability, Double(SpacedRepetition.maxInterval))
+        #expect(intervals.allSatisfy { abs(Double($0) - unfuzzed) <= unfuzzed * 0.15 + 1 })
+        #expect(Set(intervals).count > 1, "同一个间隔应该会被分散到前后几天")
+        let seed = SpacedRepetition.seed(for: id, reviewCount: 3)
+        #expect(reviewOnDue(state, .good, seed: seed) == reviewOnDue(state, .good, seed: seed))
+    }
+
+    @Test func onlyThreeButtonsAreShown() {
+        #expect(ReviewRating.buttons == [.again, .good, .easy])
     }
 }
 
@@ -73,7 +104,7 @@ private struct TestWord: PlannableWord {
     var excludedFromReview = false
     var dueDate: Date
     var addedAt: Date
-    var easeFactor = 2.5
+    var difficulty = 5.0
 }
 
 private struct TestEvent: StudyEvent {
@@ -156,13 +187,98 @@ struct DailyPlannerTests {
 struct RatingOrderTests {
     @Test func easyIsAlwaysLaterThanGoodAndHardNeverLater() {
         var state = SRSState.fresh(on: date(1), calendar: calendar)
-        for day in [1, 2, 5] {
+        for day in [1, 3, 8] {
             state = SpacedRepetition.schedule(state, rating: .good, on: date(day), calendar: calendar)
-            let hard = SpacedRepetition.schedule(state, rating: .hard, on: date(day + 1), calendar: calendar).intervalDays
-            let good = SpacedRepetition.schedule(state, rating: .good, on: date(day + 1), calendar: calendar).intervalDays
-            let easy = SpacedRepetition.schedule(state, rating: .easy, on: date(day + 1), calendar: calendar).intervalDays
+            let hard = SpacedRepetition.schedule(state, rating: .hard, on: date(day + 2), calendar: calendar).stability
+            let good = SpacedRepetition.schedule(state, rating: .good, on: date(day + 2), calendar: calendar).stability
+            let easy = SpacedRepetition.schedule(state, rating: .easy, on: date(day + 2), calendar: calendar).stability
             #expect(hard <= good)
             #expect(easy > good)
         }
+    }
+}
+
+struct StudyPaceTests {
+    @Test func adjustingMovesOneOptionAndStopsAtEnds() {
+        #expect(StudyPace.adjusted(10, by: 1) == 15)
+        #expect(StudyPace.adjusted(10, by: -1) == 5)
+        #expect(StudyPace.adjusted(5, by: -1) == 5)
+        #expect(StudyPace.adjusted(30, by: 1) == 30)
+        #expect(StudyPace.adjusted(8, by: 0) == 10)
+        #expect(StudyPace.adjusted(8, by: 1) == 10)
+        #expect(StudyPace.adjusted(8, by: -1) == 5)
+        #expect(StudyPace.adjusted(2, by: 1) == 5)
+        #expect(StudyPace.adjusted(2, by: -1) == 5)
+        #expect(StudyPace.adjusted(40, by: 1) == 30)
+    }
+
+    @Test func asksOnlyWhenTheCapHeldWordsBack() {
+        let done = DailyPlan(reviewIDs: [], newIDs: [], reviewsDone: 3, newDone: 10)
+        let unfinished = DailyPlan(reviewIDs: [UUID()], newIDs: [], reviewsDone: 0, newDone: 10)
+        #expect(StudyPace.shouldAsk(plan: done, backlog: 4, asked: false))
+        #expect(!StudyPace.shouldAsk(plan: done, backlog: 0, asked: false))
+        #expect(!StudyPace.shouldAsk(plan: done, backlog: 4, asked: true))
+        #expect(!StudyPace.shouldAsk(plan: unfinished, backlog: 4, asked: false))
+    }
+}
+
+// MARK: - 三个按钮 + 旧数据迁移
+
+@MainActor
+struct ThreeButtonSessionTests {
+    @Test func tooEasyRetiresTheWordAndKnowSchedulesIt() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let easy = VocabWord(word: "queue")
+        let known = VocabWord(word: "deductible")
+        [easy, known].forEach(context.insert)
+        try context.save()
+
+        let session = StudySession(scope: .words([easy.id, known.id]), reviews: [], news: [easy, known])
+        #expect(session.previewInterval(for: .easy) == nil)
+        session.rate(.easy, context: context)
+        let preview = session.previewInterval(for: .good)
+        session.rate(.good, context: context)
+
+        #expect(easy.excludedFromReview)
+        #expect(easy.state == .mastered)
+        #expect(!known.excludedFromReview)
+        #expect(known.stability > 0)
+        #expect(known.intervalDays == preview)
+        #expect(session.isFinished)
+        #expect(try context.fetch(FetchDescriptor<ReviewLog>()).count == 2)
+    }
+
+    @Test func migrationReplaysOldReviewsAndKeepsRetiredWords() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let reviewed = VocabWord(word: "bond")
+        reviewed.state = .learning
+        reviewed.intervalDays = 8
+        let noHistory = VocabWord(word: "tenancy")
+        noHistory.state = .mastered
+        noHistory.intervalDays = 30
+        noHistory.excludedFromReview = true
+        let fresh = VocabWord(word: "platform")
+        [reviewed, noHistory, fresh].forEach(context.insert)
+        for (day, rating) in [(1, ReviewRating.good), (2, .hard), (5, .good)] {
+            context.insert(ReviewLog(wordID: reviewed.id, word: reviewed.word, rating: rating, wasNew: day == 1, intervalAfter: 0, reviewedAt: date(day)))
+        }
+        try context.save()
+
+        SpacedRepetitionMigration.run(context: context)
+
+        #expect(reviewed.stability > 0)
+        #expect(reviewed.lastReviewedAt == date(5))
+        #expect(reviewed.dueDate > date(5))
+        #expect(noHistory.stability == 30)
+        #expect(noHistory.excludedFromReview)
+        #expect(noHistory.state == .mastered)
+        #expect(fresh.stability == 0)
+
+        // 再跑一次不会重算
+        let due = reviewed.dueDate
+        SpacedRepetitionMigration.run(context: context)
+        #expect(reviewed.dueDate == due)
     }
 }

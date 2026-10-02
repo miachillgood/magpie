@@ -29,6 +29,13 @@ enum DemoData {
             UserSettings.current(in: context).onboardingCompleted = false
             try? context.save()
         }
+        // -newWordsPerDay 2：调小每天的新词上限，让新词排队，方便看结算页的「节奏合适吗？」
+        if let index = arguments.firstIndex(of: "-newWordsPerDay"), index + 1 < arguments.count, let count = Int(arguments[index + 1]) {
+            let settings = UserSettings.current(in: context)
+            settings.newWordsPerDay = count
+            settings.paceCheckDone = false
+            try? context.save()
+        }
         if arguments.contains("-seedDemoData") {
             let count = (try? context.fetchCount(FetchDescriptor<Scan>())) ?? 0
             if count == 0 { seed(into: context) }

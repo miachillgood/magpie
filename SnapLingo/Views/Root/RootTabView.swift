@@ -13,7 +13,6 @@ struct RootTabView: View {
     @Query private var words: [VocabWord]
     @Query(sort: \ReviewLog.reviewedAt) private var logs: [ReviewLog]
     @Query(sort: \UserSettings.createdAt) private var settingsRows: [UserSettings]
-    @AppStorage(AIConsent.storageKey) private var consentRaw = AIConsent.State.undecided.rawValue
 
     /// 今天还有没有要学的词（驱动“复习”图标上的小红点）
     private var hasStudyWork: Bool {
@@ -38,13 +37,6 @@ struct RootTabView: View {
         }
         .fullScreenCover(item: $coordinator.studyRequest) { request in
             StudySessionView(request: request)
-        }
-        // 这一版之前装的 App 没问过要不要用 AI，补问一次
-        .sheet(isPresented: Binding(
-            get: { AIConsent.State(rawValue: consentRaw) ?? .undecided == .undecided },
-            set: { _ in }
-        )) {
-            AIConsentSheet()
         }
         .onChange(of: hasStudyWork, initial: true) { _, pending in
             coordinator.reviewPending = pending

@@ -12,7 +12,7 @@ protocol PlannableWord {
     var excludedFromReview: Bool { get }
     var dueDate: Date { get }
     var addedAt: Date { get }
-    var easeFactor: Double { get }
+    var difficulty: Double { get }
 }
 
 /// 计划需要的学习记录字段
@@ -95,7 +95,8 @@ enum DailyPlanner {
             .filter { $0.state != .new && !$0.excludedFromReview && $0.dueDate <= today && !reviewDoneIDs.contains($0.id) && !newDoneIDs.contains($0.id) }
             .sorted { lhs, rhs in
                 if lhs.dueDate != rhs.dueDate { return lhs.dueDate < rhs.dueDate }
-                return lhs.easeFactor < rhs.easeFactor
+                // 同一天到期的，难的先复习
+                return lhs.difficulty > rhs.difficulty
             }
         let reviewQuota = max(0, maxReviews - reviewDoneIDs.count)
 

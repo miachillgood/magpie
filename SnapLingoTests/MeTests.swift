@@ -34,23 +34,6 @@ struct MeStatsTests {
         #expect(MeStats.daysSinceFirst([date(18), date(3, hour: 22)], now: date(20, hour: 7), calendar: calendar) == 18)
     }
 
-    @Test func sceneSharesDedupeWordsWithinATypeAndSortByWords() {
-        let shared = UUID()
-        let oldMenu = SceneRecord(id: UUID(), scene: .restaurant, createdAt: date(1), wordIDs: [shared, UUID()])
-        let newMenu = SceneRecord(id: UUID(), scene: .restaurant, createdAt: date(5), wordIDs: [shared, UUID(), UUID()])
-        let lease = SceneRecord(id: UUID(), scene: .housing, createdAt: date(3), wordIDs: [UUID(), UUID(), UUID(), UUID(), UUID(), UUID()])
-        let empty = SceneRecord(id: UUID(), scene: .bank, createdAt: date(4), wordIDs: [])
-
-        let shares = MeStats.sceneShares([oldMenu, lease, newMenu, empty])
-
-        #expect(shares.map(\.scene) == [.housing, .restaurant])
-        #expect(shares.map(\.wordCount) == [6, 4])
-        #expect(shares.map(\.scanCount) == [1, 2])
-        #expect(shares.map(\.percent) == [60, 40])
-        #expect(shares[1].coverScanID == newMenu.id)
-        #expect(MeStats.sceneShares([empty]).isEmpty)
-    }
-
     @Test func hardestWordsSkipNeverForgottenAndExcluded() {
         let a = LapseRecord(id: UUID(), lapses: 2, excludedFromReview: false, addedAt: date(1))
         let b = LapseRecord(id: UUID(), lapses: 4, excludedFromReview: false, addedAt: date(2))

@@ -398,7 +398,8 @@ private struct PenStroke: Shape {
     }
 }
 
-private struct Entrance: ViewModifier {
+/// 从下往上淡入，引导页里按先后顺序出场用
+struct Entrance: ViewModifier {
     var appeared: Bool
     var delay: Double
     var reduceMotion: Bool

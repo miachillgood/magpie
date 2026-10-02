@@ -343,16 +343,16 @@ struct StatTile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(value, format: .number)
-                    .font(.statNumber)
-                    .contentTransition(.numericText())
-                if !suffix.isEmpty {
-                    Text(suffix).font(.headline.weight(.heavy))
+            // 窄屏（SE 上三格并排）放不下「100% 🧠」时先去掉 emoji，数字始终完整
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    number
+                    Spacer(minLength: 2)
+                    Text(emoji).font(.title3)
                 }
-                Spacer(minLength: 2)
-                Text(emoji).font(.title3)
+                number
             }
+            .lineLimit(1)
             .foregroundStyle(Theme.ink)
             Text(label)
                 .font(.caption.weight(.bold))
@@ -363,6 +363,18 @@ struct StatTile: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(color, in: .rect(cornerRadius: Radius.card, style: .continuous))
         .accessibilityElement(children: .combine)
+    }
+
+    private var number: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 1) {
+            Text(value, format: .number)
+                .font(.statNumber)
+                .contentTransition(.numericText())
+            if !suffix.isEmpty {
+                Text(suffix).font(.headline.weight(.heavy))
+            }
+        }
+        .fixedSize()
     }
 }
 

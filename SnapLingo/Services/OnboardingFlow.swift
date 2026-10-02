@@ -2,14 +2,17 @@
 //  OnboardingFlow.swift
 //  SnapLingo
 //
-//  首次启动的步骤顺序：欢迎 →（登录）→ 水平小测 → 母语 → AI 说明 → 每日节奏 → 提醒。
+//  首次启动的步骤顺序：欢迎 →（登录）→ 自选水平 → 母语。
+//  要不要用 AI 不在引导里问，第一次拍完照时再弹窗问（见 ScanFlowView）。
+//  每日提醒不在引导里问，在“我的”里开。
+//  每天几个新词不在这里问（新用户还没概念），见 StudyPace.shouldAsk。
 //  登录要等账号服务上线（AccountFeatures.isEnabled）才出现。
 //
 
 import Foundation
 
 enum OnboardingStep: String, CaseIterable, Sendable {
-    case welcome, login, level, language, ai, pace, reminder
+    case welcome, login, level, language
 }
 
 enum OnboardingFlow {

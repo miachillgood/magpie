@@ -6,7 +6,7 @@
 import Foundation
 import SwiftData
 
-/// 一次学习会话：先复习到期的词，再学新词；“忘了”的词在本轮稍后再出现
+/// 一次学习会话：先复习到期的词，再学新词；“不会”的词在本轮稍后再出现，“太简单”的词以后不再出现
 @Observable
 final class StudySession {
     struct Card: Identifiable, Equatable {
@@ -34,6 +34,29 @@ final class StudySession {
     private(set) var lastRating: ReviewRating?
     private(set) var ratingCount = 0
     let initialCount: Int
+    /// 刚点的「太简单」可以撤销：记下点之前的样子
+    private(set) var pendingUndo: Undo?
+
+    /// 「太简单」是唯一移出复习的评分，手滑了要能退回去
+    struct Undo {
+        let word: VocabWord
+        let srs: SRSState
+        let excluded: Bool
+        let introducedAt: Date?
+        let levelScore: Double
+        let firstRating: ReviewRating?
+        let log: ReviewLog?
+        /// 这个词的熟悉度记录原来的样子；nil 表示原来没有，撤销时删掉新建的那条
+        let familiarity: FamiliaritySnapshot?
+        let position: Int
+    }
+
+    struct FamiliaritySnapshot {
+        let confidence: Double
+        let evidenceCount: Int
+        let lastSourceRaw: String
+        let updatedAt: Date
+    }
 
     init(scope: StudyScope, reviews: [VocabWord], news: [VocabWord], practice: [VocabWord] = []) {
         self.scope = scope
@@ -57,14 +80,37 @@ final class StudySession {
 
     /// 某个评分会把下次复习安排到几天后（本轮重试的卡不改排期）
     func previewInterval(for rating: ReviewRating) -> Int? {
-        guard let card = current, card.attempt == 0, !card.isPractice else { return nil }
-        return SpacedRepetition.schedule(card.word.srs, rating: rating, on: Date()).intervalDays
+        guard let card = current, card.attempt == 0, !card.isPractice, rating != .easy else { return nil }
+        return SpacedRepetition.schedule(card.word.srs, rating: rating, on: Date(), seed: Self.seed(for: card.word)).intervalDays
+    }
+
+    private static func seed(for word: VocabWord) -> UInt64 {
+        SpacedRepetition.seed(for: word.id, reviewCount: word.repetitions + word.lapses)
     }
 
     func rate(_ rating: ReviewRating, context: ModelContext) {
         guard let card = current else { return }
         let word = card.word
         let now = Date()
+        pendingUndo = nil
+        var undo: Undo?
+        if rating == .easy {
+            let settings = UserSettings.current(in: context)
+            undo = Undo(
+                word: word,
+                srs: word.srs,
+                excluded: word.excludedFromReview,
+                introducedAt: word.introducedAt,
+                levelScore: settings.levelScore,
+                firstRating: firstRatings[word.id],
+                log: nil,
+                familiarity: Self.familiarity(for: word, in: context).map {
+                    FamiliaritySnapshot(confidence: $0.confidence, evidenceCount: $0.evidenceCount, lastSourceRaw: $0.lastSourceRaw, updatedAt: $0.updatedAt)
+                },
+                position: position
+            )
+        }
+        var insertedLog: ReviewLog?
 
         if card.attempt == 0 && card.isPractice {
             // 顺便再看一遍：只记本轮结果，不改排期、不写复习记录
@@ -72,12 +118,14 @@ final class StudySession {
         } else if card.attempt == 0 {
             let settings = UserSettings.current(in: context)
             let wasNew = word.state == .new
-            let next = SpacedRepetition.schedule(word.srs, rating: rating, on: now)
+            let next = SpacedRepetition.schedule(word.srs, rating: rating, on: now, seed: Self.seed(for: word))
             word.srs = next
             word.lastReviewedAt = now
             if wasNew { word.introducedAt = now }
 
-            context.insert(ReviewLog(wordID: word.id, word: word.word, rating: rating, wasNew: wasNew, intervalAfter: next.intervalDays, reviewedAt: now))
+            let log = ReviewLog(wordID: word.id, word: word.word, rating: rating, wasNew: wasNew, intervalAfter: next.intervalDays, reviewedAt: now)
+            context.insert(log)
+            insertedLog = log
             LevelService.recordFamiliarity(key: word.normalizedForm, confidence: LevelService.confidence(for: rating), source: .review, in: context)
             if wasNew {
                 let delta = LevelService.firstSightDelta(rating: rating, wordLevel: word.cefr, userLevel: settings.level)
@@ -85,6 +133,16 @@ final class StudySession {
             }
             firstRatings[word.id] = rating
             try? context.save()
+        }
+
+        if rating == .easy, let undo {
+            // 太简单：以后不再出现。几秒内可以撤销，之后也能在单词页里“恢复复习”
+            WordLibrary.setMastered(word, true, context: context)
+            pendingUndo = Undo(
+                word: undo.word, srs: undo.srs, excluded: undo.excluded, introducedAt: undo.introducedAt,
+                levelScore: undo.levelScore, firstRating: undo.firstRating, log: insertedLog,
+                familiarity: undo.familiarity, position: undo.position
+            )
         }
 
         if rating == .again && card.attempt + 1 < StudySession.maxAttempts {
@@ -97,6 +155,42 @@ final class StudySession {
         ratingCount += 1
         revealed = false
         position += 1
+    }
+
+    /// 撤销刚才的「太简单」：词、复习记录、等级分、熟悉度都回到点之前，卡片重新出现
+    func undoLast(context: ModelContext) {
+        guard let undo = pendingUndo else { return }
+        pendingUndo = nil
+        let word = undo.word
+        word.srs = undo.srs
+        word.excludedFromReview = undo.excluded
+        word.introducedAt = undo.introducedAt
+        UserSettings.current(in: context).levelScore = undo.levelScore
+        if let log = undo.log { context.delete(log) }
+        if let existing = Self.familiarity(for: word, in: context) {
+            if let old = undo.familiarity {
+                existing.confidence = old.confidence
+                existing.evidenceCount = old.evidenceCount
+                existing.lastSourceRaw = old.lastSourceRaw
+                existing.updatedAt = old.updatedAt
+            } else {
+                context.delete(existing)
+            }
+        }
+        firstRatings[word.id] = undo.firstRating
+        try? context.save()
+
+        position = undo.position
+        revealed = false
+        lastRating = nil
+    }
+
+    /// 几秒后撤销条消失，不能再撤销
+    func dismissUndo() { pendingUndo = nil }
+
+    private static func familiarity(for word: VocabWord, in context: ModelContext) -> WordFamiliarity? {
+        let key = word.normalizedForm
+        return try? context.fetch(FetchDescriptor<WordFamiliarity>(predicate: #Predicate { $0.normalizedForm == key })).first
     }
 
     // MARK: - 创建

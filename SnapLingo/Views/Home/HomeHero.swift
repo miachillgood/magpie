@@ -2,9 +2,9 @@
 //  HomeHero.swift
 //  SnapLingo
 //
-//  首页上半部分：字标 + 连续天数、照片堆、句子、单词胶囊、黑色按钮。
+//  首页上半部分：字标、照片墙（最近一次拍照那天）、句子、单词胶囊、黑色按钮。
 //  比例刻意收小，让下面的照片墙在第一屏就露出来。
-//  打开时依次出现：照片落下 → 句子浮起 → 荧光笔框住数字 → 闪光线 → 胶囊弹出。
+//  打开时依次出现：照片逐张落下 → 句子浮起 → 荧光笔框住数字 → 闪光线 → 胶囊弹出。
 //
 
 import SwiftUI
@@ -62,6 +62,8 @@ enum HomeHeroAction {
     case openScan(Scan)
     case openWord(VocabWord)
     case study
+    /// 学某一天拍到的词
+    case studyDay(Date)
     case scan
     case showTimeline
 }
@@ -75,8 +77,8 @@ struct HomeHeroContent {
     var action: HomeHeroAction
     var actionTitle: String
     var actionSymbol: String
+    /// 照片墙上的照片（最近一次拍照那天的）
     var photos: [Scan]
-    var stackStyle: PhotoStack.Style
 
     /// 读屏用的整句
     var sentence: String {
@@ -128,14 +130,15 @@ struct HomeHero: View {
             // 屏幕高、内容放得下时，多出来的空间平均分到这几段留白里
             Spacer(minLength: metrics.gap(4))
 
-            PhotoStack(
+            PhotoWall(
                 photos: content.photos,
-                style: content.stackStyle,
                 label: content.label,
                 scale: metrics.stackScale,
                 appeared: appeared,
                 animated: !reduceMotion
-            )
+            ) { scan in
+                onAction(.openScan(scan))
+            }
             .frame(maxWidth: .infinity)
 
             Spacer(minLength: metrics.gap(14))

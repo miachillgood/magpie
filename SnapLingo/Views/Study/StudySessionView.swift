@@ -31,6 +31,25 @@ struct StudySessionView: View {
                 }
             }
         }
+        .overlay(alignment: .bottom) {
+            // 撤销条放在最外层：最后一张点了「太简单」直接进结算页时也能撤销
+            if let session, let undo = session.pendingUndo {
+                UndoBar(word: undo.word.word) {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                        session.undoLast(context: context)
+                    }
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.bottom, 128)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .task(id: undo.log?.id ?? undo.word.id) {
+                    try? await Task.sleep(for: .seconds(5))
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.smooth) { session.dismissUndo() }
+                }
+            }
+        }
+        .animation(.smooth, value: session?.pendingUndo != nil)
         .animation(.smooth, value: session?.isFinished)
         .task {
             if case .today(let extra) = request.scope { extraNew = extra }
@@ -121,8 +140,9 @@ private struct StudyCardsView: View {
     @ViewBuilder
     private var controls: some View {
         if session.revealed {
-            HStack(spacing: Spacing.xs) {
-                ForEach(ReviewRating.allCases) { rating in
+            // 「会」最常用，给最宽的位置；「太简单」会把词移出复习，做窄一点免得手滑
+            WeightedHStack(weights: ReviewRating.buttons.map(\.buttonWeight), spacing: Spacing.xs) {
+                ForEach(ReviewRating.buttons) { rating in
                     RatingButton(rating: rating, interval: session.previewInterval(for: rating)) {
                         withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
                             session.rate(rating, context: context)
@@ -309,6 +329,83 @@ private struct CardBack: View {
 
 // MARK: - 评分按钮
 
+private extension ReviewRating {
+    var buttonWeight: CGFloat {
+        switch self {
+        case .good: 1.4
+        case .easy: 0.8
+        default:    1
+        }
+    }
+}
+
+/// 按比例分宽度的一排，高度取最高的那个
+private struct WeightedHStack: Layout {
+    var weights: [CGFloat]
+    var spacing: CGFloat
+
+    private func widths(total: CGFloat, count: Int) -> [CGFloat] {
+        let ws = (0..<count).map { $0 < weights.count ? weights[$0] : 1 }
+        let available = max(total - spacing * CGFloat(max(count - 1, 0)), 0)
+        let sum = ws.reduce(0, +)
+        return ws.map { available * $0 / max(sum, 0.0001) }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let total = proposal.width ?? subviews.reduce(0) { $0 + $1.sizeThatFits(.unspecified).width } + spacing * CGFloat(max(subviews.count - 1, 0))
+        let ws = widths(total: total, count: subviews.count)
+        let height = zip(subviews, ws).map { $0.sizeThatFits(ProposedViewSize(width: $1, height: nil)).height }.max() ?? 0
+        return CGSize(width: total, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let ws = widths(total: bounds.width, count: subviews.count)
+        var x = bounds.minX
+        for (subview, width) in zip(subviews, ws) {
+            subview.place(at: CGPoint(x: x, y: bounds.minY), proposal: ProposedViewSize(width: width, height: bounds.height))
+            x += width + spacing
+        }
+    }
+}
+
+/// 点了「太简单」后的几秒撤销条
+private struct UndoBar: View {
+    var word: String
+    var onUndo: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "checkmark.seal.fill")
+                .foregroundStyle(Theme.onInk.opacity(0.8))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: word)
+                    .font(.word(16, weight: .bold))
+                    .foregroundStyle(Theme.onInk)
+                Text("已移出复习")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.onInk.opacity(0.7))
+            }
+            .lineLimit(1)
+            Spacer(minLength: Spacing.xs)
+            Button(action: onUndo) {
+                Text("撤销")
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(Theme.ink)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(Theme.onInk, in: .capsule)
+            }
+            .buttonStyle(.pressable)
+        }
+        .padding(.leading, Spacing.md)
+        .padding(.trailing, Spacing.xs)
+        .padding(.vertical, Spacing.xs)
+        .background(Theme.ink, in: .capsule)
+        .softShadow()
+        .accessibilityElement(children: .contain)
+    }
+}
+
 private struct RatingButton: View {
     var rating: ReviewRating
     var interval: Int?
@@ -318,15 +415,16 @@ private struct RatingButton: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Text(rating.emoji)
-                    .font(.system(size: 28))
+                    .font(.system(size: rating == .easy ? 22 : 28))
                 Text(rating.title)
                     .font(.subheadline.weight(.heavy))
                     .foregroundStyle(Theme.ink)
                 Text(intervalText)
                     .font(.caption2.weight(.semibold))
+                    .multilineTextAlignment(.center)
                     .foregroundStyle(Theme.ink.opacity(0.55))
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 10)
             .background(rating.pastel, in: .rect(cornerRadius: Radius.card - 2, style: .continuous))
             .overlay(
@@ -339,6 +437,7 @@ private struct RatingButton: View {
     }
 
     private var intervalText: String {
+        if rating == .easy { return String(localized: "不再出现", comment: "Rating button subtitle: this word will not be reviewed again") }
         guard let interval else {
             return rating == .again ? String(localized: "再看一遍") : String(localized: "本轮练习", comment: "Rating button subtitle: practice only, schedule unchanged")
         }

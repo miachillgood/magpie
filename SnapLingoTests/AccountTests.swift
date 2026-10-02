@@ -12,19 +12,19 @@ import Testing
 @MainActor
 struct OnboardingFlowTests {
     @Test func levelTestComesRightAfterWelcomeWithoutAccounts() {
-        #expect(OnboardingFlow.steps(accountsEnabled: false) == [.welcome, .level, .language, .ai, .pace, .reminder])
+        #expect(OnboardingFlow.steps(accountsEnabled: false) == [.welcome, .level, .language])
         #expect(OnboardingFlow.next(after: .welcome, accountsEnabled: false) == .level)
     }
 
     @Test func loginSitsBetweenWelcomeAndLevelTest() {
-        #expect(OnboardingFlow.steps(accountsEnabled: true) == [.welcome, .login, .level, .language, .ai, .pace, .reminder])
+        #expect(OnboardingFlow.steps(accountsEnabled: true) == [.welcome, .login, .level, .language])
         #expect(OnboardingFlow.next(after: .welcome, accountsEnabled: true) == .login)
         #expect(OnboardingFlow.next(after: .login, accountsEnabled: true) == .level)
     }
 
-    @Test func reminderIsLast() {
-        #expect(OnboardingFlow.next(after: .reminder, accountsEnabled: true) == nil)
-        #expect(OnboardingFlow.next(after: .reminder, accountsEnabled: false) == nil)
+    @Test func nativeLanguageIsLast() {
+        #expect(OnboardingFlow.next(after: .language, accountsEnabled: true) == nil)
+        #expect(OnboardingFlow.next(after: .language, accountsEnabled: false) == nil)
     }
 }
 

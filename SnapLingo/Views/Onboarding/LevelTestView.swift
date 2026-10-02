@@ -14,6 +14,11 @@ struct LevelTestView: View {
     @State private var items: [LevelTest.Item] = []
     @State private var known: Set<String> = []
     @State private var finished = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 标题和说明先出来
+    @State private var appeared = false
+    /// 读完说明再出单词：等于当前轮次时这一轮的词才显示
+    @State private var shownRound = -1
 
     var body: some View {
         ZStack {
@@ -32,6 +37,18 @@ struct LevelTestView: View {
         .onAppear {
             if items.isEmpty { items = test.nextRound() }
             if Self.debugResultLevel != nil { finished = true }
+            guard !appeared else { return }
+            if reduceMotion {
+                appeared = true
+                shownRound = test.round
+            } else {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(80))
+                    appeared = true
+                    try? await Task.sleep(for: .milliseconds(650))
+                    shownRound = test.round
+                }
+            }
         }
         .sensoryFeedback(.selection, trigger: known)
     }
@@ -68,11 +85,14 @@ struct LevelTestView: View {
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .modifier(Entrance(appeared: appeared, delay: 0.12, reduceMotion: reduceMotion))
             }
+            .modifier(Entrance(appeared: appeared, delay: 0, reduceMotion: reduceMotion))
 
             FlowLayout(spacing: Spacing.sm) {
-                ForEach(items) { item in
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     let isOn = known.contains(item.word)
+                    let shown = shownRound == test.round
                     Button {
                         withAnimation(.snappy(duration: 0.2)) {
                             if isOn { known.remove(item.word) } else { known.insert(item.word) }
@@ -90,6 +110,12 @@ struct LevelTestView: View {
                     }
                     .buttonStyle(.pressable)
                     .accessibilityAddTraits(isOn ? .isSelected : [])
+                    // 一个接一个冒出来
+                    .opacity(shown ? 1 : 0)
+                    .scaleEffect(shown ? 1 : 0.85)
+                    .offset(y: shown ? 0 : 10)
+                    .animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.75).delay(0.05 * Double(index)), value: shown)
+                    .allowsHitTesting(shown)
                 }
             }
             .id(test.round)
@@ -97,26 +123,41 @@ struct LevelTestView: View {
 
             Spacer()
 
-            Text(known.isEmpty ? "一个都不认识也没关系 🙂" : "已选 \(known.count) 个")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .contentTransition(.numericText())
+            VStack(spacing: Spacing.lg) {
+                Text(known.isEmpty ? "一个都不认识也没关系 🙂" : "已选 \(known.count) 个")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .contentTransition(.numericText())
 
-            PrimaryButton(title: test.round + 1 < LevelTest.rounds ? "下一轮" : "看结果", trailingSymbol: "arrow.right") {
-                advance()
+                PrimaryButton(title: test.round + 1 < LevelTest.rounds ? "下一轮" : "看结果", trailingSymbol: "arrow.right") {
+                    advance()
+                }
             }
+            .modifier(Entrance(appeared: appeared, delay: 0.25, reduceMotion: reduceMotion))
         }
         .padding(Spacing.lg)
     }
 
     private func advance() {
+        // 词还没出来就点“下一轮”，等于什么都没看就交了
+        guard shownRound == test.round else { return }
         test.submit(items, known: known)
         known = []
         if test.isFinished {
             finished = true
         } else {
             withAnimation(.smooth) { items = test.nextRound() }
+            // 第二轮也是先换标题说明，再出新词
+            if reduceMotion {
+                shownRound = test.round
+            } else {
+                let round = test.round
+                Task {
+                    try? await Task.sleep(for: .milliseconds(550))
+                    shownRound = round
+                }
+            }
         }
     }
 
