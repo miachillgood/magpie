@@ -70,7 +70,12 @@ final class VocabWord {
     var stateRaw: String = WordState.new.rawValue
     /// 手动标记“已掌握，不再复习”
     var excludedFromReview: Bool = false
+    /// 旧算法（SM-2）的难度系数，现在不用了，留着是为了不改数据库结构
     var easeFactor: Double = 2.5
+    /// FSRS 记忆稳定性（天）；0 表示还没按 FSRS 算过
+    var stability: Double = 0
+    /// FSRS 难度 1...10
+    var difficulty: Double = 0
     var intervalDays: Int = 0
     var repetitions: Int = 0
     var lapses: Int = 0
@@ -130,20 +135,24 @@ final class VocabWord {
         get {
             SRSState(
                 state: state,
-                easeFactor: easeFactor,
+                stability: stability,
+                difficulty: difficulty,
                 intervalDays: intervalDays,
                 repetitions: repetitions,
                 lapses: lapses,
-                dueDate: dueDate
+                dueDate: dueDate,
+                lastReviewedAt: lastReviewedAt
             )
         }
         set {
             state = newValue.state
-            easeFactor = newValue.easeFactor
+            stability = newValue.stability
+            difficulty = newValue.difficulty
             intervalDays = newValue.intervalDays
             repetitions = newValue.repetitions
             lapses = newValue.lapses
             dueDate = newValue.dueDate
+            lastReviewedAt = newValue.lastReviewedAt
         }
     }
 

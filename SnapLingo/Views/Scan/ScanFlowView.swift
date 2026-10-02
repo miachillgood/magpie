@@ -14,6 +14,8 @@ struct ScanFlowView: View {
     }
 
     @State private var stage: Stage = .capture
+    /// 第一次拍照、还没决定要不要用 AI：先弹窗问，选完再处理这张照片
+    @State private var awaitingConsent: UIImage?
 
     var body: some View {
         NavigationStack {
@@ -21,7 +23,11 @@ struct ScanFlowView: View {
                 switch stage {
                 case .capture:
                     ScanCameraView { image in
-                        withAnimation(.smooth) { stage = .processing(image) }
+                        if AIConsent.state == .undecided {
+                            awaitingConsent = image
+                        } else {
+                            withAnimation(.smooth) { stage = .processing(image) }
+                        }
                     }
                 case .processing(let image):
                     ScanProcessingView(image: image) { draft in
@@ -36,6 +42,19 @@ struct ScanFlowView: View {
                 }
             }
             .transition(.opacity)
+        }
+        #if DEBUG
+        // 截图用：-previewAIConsent 直接弹出 AI 说明
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-previewAIConsent") { awaitingConsent = UIImage() }
+        }
+        #endif
+        .sheet(isPresented: Binding(get: { awaitingConsent != nil }, set: { _ in })) {
+            AIConsentSheet {
+                guard let image = awaitingConsent else { return }
+                awaitingConsent = nil
+                withAnimation(.smooth) { stage = .processing(image) }
+            }
         }
     }
 }

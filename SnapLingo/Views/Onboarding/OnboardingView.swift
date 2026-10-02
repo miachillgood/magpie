@@ -6,44 +6,65 @@
 import SwiftUI
 import SwiftData
 
-/// 首次启动：欢迎 → 母语 → 水平自测 → 每日节奏 → 提醒
+/// 首次启动：欢迎 → 介绍 →（登录）→ 自选水平 → 母语（顺序见 OnboardingFlow）
 struct OnboardingView: View {
     @Bindable var settings: UserSettings
     @Environment(\.modelContext) private var context
-    @State private var step: Step = .welcome
+    @State private var step: OnboardingStep = {
+        #if DEBUG
+        OnboardingDebug.initialStep
+        #else
+        .welcome
+        #endif
+    }()
 
-    private enum Step: Int, CaseIterable {
-        case welcome, language, level, pace, reminder
-    }
+    private let accountsEnabled = AccountFeatures.isEnabled
 
     var body: some View {
         NavigationStack {
             ZStack {
-                PaperBackground()
+                OnboardingBackground()
                 Group {
                     switch step {
                     case .welcome:
-                        WelcomeStep { go(.language) }
-                    case .language:
-                        LanguageStep(selection: $settings.nativeLanguage) { go(.level) }
+                        WelcomeStep { advance() }
+                    case .intro:
+                        IntroStep { advance() }
+                    case .login:
+                        loginStep
                     case .level:
-                        LevelTestView(onSkip: { go(.pace) }) { score in
-                            settings.levelScore = score
-                            settings.assessmentCompleted = true
-                            go(.pace)
+                        // 引导里只让用户自己选一档；想测可以去「我的」里做小测
+                        LevelPickStep { level in
+                            settings.levelScore = level.cefr.midScore
+                            advance()
                         }
-                    case .pace:
-                        PaceStep(selection: $settings.newWordsPerDay) { go(.reminder) }
-                    case .reminder:
-                        ReminderStep(settings: settings) { finish() }
+                    case .language:
+                        LanguageStep(selection: $settings.nativeLanguage) { advance() }
                     }
                 }
                 .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
             }
+            .toolbarVisibility(.hidden, for: .navigationBar)
         }
     }
 
-    private func go(_ next: Step) {
+    /// 账号服务上线前（阶段 D）只在调试预览里出现，用假的验证码服务
+    @ViewBuilder
+    private var loginStep: some View {
+        #if DEBUG
+        LoginFlowView(actions: .preview, onApple: { result in
+            if case .signedIn = AppleAccount.handle(result, settings: settings, context: context) { advance() }
+        }, onDone: { advance() })
+        #else
+        Color.clear.onAppear { advance() }
+        #endif
+    }
+
+    private func advance() {
+        guard let next = OnboardingFlow.next(after: step, accountsEnabled: accountsEnabled) else {
+            finish()
+            return
+        }
         try? context.save()
         withAnimation(.smooth) { step = next }
     }
@@ -55,59 +76,12 @@ struct OnboardingView: View {
     }
 }
 
-// MARK: - 欢迎
-
-private struct WelcomeStep: View {
-    var onContinue: () -> Void
-    @State private var appeared = false
-
+/// 引导页的底：上面暖沙斑点（和欢迎页同一个颜色），往下过渡成浅灰
+struct OnboardingBackground: View {
     var body: some View {
-        ZStack(alignment: .top) {
-            MeshBackdrop()
-                .frame(height: 560)
-                .mask(LinearGradient(colors: [.black, .black, .clear], startPoint: .top, endPoint: .bottom))
-                .ignoresSafeArea(edges: .top)
-
-            VStack(spacing: 0) {
-                StickerCollage()
-                    .frame(height: 300)
-                    .padding(.top, 70)
-                    .scaleEffect(appeared ? 1 : 0.85)
-                    .opacity(appeared ? 1 : 0)
-
-                Spacer(minLength: Spacing.lg)
-
-                VStack(spacing: Spacing.sm) {
-                    Text("See it. Snap it.\nLearn it.")
-                        .font(.system(size: 40, weight: .bold, design: .serif))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Theme.ink)
-                    Text("拍下身边的英文，按你的水平挑词，\n每天几分钟，把它们变成你的词汇。")
-                        .font(.body.weight(.medium))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
-                }
-                .offset(y: appeared ? 0 : 20)
-                .opacity(appeared ? 1 : 0)
-
-                HStack(spacing: Spacing.xs) {
-                    Pill(text: "拍照识词", emoji: "📸", style: .tinted(Pastel.peach))
-                    Pill(text: "按水平推荐", emoji: "✨", style: .tinted(Pastel.lavender))
-                    Pill(text: "每日计划", emoji: "⏰", style: .tinted(Pastel.mint))
-                }
-                .padding(.top, Spacing.lg)
-                .opacity(appeared ? 1 : 0)
-
-                Spacer(minLength: Spacing.lg)
-
-                PrimaryButton(title: "开始", trailingSymbol: "arrow.right", action: onContinue)
-                    .padding(.horizontal, Spacing.lg)
-                    .padding(.bottom, Spacing.md)
-            }
-        }
-        .onAppear {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) { appeared = true }
-        }
+        Theme.mist
+            .overlay(alignment: .top) { ThemeWash(height: 640, theme: .sand) }
+            .ignoresSafeArea()
     }
 }
 
@@ -117,224 +91,126 @@ private struct LanguageStep: View {
     @Binding var selection: NativeLanguage
     var onContinue: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+
+    /// 效果图里选中那一行的黄色
+    private static let selectedFill = Color(light: UIColor(hex: 0xF6E3A8), dark: UIColor(hex: 0x5A4A1E))
+
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("你的母语是？")
-                    .font(.display)
-                Text("单词的释义和例句翻译会用这种语言。随时可以在“我的”里改。")
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.top, Spacing.xl)
+        VStack(spacing: 0) {
+            header
+                .padding(.horizontal, Spacing.lg)
 
             ScrollView {
-                VStack(spacing: Spacing.xs + 2) {
-                    ForEach(NativeLanguage.allCases) { language in
-                        let isOn = selection == language
-                        Button {
-                            withAnimation(.snappy) { selection = language }
-                        } label: {
-                            HStack(spacing: Spacing.md) {
-                                Text(verbatim: language.endonym)
-                                    .font(.headline.weight(.heavy))
-                                Spacer()
-                                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
-                                    .font(.title2)
-                                    .foregroundStyle(isOn ? Theme.ink : Theme.ink.opacity(0.2))
-                                    .contentTransition(.symbolEffect(.replace))
-                            }
-                            .padding(.horizontal, Spacing.md)
-                            .frame(height: 58)
-                            .background(Theme.card, in: .rect(cornerRadius: Radius.card - 4, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Radius.card - 4, style: .continuous)
-                                    .strokeBorder(isOn ? Theme.ink : .clear, lineWidth: 2.5)
-                            )
-                        }
-                        .buttonStyle(.pressable)
-                        .foregroundStyle(Theme.ink)
+                VStack(spacing: 8) {
+                    ForEach(Array(NativeLanguage.allCases.enumerated()), id: \.element) { index, language in
+                        row(language)
+                            .modifier(Entrance(appeared: appeared, delay: 0.15 + 0.04 * Double(index), reduceMotion: reduceMotion))
                     }
                 }
-                .padding(2)
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, 4)
             }
             .scrollIndicators(.hidden)
             .scrollBounceBehavior(.basedOnSize)
             .sensoryFeedback(.selection, trigger: selection)
 
             PrimaryButton(title: "继续", trailingSymbol: "arrow.right", action: onContinue)
-        }
-        .padding(Spacing.lg)
-    }
-}
+                .padding(.horizontal, Spacing.lg)
+                .padding(.top, Spacing.md)
 
-// MARK: - 节奏
-
-private struct PaceStep: View {
-    @Binding var selection: Int
-    var onContinue: () -> Void
-
-    private func color(for pace: StudyPace) -> Color {
-        switch pace {
-        case .relaxed:  Pastel.mint
-        case .standard: Pastel.butter
-        case .intense:  Pastel.peach
-        }
-    }
-
-    private func emoji(for pace: StudyPace) -> String {
-        switch pace {
-        case .relaxed:  "🐢"
-        case .standard: "🚶"
-        case .intense:  "🐇"
-        }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("每天学多少？")
-                    .font(.display)
-                Text("随时可以在“我的”里调整，到期的复习会优先安排。")
-                    .foregroundStyle(.secondary)
+            // 左下角探出头的喜鹊，贴着屏幕底边
+            HStack {
+                Image("HelperMagpie")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 76)
+                    .offset(x: -Spacing.lg - 6)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 40)
+                    .animation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.7).delay(0.6), value: appeared)
+                    .accessibilityHidden(true)
+                Spacer()
             }
-            .padding(.top, Spacing.xl)
-
-            VStack(spacing: Spacing.sm) {
-                ForEach(StudyPace.allCases) { pace in
-                    let isOn = selection == pace.rawValue
-                    Button {
-                        withAnimation(.snappy) { selection = pace.rawValue }
-                    } label: {
-                        HStack(spacing: Spacing.md) {
-                            EmojiTile(emoji: emoji(for: pace), color: color(for: pace), size: 56)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(pace.title).font(.headline.weight(.heavy))
-                                Text(pace.detail).font(.subheadline).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
-                                .font(.title2)
-                                .foregroundStyle(isOn ? Theme.ink : Theme.ink.opacity(0.2))
-                                .contentTransition(.symbolEffect(.replace))
-                        }
-                        .card(padding: Spacing.sm + 2)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
-                                .strokeBorder(isOn ? Theme.ink : .clear, lineWidth: 2.5)
-                        )
-                    }
-                    .buttonStyle(.pressable)
-                    .foregroundStyle(Theme.ink)
+            .padding(.leading, Spacing.lg)
+            .padding(.top, 6)
+        }
+        .ignoresSafeArea(edges: .bottom)
+        .onAppear {
+            guard !appeared else { return }
+            if reduceMotion {
+                appeared = true
+            } else {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(80))
+                    appeared = true
                 }
             }
-            .sensoryFeedback(.selection, trigger: selection)
-
-            Spacer()
-            PrimaryButton(title: "继续", trailingSymbol: "arrow.right", action: onContinue)
         }
-        .padding(Spacing.lg)
     }
-}
 
-// MARK: - 提醒
-
-private struct ReminderStep: View {
-    @Bindable var settings: UserSettings
-    var onFinish: () -> Void
-    @State private var ring = 0
-
-    var body: some View {
-        VStack(spacing: Spacing.lg) {
-            Spacer()
-            Text("🔔")
-                .font(.system(size: 64))
-                .frame(width: 140, height: 140)
-                .background(Pastel.butter, in: .circle)
-                .rotationEffect(.degrees(ring.isMultiple(of: 2) ? -8 : 8))
-                .animation(.easeInOut(duration: 0.18).repeatCount(5, autoreverses: true), value: ring)
-                .onAppear { ring += 1 }
-            VStack(spacing: Spacing.xs) {
-                Text("每天提醒你一次？")
-                    .font(.display)
-                Text("在你方便的时间提醒一下，坚持更容易。")
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm), GridItem(.flexible(), spacing: Spacing.sm)], spacing: Spacing.sm) {
-                ForEach(ReminderPreset.all) { preset in
-                    let isOn = settings.reminderHour == preset.hour && settings.reminderMinute == preset.minute
-                    Button {
-                        withAnimation(.snappy) {
-                            settings.reminderHour = preset.hour
-                            settings.reminderMinute = preset.minute
-                        }
-                    } label: {
-                        HStack(spacing: Spacing.xs) {
-                            Text(preset.emoji).font(.title2)
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(preset.title).font(.subheadline.weight(.heavy))
-                                Text(preset.timeText).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .padding(Spacing.sm)
-                        .background(preset.color, in: .rect(cornerRadius: Radius.card - 6, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Radius.card - 6, style: .continuous)
-                                .strokeBorder(isOn ? Theme.ink : .clear, lineWidth: 2.5)
-                        )
-                    }
-                    .buttonStyle(.pressable)
-                    .foregroundStyle(Theme.ink)
+    private var header: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("你的母语是？")
+                .font(.system(size: 31, weight: .heavy, design: .rounded))
+                .foregroundStyle(Theme.homeInk)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.trailing, 40)
+                .overlay(alignment: .topTrailing) {
+                    Image("TitleSparks")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 30)
+                        .offset(x: -40, y: -26)
+                        .accessibilityHidden(true)
                 }
-            }
-            .sensoryFeedback(.selection, trigger: settings.reminderHour)
-
-            DatePicker("其他时间", selection: $settings.reminderTime, displayedComponents: .hourAndMinute)
-                .datePickerStyle(.compact)
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.xs)
-                .background(Theme.card, in: .capsule)
-                .frame(maxWidth: 240)
-            Spacer()
-            VStack(spacing: Spacing.sm) {
-                PrimaryButton(title: "开启提醒", symbol: "bell.fill") {
-                    Task {
-                        settings.reminderEnabled = await NotificationService.requestAuthorization()
-                        onFinish()
-                    }
-                }
-                Button("以后再说") { onFinish() }
-                    .font(.headline)
-                    .foregroundStyle(Theme.ink.opacity(0.6))
-                    .padding(.vertical, Spacing.xs)
-            }
+            Text("我们会用它来解释单词，帮你学英语。")
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(Theme.homeInk.opacity(0.6))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 190, alignment: .leading)
         }
-        .padding(Spacing.lg)
-    }
-}
-
-// MARK: - 提醒时间预设
-
-private struct ReminderPreset: Identifiable {
-    var emoji: String
-    var title: LocalizedStringKey
-    var hour: Int
-    var minute: Int
-    var color: Color
-
-    var id: Int { hour * 60 + minute }
-    /// 按地区显示时间：08:00 / 8:00 AM
-    var timeText: String {
-        let date = Calendar.current.date(from: DateComponents(hour: hour, minute: minute)) ?? Date()
-        return date.formatted(date: .omitted, time: .shortened)
+        .frame(maxWidth: .infinity, minHeight: 170, alignment: .bottomLeading)
+        .modifier(Entrance(appeared: appeared, delay: 0, reduceMotion: reduceMotion))
+        .overlay(alignment: .bottomTrailing) {
+            Image("LanguageMagpie")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 165)
+                .offset(x: Spacing.sm, y: 6)
+                .rotationEffect(.degrees(appeared ? 0 : 6), anchor: .bottom)
+                .scaleEffect(appeared ? 1 : 0.85, anchor: .bottom)
+                .opacity(appeared ? 1 : 0)
+                .animation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.65).delay(0.1), value: appeared)
+                .accessibilityHidden(true)
+        }
+        .padding(.top, Spacing.xl)
+        .padding(.bottom, Spacing.lg)
     }
 
-    static let all = [
-        ReminderPreset(emoji: "🌅", title: "早上", hour: 8, minute: 0, color: Pastel.peach),
-        ReminderPreset(emoji: "🥪", title: "午休", hour: 12, minute: 30, color: Pastel.butter),
-        ReminderPreset(emoji: "🚌", title: "下班路上", hour: 18, minute: 0, color: Pastel.mint),
-        ReminderPreset(emoji: "🌙", title: "睡前", hour: 21, minute: 30, color: Pastel.lavender)
-    ]
+    private func row(_ language: NativeLanguage) -> some View {
+        let isOn = selection == language
+        return Button {
+            withAnimation(.snappy) { selection = language }
+        } label: {
+            HStack(spacing: Spacing.md) {
+                Text(verbatim: language.endonym)
+                    .font(.system(.headline, design: .rounded, weight: .heavy))
+                Spacer()
+                Circle()
+                    .strokeBorder(isOn ? Theme.homeInk : Theme.homeInk.opacity(0.25), lineWidth: isOn ? 7 : 1.5)
+                    .background(Circle().fill(isOn ? Theme.card : .clear))
+                    .frame(width: 26, height: 26)
+            }
+            .foregroundStyle(Theme.homeInk)
+            .padding(.horizontal, 20)
+            .frame(height: 50)
+            .background(isOn ? Self.selectedFill : Theme.card, in: .capsule)
+            .overlay(Capsule().strokeBorder(isOn ? Theme.homeInk : .clear, lineWidth: 2))
+            .shadow(color: .black.opacity(isOn ? 0 : 0.04), radius: 6, y: 2)
+        }
+        .buttonStyle(.pressable)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
 }

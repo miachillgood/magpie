@@ -14,8 +14,11 @@ struct SessionCompleteView: View {
     @Query private var words: [VocabWord]
     @Query(sort: \ReviewLog.reviewedAt) private var logs: [ReviewLog]
     @Query(sort: \UserSettings.createdAt) private var settingsRows: [UserSettings]
+    @Environment(\.modelContext) private var context
     @State private var celebrate = 0
     @State private var appeared = false
+    /// 这一屏里刚回答过「节奏合适吗？」，显示调整后的结果
+    @State private var paceAnswered = false
 
     private var plan: DailyPlan {
         guard let settings = settingsRows.first else { return .empty }
@@ -29,16 +32,24 @@ struct SessionCompleteView: View {
         session.completedCount == 0 ? 0 : session.rememberedCount * 100 / session.completedCount
     }
 
+    /// 结算页要不要放「节奏合适吗？」卡片
+    private var showsPaceCheck: Bool {
+        guard let settings = settingsRows.first, case .today = session.scope else { return false }
+        return paceAnswered || StudyPace.shouldAsk(plan: plan, backlog: backlog, asked: settings.paceCheckDone)
+    }
+
     var body: some View {
+        // 多一张卡片时圆环缩小、间距收紧，小屏也放得下「完成」按钮
+        let tight = showsPaceCheck
         ZStack {
-            VStack(spacing: Spacing.xl) {
+            VStack(spacing: tight ? Spacing.sm : Spacing.xl) {
                 Spacer()
 
                 ZStack {
                     PlanRingView(newProgress: plan.newProgress, reviewProgress: plan.reviewProgress, lineWidth: 18)
-                        .frame(width: 190, height: 190)
+                        .frame(width: tight ? 120 : 190, height: tight ? 120 : 190)
                     Text(session.completedCount > 0 ? "🎉" : "☕️")
-                        .font(.system(size: 64))
+                        .font(.system(size: tight ? 44 : 64))
                         .scaleEffect(appeared ? 1 : 0.3)
                         .rotationEffect(.degrees(appeared ? 0 : -30))
                 }
@@ -68,6 +79,13 @@ struct SessionCompleteView: View {
                     }
                 }
 
+                if showsPaceCheck, let settings = settingsRows.first {
+                    PaceCheckCard(settings: settings, newDone: plan.newDone, backlog: backlog, answered: paceAnswered) { step in
+                        answerPace(settings: settings, step: step)
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                }
+
                 Spacer()
 
                 VStack(spacing: Spacing.sm) {
@@ -90,6 +108,16 @@ struct SessionCompleteView: View {
         }
     }
 
+    private func answerPace(settings: UserSettings, step: Int) {
+        withAnimation(.snappy) {
+            settings.newWordsPerDay = StudyPace.adjusted(settings.newWordsPerDay, by: step)
+            settings.paceCheckDone = true
+            paceAnswered = true
+        }
+        try? context.save()
+        StudyReminder.refresh(context: context)
+    }
+
     private var title: String {
         if session.completedCount == 0 { return String(localized: "今天没有要学的词") }
         return plan.hasWork ? String(localized: "这一轮完成！") : String(localized: "今日计划完成！")
@@ -104,5 +132,58 @@ struct SessionCompleteView: View {
             return String(localized: "下次复习在 \(day)，共 \(nextDay.count) 个词。")
         }
         return String(localized: "去扫描一个新场景，积累更多单词吧。")
+    }
+}
+
+/// 结算页的「节奏合适吗？」：第一次有新词因为每日上限在排队时问一次，往上或往下挪一档
+private struct PaceCheckCard: View {
+    let settings: UserSettings
+    var newDone: Int
+    var backlog: Int
+    var answered: Bool
+    var onAnswer: (Int) -> Void
+
+    var body: some View {
+        VStack(spacing: Spacing.sm) {
+            if answered {
+                Text("以后每天 \(settings.newWordsPerDay) 个新词，可以在“我的”里改")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(spacing: 4) {
+                    Text("节奏合适吗？")
+                        .font(.headline.weight(.heavy))
+                    Text("今天的 \(newDone) 个新词学完了，还有 \(backlog) 个在排队。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                HStack(spacing: Spacing.xs) {
+                    choice("少一点", step: -1)
+                    choice("刚好", step: 0)
+                    choice("多一点", step: 1)
+                }
+            }
+        }
+        .foregroundStyle(Theme.ink)
+        .frame(maxWidth: .infinity)
+        .card(padding: Spacing.md)
+    }
+
+    private func choice(_ title: LocalizedStringKey, step: Int) -> some View {
+        Button { onAnswer(step) } label: {
+            Text(title)
+                .font(.subheadline.weight(.heavy))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(step == 0 ? Theme.ink : Theme.insetFill, in: .capsule)
+                .foregroundStyle(step == 0 ? Theme.onInk : Theme.ink)
+        }
+        .buttonStyle(.pressable)
     }
 }

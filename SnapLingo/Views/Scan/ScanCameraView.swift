@@ -23,6 +23,11 @@ struct ScanCameraView: View {
     /// 先确认相机权限再决定是否实时取景（未授权时 isAvailable 为 false）
     @State private var cameraChecked = false
     @State private var cameraDenied = false
+    /// 不为 nil 时盖一层相机权限说明页
+    @State private var permission: CameraPermissionView.Mode?
+    /// 取景页固定深色，说明页跟随系统
+    @Environment(\.colorScheme) private var systemScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     private var liveScanAvailable: Bool {
         cameraChecked && DataScannerViewController.isSupported && DataScannerViewController.isAvailable
@@ -55,8 +60,25 @@ struct ScanCameraView: View {
                 controls
                     .padding(.bottom, 16)
             }
+
+            if let permission {
+                CameraPermissionView(mode: permission) {
+                    Task { await requestCamera() }
+                } onPickPhoto: {
+                    showingPhotoPicker = true
+                } onLater: {
+                    dismiss()
+                }
+                .environment(\.colorScheme, systemScheme)
+                .transition(.opacity)
+            }
         }
+        .animation(.smooth, value: permission)
         .task { await checkCamera() }
+        .onChange(of: scenePhase) { _, phase in
+            // 从设置里打开权限回来
+            if phase == .active, permission == .denied { Task { await checkCamera() } }
+        }
         .toolbarVisibility(.hidden, for: .navigationBar)
         .environment(\.colorScheme, .dark)
         .sensoryFeedback(.impact(weight: .medium), trigger: isCapturing) { _, new in new }
@@ -182,15 +204,36 @@ struct ScanCameraView: View {
     }
 
     private func checkCamera() async {
+        let hasCamera = UIImagePickerController.isSourceTypeAvailable(.camera)
+        #if DEBUG
+        // 截图用：-cameraPermission ask / denied（模拟器没有相机）
+        if let forced = OnboardingDebug.value(after: "-cameraPermission") {
+            permission = forced == "denied" ? .denied : .ask
+            return
+        }
+        #endif
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .notDetermined:
-            let granted = await AVCaptureDevice.requestAccess(for: .video)
-            cameraDenied = !granted
+            if hasCamera {
+                // 先看说明页，点“允许”再弹系统框
+                permission = .ask
+                return
+            }
+            cameraDenied = false
         case .denied, .restricted:
             cameraDenied = true
+            permission = hasCamera ? .denied : nil
         default:
             cameraDenied = false
+            permission = nil
         }
+        cameraChecked = true
+    }
+
+    private func requestCamera() async {
+        let granted = await AVCaptureDevice.requestAccess(for: .video)
+        cameraDenied = !granted
+        permission = granted ? nil : .denied
         cameraChecked = true
     }
 

@@ -339,8 +339,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = SnapLingo/SnapLingo.entitlements;
 				DEVELOPMENT_LANGUAGE = en;
-				INFOPLIST_KEY_CFBundleDisplayName = SnapLingo;
-				INFOPLIST_KEY_NSCameraUsageDescription = "SnapLingo 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
+				INFOPLIST_KEY_CFBundleDisplayName = Magpie;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Magpie 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -375,8 +375,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = SnapLingo/SnapLingo.entitlements;
 				DEVELOPMENT_LANGUAGE = en;
-				INFOPLIST_KEY_CFBundleDisplayName = SnapLingo;
-				INFOPLIST_KEY_NSCameraUsageDescription = "SnapLingo 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
+				INFOPLIST_KEY_CFBundleDisplayName = Magpie;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Magpie 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

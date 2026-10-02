@@ -70,6 +70,8 @@ struct AppTabBar: View {
                 }
             }
             .accessibilityElement(children: .contain)
+            // 底条是一张奶油色的图，深色模式下也是浅色，上面的文字和图标固定用浅色模式的颜色
+            .environment(\.colorScheme, .light)
             // 快门和「Snap!」比底条高出一截，这部分也要让出来
             .padding(.top, 20)
             .padding(.horizontal, 16)
@@ -100,7 +102,7 @@ struct AppTabBar: View {
                     .overlay(alignment: .topTrailing) {
                         if badge {
                             Circle()
-                                .fill(Color(hex: 0xFF7A2F))
+                                .fill(Theme.brand)
                                 .frame(width: 9, height: 9)
                                 .overlay(Circle().stroke(Theme.cream, lineWidth: 2))
                                 .offset(x: 5, y: -2)

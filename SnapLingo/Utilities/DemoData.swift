@@ -21,10 +21,19 @@ enum DemoData {
             let settings = UserSettings.current(in: context)
             settings.onboardingCompleted = true
             settings.assessmentCompleted = true
+            // 跳过引导也就跳过了 AI 说明页，当作已经同意（截图、调试用）
+            if AIConsent.state == .undecided { AIConsent.state = .granted }
             try? context.save()
         }
         if arguments.contains("-showOnboarding") {
             UserSettings.current(in: context).onboardingCompleted = false
+            try? context.save()
+        }
+        // -newWordsPerDay 2：调小每天的新词上限，让新词排队，方便看结算页的「节奏合适吗？」
+        if let index = arguments.firstIndex(of: "-newWordsPerDay"), index + 1 < arguments.count, let count = Int(arguments[index + 1]) {
+            let settings = UserSettings.current(in: context)
+            settings.newWordsPerDay = count
+            settings.paceCheckDone = false
             try? context.save()
         }
         if arguments.contains("-seedDemoData") {

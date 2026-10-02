@@ -48,10 +48,12 @@ struct SpeckleBackground: View {
 /// 页面顶部的主题色斑点底纹，往下很快过渡成透明（露出下面的浅灰）；复习页和「我的」共用
 struct ThemeWash: View {
     var height: CGFloat = 560
+    /// 指定时不跟随用户选的主题色（引导页固定用暖沙，和欢迎页一致）
+    var theme: HomeTheme? = nil
     @AppStorage(HomeTheme.storageKey) private var themeRaw = HomeTheme.sky.rawValue
 
     var body: some View {
-        SpeckleBackground(base: HomeTheme(storedValue: themeRaw).base)
+        SpeckleBackground(base: (theme ?? HomeTheme(storedValue: themeRaw)).base)
             .frame(height: height)
             .mask {
                 LinearGradient(
@@ -107,12 +109,12 @@ enum HomeTheme: String, CaseIterable, Identifiable {
 
     var base: Color {
         switch self {
-        case .sky: Color(light: UIColor(hex: 0xD8E2EC), dark: UIColor(hex: 0x252E38))
-        case .sand: Color(light: UIColor(hex: 0xF1DCC6), dark: UIColor(hex: 0x3A2E24))
-        case .lilac: Color(light: UIColor(hex: 0xE2DBEB), dark: UIColor(hex: 0x2D2836))
-        case .sage: Color(light: UIColor(hex: 0xDAE4D0), dark: UIColor(hex: 0x28311F))
-        case .blush: Color(light: UIColor(hex: 0xF0DADA), dark: UIColor(hex: 0x382628))
-        case .stone: Color(light: UIColor(hex: 0xE4E1DA), dark: UIColor(hex: 0x2C2A27))
+        case .sky: Color(light: UIColor(hex: 0xCED9DE), dark: UIColor(hex: 0x32393A))
+        case .sand: Color(light: UIColor(hex: 0xE4D2C0), dark: UIColor(hex: 0x433526))
+        case .lilac: Color(light: UIColor(hex: 0xDDD0D2), dark: UIColor(hex: 0x312221))
+        case .sage: Color(light: UIColor(hex: 0xCDD2C8), dark: UIColor(hex: 0x363830))
+        case .blush: Color(light: UIColor(hex: 0xE8D2D0), dark: UIColor(hex: 0x463733))
+        case .stone: Color(light: UIColor(hex: 0xEEE7D8), dark: UIColor(hex: 0x383530))
         }
     }
 

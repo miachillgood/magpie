@@ -2,9 +2,9 @@
 //  HomeHero.swift
 //  SnapLingo
 //
-//  首页上半部分：字标 + 连续天数、照片堆、句子、单词胶囊、黑色按钮。
+//  首页上半部分：字标、照片墙（最近一次拍照那天）、句子、单词胶囊、黑色按钮。
 //  比例刻意收小，让下面的照片墙在第一屏就露出来。
-//  打开时依次出现：照片落下 → 句子浮起 → 荧光笔框住数字 → 闪光线 → 胶囊弹出。
+//  打开时依次出现：照片逐张落下 → 句子浮起 → 荧光笔框住数字 → 闪光线 → 胶囊弹出。
 //
 
 import SwiftUI
@@ -62,6 +62,8 @@ enum HomeHeroAction {
     case openScan(Scan)
     case openWord(VocabWord)
     case study
+    /// 学某一天拍到的词
+    case studyDay(Date)
     case scan
     case showTimeline
 }
@@ -75,8 +77,8 @@ struct HomeHeroContent {
     var action: HomeHeroAction
     var actionTitle: String
     var actionSymbol: String
+    /// 照片墙上的照片（最近一次拍照那天的）
     var photos: [Scan]
-    var stackStyle: PhotoStack.Style
 
     /// 读屏用的整句
     var sentence: String {
@@ -128,14 +130,15 @@ struct HomeHero: View {
             // 屏幕高、内容放得下时，多出来的空间平均分到这几段留白里
             Spacer(minLength: metrics.gap(4))
 
-            PhotoStack(
+            PhotoWall(
                 photos: content.photos,
-                style: content.stackStyle,
                 label: content.label,
                 scale: metrics.stackScale,
                 appeared: appeared,
                 animated: !reduceMotion
-            )
+            ) { scan in
+                onAction(.openScan(scan))
+            }
             .frame(maxWidth: .infinity)
 
             Spacer(minLength: metrics.gap(14))
@@ -183,7 +186,7 @@ struct HomeHero: View {
 
     private var header: some View {
         HStack {
-            Text("SnapLingo")
+            Text("Magpie")
                 .font(.brand(21))
                 .kerning(-0.4)
                 .foregroundStyle(Theme.homeInk)
@@ -321,8 +324,9 @@ struct HomeHero: View {
 
 // MARK: - 一行句子
 
-/// 每一行都不换行：文字放不下时整行字号依次缩小（西语、葡语的句子比中文长），
-/// 地点胶囊放不下时先缩小字号、再用“…”截断，这样句子总是固定的行数
+/// 每一行尽量不换行：文字放不下时整行字号依次缩小（西语、葡语的句子比中文长）。
+/// 地点胶囊放不下时先缩小字号、再用“…”截断；普通句子缩到最小还放不下（英文长句），就折成两行，
+/// 绝不比屏幕宽——一行撑出屏幕会把整个首页都挤歪
 private struct HeadlineLine: View {
     var pieces: [HeadlinePiece]
     var size: CGFloat
@@ -332,13 +336,47 @@ private struct HeadlineLine: View {
     var reduceMotion: Bool
 
     private static let fitFactors: [CGFloat] = [1, 0.88, 0.76, 0.66]
+    private static let wrapFactors: [CGFloat] = [1, 0.88, 0.76]
+
+    private var hasPlace: Bool {
+        pieces.contains { if case .place = $0 { true } else { false } }
+    }
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            ForEach(Self.fitFactors, id: \.self) { factor in
-                row(size: size * factor)
+            if hasPlace {
+                ForEach(Self.fitFactors, id: \.self) { factor in
+                    row(size: size * factor)
+                }
+            } else {
+                ForEach(Self.wrapFactors, id: \.self) { factor in
+                    row(size: size * factor)
+                }
+                wrapped(size: size * 0.88)
             }
         }
+    }
+
+    /// 折行的写法：整句是一段文字，数字用荧光黄底色标出
+    private func wrapped(size: CGFloat) -> some View {
+        var text = AttributedString()
+        for (index, piece) in pieces.enumerated() {
+            if index > 0 { text += AttributedString(" ") }
+            if case .marker(let number) = piece {
+                var part = AttributedString("\u{2009}\(number)\u{2009}")
+                part.font = .brand(size * 1.15)
+                part.backgroundColor = Theme.marker
+                text += part
+            } else {
+                var part = AttributedString(piece.plainText)
+                part.font = .system(size: size, weight: .heavy)
+                text += part
+            }
+        }
+        return Text(text)
+            .foregroundStyle(Theme.homeInk)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func row(size: CGFloat) -> some View {
@@ -349,7 +387,7 @@ private struct HeadlineLine: View {
             if isLast && !pieces.contains(where: \.isCaption) {
                 SparkleLines()
                     .trim(from: 0, to: appeared ? 1 : 0)
-                    .stroke(Color(hex: 0xF2B928), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .stroke(Theme.sparkle, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                     .frame(width: 22 * scale, height: 22 * scale)
                     .rotationEffect(.degrees(75))
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.4).delay(1.0), value: appeared)

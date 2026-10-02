@@ -102,6 +102,32 @@ struct LevelTestScoringTests {
         }
         #expect(test.estimatedLevel == .b1)
     }
+
+    /// 按固定规则作答，把整个测试跑完，返回总词数和结果
+    private func run(knowing rule: (LevelTest.Item) -> Bool) -> (words: Int, level: CEFRLevel) {
+        var test = LevelTest()
+        var total = 0
+        while !test.isFinished {
+            let round = test.nextRound()
+            total += round.count
+            test.submit(round, known: Set(round.filter(rule).map(\.word)))
+        }
+        return (total, test.estimatedLevel)
+    }
+
+    @Test func twoShortRounds() {
+        #expect(LevelTest.rounds == 2)
+        for rule: (LevelTest.Item) -> Bool in [{ _ in true }, { _ in false }, { $0.level <= .b1 }] {
+            let words = run(knowing: rule).words
+            #expect((14...17).contains(words))
+        }
+    }
+
+    @Test func twoRoundsStillReachBothEnds() {
+        #expect(run { _ in true }.level == .c2)
+        #expect(run { _ in false }.level == .a1)
+        #expect(run { $0.level <= .b2 }.level == .b2)
+    }
 }
 
 @MainActor
@@ -121,5 +147,23 @@ struct TokenMatcherTests {
         #expect(matcher.tokenIDs(for: ["breach notice"]) == [6, 7])
         #expect(matcher.tokenIDs(for: ["tenancy"]) == [0])
         #expect(matcher.occurrences(of: "missing phrase").isEmpty)
+    }
+}
+
+@MainActor
+struct LevelResultTests {
+    @Test func everyLevelGetsAThreeTileThreeExampleBand() {
+        #expect(LevelBand(.a1) == .everyday)
+        #expect(LevelBand(.a2) == .everyday)
+        #expect(LevelBand(.b1) == .practical)
+        #expect(LevelBand(.b2) == .practical)
+        #expect(LevelBand(.c1) == .advanced)
+        #expect(LevelBand(.c2) == .advanced)
+        for band in LevelBand.allCases {
+            #expect(band.focus.count == 3)
+            #expect(Set(band.focus.map(\.title)).count == 3)
+            #expect(band.examples.count == 3)
+            #expect(band.examples.allSatisfy { !$0.phrase.isEmpty && !$0.meaning.isEmpty })
+        }
     }
 }

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 200" width="260" height="200">
+  <ellipse cx="124" cy="187" rx="62" ry="6" fill="#000000" opacity="0.35"/>
+  <g transform="rotate(-7 124 120)">
+    <path d="M88 126 C 64 140, 38 158, 12 172 C 6 175, 9 182, 16 180 C 46 172, 78 160, 104 148 Z" fill="#3B3631"/>
+    <path d="M136 58 C 104 64, 74 98, 68 128 C 64 154, 88 172, 120 172 C 154 172, 180 150, 184 120 C 187 98, 180 84, 168 78 Z" fill="#3B3631"/>
+    <path d="M100 116 C 122 98, 160 94, 180 108 C 184 132, 170 158, 140 166 C 116 172, 96 164, 92 146 C 90 132, 94 122, 100 116 Z" fill="#F4F0EA"/>
+    <path d="M88 136 C 100 116, 128 106, 152 112 C 144 136, 120 152, 88 156 C 82 152, 83 143, 88 136 Z" fill="#F4BE3A"/>
+    <circle cx="152" cy="64" r="30" fill="#3B3631"/>
+    <path d="M178 55 Q 198 61, 205 65 Q 198 69, 178 75 Z" fill="#3B3631" stroke="#3B3631" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="163" cy="57" r="9.5" fill="#F4F0EA"/>
+    <circle cx="165" cy="57.5" r="5.8" fill="#1F1A17"/>
+    <circle cx="167.2" cy="55" r="1.9" fill="#FFFFFF"/>
+  </g>
+  <g stroke="#3B3631" stroke-width="4.5" stroke-linecap="round" fill="none">
+    <path d="M114 164 L 111 183 L 120 183"/>
+    <path d="M132 162 L 133 183 L 142 183"/>
+  </g>
+  <g transform="rotate(-6 196 114)">
+    <path d="M168 88 L 186 82 L 186 140 L 168 146 Z" fill="#E4DAC6"/>
+    <path d="M186 82 L 204 88 L 204 146 L 186 140 Z" fill="#C8B998"/>
+    <path d="M204 88 L 222 82 L 222 140 L 204 146 Z" fill="#E4DAC6"/>
+    <path d="M173 130 C 180 118, 190 124, 196 110 C 202 98, 212 104, 217 94" stroke="#9C8A68" stroke-width="2.2" stroke-dasharray="3 4" fill="none" stroke-linecap="round"/>
+    <circle cx="217" cy="94" r="3" fill="#E5604A"/>
+  </g>
+  <g stroke="#F2B928" stroke-width="4" stroke-linecap="round">
+    <path d="M226 64 L 234 48"/>
+    <path d="M233 76 L 249 68"/>
+    <path d="M234 88 L 250 90"/>
+  </g>
+</svg>

@@ -181,7 +181,7 @@ struct DayDivider: View {
         HStack(spacing: 10) {
             dashes
             StarBurst()
-                .stroke(Color(hex: 0xF2B928), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .stroke(Theme.sparkle, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .frame(width: 16, height: 16)
             dashes
         }

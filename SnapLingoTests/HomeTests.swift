@@ -24,20 +24,22 @@ private func date(_ day: Int, hour: Int = 9, minute: Int = 0, month: Int = 9, ye
 
 @MainActor
 struct HomeMoodTests {
-    @Test func scanningTodayWinsOverEverything() {
-        let mood = HomeMood.pick(scannedToday: true, pendingStudy: 12, scansThisWeek: 5, now: date(27), calendar: calendar)
-        #expect(mood == .captured)
+    @Test func neverScannedIsEmpty() {
+        #expect(HomeMood.pick(latestScanDate: nil, now: date(28), calendar: calendar) == .empty)
     }
 
-    @Test func pendingStudyComesBeforeWeeklyRecap() {
-        let mood = HomeMood.pick(scannedToday: false, pendingStudy: 3, scansThisWeek: 5, now: date(27), calendar: calendar)
-        #expect(mood == .review)
+    @Test func followsTheLatestShootingDay() {
+        let now = date(28, hour: 20)
+        #expect(HomeMood.pick(latestScanDate: date(28, hour: 7), now: now, calendar: calendar) == .today)
+        #expect(HomeMood.pick(latestScanDate: date(27, hour: 23), now: now, calendar: calendar) == .recent)
+        #expect(HomeMood.pick(latestScanDate: date(25), now: now, calendar: calendar) == .recent)
+        #expect(HomeMood.pick(latestScanDate: date(18), now: now, calendar: calendar) == .away)
     }
 
-    @Test func weeklyRecapOnlyOnWeekendsWithScans() {
-        #expect(HomeMood.pick(scannedToday: false, pendingStudy: 0, scansThisWeek: 2, now: date(27), calendar: calendar) == .weekly)
-        #expect(HomeMood.pick(scannedToday: false, pendingStudy: 0, scansThisWeek: 2, now: date(29), calendar: calendar) == .empty)
-        #expect(HomeMood.pick(scannedToday: false, pendingStudy: 0, scansThisWeek: 0, now: date(27), calendar: calendar) == .empty)
+    @Test func awayStartsAfterAWeek() {
+        let now = date(28)
+        #expect(HomeMood.pick(latestScanDate: date(21), now: now, calendar: calendar) == .recent, "正好 7 天前还算最近")
+        #expect(HomeMood.pick(latestScanDate: date(20), now: now, calendar: calendar) == .away)
     }
 }
 

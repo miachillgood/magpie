@@ -6,7 +6,7 @@
 import Foundation
 import SwiftData
 
-/// 每日节奏
+/// 每天最多学几个新词。引导里不问，默认标准档；第一次真的有新词排队时在结算页问一次
 enum StudyPace: Int, CaseIterable, Identifiable, Sendable {
     case relaxed = 5
     case standard = 10
@@ -14,24 +14,29 @@ enum StudyPace: Int, CaseIterable, Identifiable, Sendable {
 
     var id: Int { rawValue }
 
-    var title: String {
-        switch self {
-        case .relaxed:  String(localized: "轻松", comment: "Study pace: relaxed")
-        case .standard: String(localized: "标准", comment: "Study pace: standard")
-        case .intense:  String(localized: "进取", comment: "Study pace: intense")
+    /// 「我的」页和结算页可选的每天新词数
+    static let dailyOptions = [5, 10, 15, 20, 30]
+
+    /// 在 dailyOptions 里往上（step > 0）或往下挪 step 档，到两头就停住。
+    /// 不在列表里的值（比如调试时设的 2）：往上取比它大的第一档，往下取比它小的第一档，不动就取最近的一档
+    static func adjusted(_ current: Int, by step: Int) -> Int {
+        let options = dailyOptions
+        let start: Int
+        if let exact = options.firstIndex(of: current) {
+            start = exact + step
+        } else if step > 0 {
+            start = (options.firstIndex { $0 > current } ?? options.count - 1) + step - 1
+        } else if step < 0 {
+            start = (options.lastIndex { $0 < current } ?? 0) + step + 1
+        } else {
+            start = options.indices.min { abs(options[$0] - current) < abs(options[$1] - current) } ?? 0
         }
+        return options[min(max(start, 0), options.count - 1)]
     }
 
-    var detail: String {
-        String(localized: "每天 \(rawValue) 个新词，约 \(rawValue) 分钟")
-    }
-
-    var symbol: String {
-        switch self {
-        case .relaxed:  "tortoise"
-        case .standard: "figure.walk"
-        case .intense:  "hare"
-        }
+    /// 结算页问「节奏合适吗？」：今天的计划做完了、还有新词在排队（上限真的挡住了词），而且以前没问过
+    static func shouldAsk(plan: DailyPlan, backlog: Int, asked: Bool) -> Bool {
+        !asked && !plan.hasWork && backlog > 0
     }
 }
 
@@ -73,6 +78,8 @@ final class UserSettings {
     var assessmentCompleted: Bool = false
     var onboardingCompleted: Bool = false
     var newWordsPerDay: Int = StudyPace.standard.rawValue
+    /// 结算页的「节奏合适吗？」问过了没有
+    var paceCheckDone: Bool = false
     var maxReviewsPerDay: Int = 100
     var reminderEnabled: Bool = false
     var reminderHour: Int = 20

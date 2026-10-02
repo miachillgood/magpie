@@ -2,8 +2,8 @@
 //  HomeView.swift
 //  SnapLingo
 //
-//  首页 = 照片墙。上半部分随当天状态变化（柔光色 + 一句话 + 单词胶囊 + 按钮），
-//  下半部分是白色底板，按天排出拍过的照片。
+//  首页 = 照片墙。上半部分是最近一次拍照那天的照片墙 + 一句话 + 单词胶囊 + 按钮，
+//  文字跟着那天离现在多久变化（见 HomeMood）；下半部分是白色底板，按天排出拍过的照片。
 //
 
 import SwiftUI
@@ -56,9 +56,6 @@ struct HomeView: View {
             .appTabBar()
             .toolbarVisibility(.hidden, for: .navigationBar)
             .libraryDestinations(zoom: zoom)
-            .navigationDestination(for: SceneType.self) { scene in
-                SceneTypeScansView(scene: scene)
-            }
             .sheet(isPresented: $showingMe) {
                 MeView()
             }
@@ -80,12 +77,18 @@ struct HomeView: View {
 
     private var calendar: Calendar { .current }
 
-    private var todayScans: [Scan] {
-        scans.filter { calendar.isDateInToday($0.createdAt) }
-    }
-
-    private var weekScans: [Scan] {
-        scans.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }
+    /// 最近一次拍照那天的全部照片（新的在前）
+    private var latestDayScans: [Scan] {
+        #if DEBUG
+        // 截图用：-homePhotos 8 用已有照片凑满 N 张，看照片墙排版
+        if let index = ProcessInfo.processInfo.arguments.firstIndex(of: "-homePhotos"),
+           index + 1 < ProcessInfo.processInfo.arguments.count,
+           let count = Int(ProcessInfo.processInfo.arguments[index + 1]), !scans.isEmpty {
+            return (0..<count).map { scans[$0 % scans.count] }
+        }
+        #endif
+        guard let latest = scans.first else { return [] }
+        return scans.filter { calendar.isDate($0.createdAt, inSameDayAs: latest.createdAt) }
     }
 
     private var plan: DailyPlan {
@@ -97,13 +100,13 @@ struct HomeView: View {
 
     private var mood: HomeMood {
         #if DEBUG
-        if let forced = Self.forcedMood { return forced }
+        if let forced = Self.forcedMood, forced == .empty || !scans.isEmpty { return forced }
         #endif
-        return HomeMood.pick(scannedToday: !todayScans.isEmpty, pendingStudy: plan.remaining, scansThisWeek: weekScans.count)
+        return HomeMood.pick(latestScanDate: scans.first?.createdAt)
     }
 
     #if DEBUG
-    /// 调试用：启动参数 -homeMood review 强制显示某种状态
+    /// 调试用：启动参数 -homeMood today / recent / away / empty 强制显示某种状态
     private static let forcedMood: HomeMood? = {
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: "-homeMood"), index + 1 < arguments.count else { return nil }
@@ -114,83 +117,74 @@ struct HomeView: View {
     // MARK: - 顶部内容
 
     private var hero: HomeHeroContent {
+        let day = latestDayScans
+        guard !day.isEmpty, mood != .empty else { return emptyHero }
         switch mood {
-        case .captured: capturedHero ?? emptyHero
-        case .review: reviewHero ?? emptyHero
-        case .weekly: weeklyHero ?? emptyHero
-        case .empty: emptyHero
+        case .today: return todayHero(day)
+        case .recent: return recentHero(day)
+        default: return awayHero(day)
         }
     }
 
-    /// 刚刚在 [公交站] 捡到 [5 个新词]
-    private var capturedHero: HomeHeroContent? {
-        guard let focus = todayScans.first else { return nil }
-        let todayWords = Set(todayScans.flatMap { $0.words.map(\.id) }).count
-        let focusWords = focus.words.sorted { $0.addedAt < $1.addedAt }
-        let lines: [[HeadlinePiece]]
-        let label: String
-        if todayWords >= 15 {
-            lines = [
-                [.caption(String(localized: "今天"))],
-                HeadlinePiece.phrase(String(localized: "已经捕捉 **\(todayWords)** 个词了！", comment: "Home headline; **N** gets a highlighter mark"))
-            ]
-            label = "On a roll!"
-        } else {
-            lines = [
-                [.caption(Self.whereCaption(focus.createdAt))],
-                [HomeHeroContent.place(symbol: focus.scene.symbol, title: focus.displayTitle, suffix: Self.placeSuffix(many: false))],
-                HeadlinePiece.phrase(String(localized: "捡到 **\(focusWords.count)** 个新词", comment: "Home headline after scanning; follows the place line; **N** gets a highlighter mark"))
-            ]
-            label = "Nice find!"
+    /// 那天捡到的词（去重，先存的在前）
+    private static func words(of day: [Scan]) -> [VocabWord] {
+        var seen = Set<UUID>()
+        return day.flatMap(\.words)
+            .sorted { $0.addedAt < $1.addedAt }
+            .filter { seen.insert($0.id).inserted }
+    }
+
+    /// 地点那一行：1 个场景放场景名，多个场景放“3 个场景”
+    private static func placeLine(_ day: [Scan]) -> [HeadlinePiece] {
+        if day.count == 1, let scan = day.first {
+            return [HomeHeroContent.place(symbol: scan.scene.symbol, title: scan.displayTitle, suffix: placeSuffix(many: false))]
         }
+        return [.place(symbol: "mappin.and.ellipse", highlight: String(localized: "\(day.count) 个场景", comment: "Home headline, place line when the photos come from several scenes (inside a white capsule)"), rest: placeSuffix(many: false))]
+    }
+
+    private static func pickedUp(_ count: Int) -> [HeadlinePiece] {
+        HeadlinePiece.phrase(String(localized: "捡到 **\(count)** 个词", comment: "Home headline; follows the place line; **N** gets a highlighter mark"))
+    }
+
+    /// 今天在 [公交站] 捡到 [5 个词]
+    private func todayHero(_ day: [Scan]) -> HomeHeroContent {
+        let dayWords = Self.words(of: day)
+        let single = day.count == 1
         return HomeHeroContent(
-            mood: .captured,
-            label: label,
-            lines: lines,
-            chips: focusWords.prefix(4).map { .word($0) },
+            mood: .today,
+            label: "Nice find!",
+            lines: [[.caption(Self.whereCaption(day[0].createdAt))], Self.placeLine(day), Self.pickedUp(dayWords.count)],
+            chips: dayWords.prefix(4).map { .word($0) },
             chipsNote: nil,
-            action: .openScan(focus),
-            actionTitle: String(localized: "看看新词"),
+            action: single ? .openScan(day[0]) : .studyDay(day[0].createdAt),
+            actionTitle: single ? String(localized: "看看新词") : String(localized: "学这些词", comment: "Home button: study the words picked up that day"),
             actionSymbol: "arrow.right",
-            photos: Self.stackPhotos(todayScans, fillingWith: scans),
-            stackStyle: .pile
+            photos: day
         )
     }
 
-    /// 昨天在 [公交站] 遇见 [5 个词]，还记得几个？
-    private var reviewHero: HomeHeroContent? {
+    /// 周六在 [公交站] 捡到 [5 个词]；有要复习的就“测一测”，没有就出去逛逛
+    private func recentHero(_ day: [Scan]) -> HomeHeroContent {
+        let dayWords = Self.words(of: day)
         let plan = plan
         let byID = Dictionary(words.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let due = (plan.reviewIDs + plan.newIDs).compactMap { byID[$0] }
-        guard !due.isEmpty else { return nil }
-
-        // 这些词大多来自哪个场景
-        var counts: [UUID: (scan: Scan, count: Int)] = [:]
-        for word in due {
-            guard let scan = word.latestScan else { continue }
-            counts[scan.id, default: (scan, 0)].count += 1
+        let lines = [[HeadlinePiece.caption(Self.whereCaption(day[0].createdAt))], Self.placeLine(day), Self.pickedUp(dayWords.count)]
+        if due.isEmpty {
+            return HomeHeroContent(
+                mood: .recent,
+                label: "Nice find!",
+                lines: lines,
+                chips: dayWords.prefix(4).map { .word($0) },
+                chipsNote: nil,
+                action: .scan,
+                actionTitle: String(localized: "出去逛逛"),
+                actionSymbol: "camera",
+                photos: day
+            )
         }
-        let sources = counts.values.sorted { lhs, rhs in
-            lhs.count != rhs.count ? lhs.count > rhs.count : lhs.scan.createdAt > rhs.scan.createdAt
-        }
-
-        var lines: [[HeadlinePiece]]
-        if let focus = sources.first {
-            // 词来自好几个场景时，地点后面加一个“等”
-            lines = [
-                [.caption(Self.whereCaption(focus.scan.createdAt))],
-                [HomeHeroContent.place(symbol: focus.scan.scene.symbol, title: focus.scan.displayTitle, suffix: Self.placeSuffix(many: focus.count < due.count))],
-                HeadlinePiece.phrase(String(localized: "遇见 **\(due.count)** 个词，还记得几个？", comment: "Home headline; follows the place line; **N** gets a highlighter mark"))
-            ]
-        } else {
-            lines = [
-                [.caption(String(localized: "今天"))],
-                HeadlinePiece.phrase(String(localized: "有 **\(due.count)** 个词等你复习", comment: "Home headline; **N** gets a highlighter mark"))
-            ]
-        }
-
         return HomeHeroContent(
-            mood: .review,
+            mood: .recent,
             label: "Still remember?",
             lines: lines,
             chips: due.compactMap { word in Self.shortGloss(word.gloss).map { .text($0) } }.prefix(4).map { $0 },
@@ -198,46 +192,33 @@ struct HomeView: View {
             action: .study,
             actionTitle: String(localized: "测一测", comment: "Button: quiz yourself"),
             actionSymbol: "arrow.right",
-            photos: Self.stackPhotos(sources.map(\.scan), fillingWith: scans),
-            stackStyle: .pile
+            photos: day
         )
     }
 
-    /// 这周你在 [5 个地方] 发现了 [16 个词]
-    private var weeklyHero: HomeHeroContent? {
-        let week = weekScans
-        guard !week.isEmpty else { return nil }
-        var seen = Set<UUID>()
-        let weekWords = week.flatMap(\.words)
-            .sorted { $0.addedAt > $1.addedAt }
-            .filter { seen.insert($0.id).inserted }
+    /// 上次是 9 月 20 日 / 在 [公交站] / 捡到 [5 个词]，好久不见
+    private func awayHero(_ day: [Scan]) -> HomeHeroContent {
+        let dayWords = Self.words(of: day)
+        let when = String(localized: "上次是 \(HomeDates.dateText(for: day[0].createdAt))，在", comment: "Home headline line 1 when the user hasn't scanned for over a week; followed by a place on the next line. The argument is a date like Sep 20")
         return HomeHeroContent(
-            mood: .weekly,
-            label: "Great week!",
-            lines: [
-                [.caption(String(localized: "这周你在", comment: "Home headline, line 1 of: This week you / [in N places] / found **N** words"))],
-                [.place(symbol: "mappin.and.ellipse", highlight: String(localized: "\(week.count) 个地方", comment: "Home headline, line 2 (inside a white capsule)"), rest: "")],
-                HeadlinePiece.phrase(String(localized: "发现了 **\(weekWords.count)** 个词", comment: "Home headline, line 3; **N** gets a highlighter mark"))
-            ],
-            chips: weekWords.prefix(4).map { .word($0) },
-            chipsNote: String(localized: "这周遇见的词"),
-            action: .showTimeline,
-            actionTitle: String(localized: "看看这一周"),
-            actionSymbol: "arrow.right",
-            photos: Self.stackPhotos(week, fillingWith: scans, limit: 4),
-            stackStyle: .fan
+            mood: .away,
+            label: "Miss you!",
+            lines: [[.caption(when)], Self.placeLine(day), Self.pickedUp(dayWords.count)],
+            chips: dayWords.prefix(4).map { .word($0) },
+            chipsNote: String(localized: "好久不见，出去拍一张？"),
+            action: .scan,
+            actionTitle: String(localized: "出去逛逛"),
+            actionSymbol: "camera",
+            photos: day
         )
     }
 
-    /// 今天还没发现新单词 👀
+    /// 从没拍过：拍下你的第一块招牌
     private var emptyHero: HomeHeroContent {
-        let lines: [[HeadlinePiece]] = scans.isEmpty
-            ? [[.caption(String(localized: "从身边开始"))], [.text(String(localized: "拍下你的第一块招牌")), .emoji("👀")]]
-            : [[.caption(String(localized: "今天"))], [.text(String(localized: "还没发现新单词")), .emoji("👀")]]
-        return HomeHeroContent(
+        HomeHeroContent(
             mood: .empty,
             label: "Go explore!",
-            lines: lines,
+            lines: [[.caption(String(localized: "从身边开始"))], [.text(String(localized: "拍下你的第一块招牌")), .emoji("👀")]],
             chips: [
                 String(localized: "咖啡店菜单"),
                 String(localized: "公交站牌"),
@@ -248,8 +229,7 @@ struct HomeView: View {
             action: .scan,
             actionTitle: String(localized: "出去逛逛"),
             actionSymbol: "camera",
-            photos: Array(scans.prefix(2)),
-            stackStyle: .emptySlot
+            photos: []
         )
     }
 
@@ -263,15 +243,6 @@ struct HomeView: View {
         many
             ? String(localized: "hero.placeSuffix.many", defaultValue: " 等", comment: "Appended after the place name when the words come from several places (e.g. ' etc.'). Keep the leading space if your language needs it")
             : String(localized: "hero.placeSuffix.one", defaultValue: " ", comment: "Appended after the place name, e.g. a particle like で or 에서. A single space means nothing")
-    }
-
-    /// 照片堆最多三张：先放主要的，不够再用最近拍的补上
-    static func stackPhotos(_ primary: [Scan], fillingWith recent: [Scan], limit: Int = 3) -> [Scan] {
-        var result = Array(primary.prefix(limit))
-        for scan in recent where result.count < limit && !result.contains(where: { $0.id == scan.id }) {
-            result.append(scan)
-        }
-        return result
     }
 
     /// 胶囊里放得下的简短释义：取第一个义项。
@@ -298,6 +269,7 @@ struct HomeView: View {
         case .openScan(let scan): path.append(scan)
         case .openWord(let word): path.append(word)
         case .study: coordinator.startStudy()
+        case .studyDay(let day): coordinator.startStudy(.day(day))
         case .scan: coordinator.startScan()
         case .showTimeline:
             withAnimation(.smooth) { scroll.scrollTo(Self.timelineID, anchor: .top) }
@@ -308,16 +280,7 @@ struct HomeView: View {
 
     private func timeline(metrics: HomeMetrics) -> some View {
         let groups = HomeDates.groupByDay(scans) { $0.createdAt }.map { DayGroup(day: $0.day, scans: $0.items) }
-        let shares = MeStats.sceneShares(scans.map { SceneRecord(id: $0.id, scene: $0.scene, createdAt: $0.createdAt, wordIDs: Set($0.words.map(\.id))) })
         return LazyVStack(alignment: .leading, spacing: 0) {
-            if !shares.isEmpty {
-                SceneSourcesRow(
-                    shares: shares,
-                    scansByID: Dictionary(scans.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }),
-                    sidePadding: metrics.sidePadding
-                )
-                DayDivider(index: 7, sidePadding: metrics.sidePadding)
-            }
             if groups.isEmpty {
                 Text("拍过的照片会按天出现在这里")
                     .font(.subheadline)
@@ -361,7 +324,7 @@ struct HomeMetrics {
     /// 第一屏（标题、照片堆、句子、胶囊、按钮）的设计稿高度：随句子行数、有没有提示语变化。
     /// 按 iPhone 17 Pro 实测校准（三行句子、两行胶囊约 640pt），再留一点余量
     static func firstScreenHeight(for content: HomeHeroContent) -> CGFloat {
-        let fixed: CGFloat = 48 + PhotoStack.designHeight + 14 + 16 + 38 + 22 + 48 + 26
+        let fixed: CGFloat = 48 + PhotoWall.designHeight(photoCount: min(content.photos.count, PhotoWall.maxPhotos)) + 14 + 16 + 38 + 22 + 48 + 26
         let headline = content.lines.reduce(CGFloat(0)) { total, line in
             total + (line.contains(where: \.isCaption) ? 22 : 40)
         }
