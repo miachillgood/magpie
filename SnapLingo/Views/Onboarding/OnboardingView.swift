@@ -6,7 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// 首次启动：欢迎 →（登录）→ 自选水平 → 母语（顺序见 OnboardingFlow）
+/// 首次启动：欢迎 → 介绍 →（登录）→ 自选水平 → 母语（顺序见 OnboardingFlow）
 struct OnboardingView: View {
     @Bindable var settings: UserSettings
     @Environment(\.modelContext) private var context
@@ -28,6 +28,8 @@ struct OnboardingView: View {
                     switch step {
                     case .welcome:
                         WelcomeStep { advance() }
+                    case .intro:
+                        IntroStep { advance() }
                     case .login:
                         loginStep
                     case .level:

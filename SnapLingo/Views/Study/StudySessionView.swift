@@ -137,30 +137,46 @@ private struct StudyCardsView: View {
         .padding(.top, Spacing.xs)
     }
 
+    /// 先问会不会：会 / 太简单直接下一张；不会就翻过来看意思，看完点“下一个”
     @ViewBuilder
     private var controls: some View {
-        if session.revealed {
-            // 「会」最常用，给最宽的位置；「太简单」会把词移出复习，做窄一点免得手滑
-            WeightedHStack(weights: ReviewRating.buttons.map(\.buttonWeight), spacing: Spacing.xs) {
-                ForEach(ReviewRating.buttons) { rating in
-                    RatingButton(rating: rating, interval: session.previewInterval(for: rating)) {
-                        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                            session.rate(rating, context: context)
-                        }
-                    }
+        if session.missedCurrent {
+            PrimaryButton(title: "记住了，下一个", trailingSymbol: "arrow.right") {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                    session.rate(.again, context: context)
                 }
             }
             .transition(.move(edge: .bottom).combined(with: .opacity))
         } else {
-            PrimaryButton(title: "看看意思", symbol: "eye.fill") { reveal() }
-                .transition(.opacity)
+            HStack(spacing: Spacing.sm) {
+                ForEach(ReviewRating.buttons) { rating in
+                    RatingButton(rating: rating) {
+                        choose(rating)
+                    }
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .transition(.opacity)
         }
     }
 
+    private func choose(_ rating: ReviewRating) {
+        if rating == .again {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
+                session.missedCurrent = true
+                session.revealed = true
+            }
+        } else {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                session.rate(rating, context: context)
+            }
+        }
+    }
+
+    /// 点卡片可以翻过来看一眼、再翻回去；评分还是用下面的按钮
     private func reveal() {
-        guard !session.revealed else { return }
         withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
-            session.revealed = true
+            session.revealed.toggle()
         }
     }
 }
@@ -209,13 +225,15 @@ private struct FlipContainer<Front: View, Back: View>: View, Animatable {
 private struct CardFront: View {
     let card: StudySession.Card
 
+    @State private var showingPhoto = false
+
     var body: some View {
         let word = card.word
         VStack(spacing: 0) {
             if let scan = word.latestScan {
                 WordInPhotoView(word: word, scan: scan)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 220)
+                    .frame(height: 240)
                     .clipShape(.rect(cornerRadius: Radius.card, style: .continuous))
                     .overlay(alignment: .bottomLeading) {
                         Text("\(scan.scene.emoji) \(scan.displayTitle)")
@@ -227,20 +245,29 @@ private struct CardFront: View {
                             .softShadow()
                             .padding(Spacing.sm)
                     }
+                    .overlay(alignment: .topTrailing) {
+                        // 看整张照片
+                        Button { showingPhoto = true } label: {
+                            Image(systemName: "viewfinder")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 40, height: 40)
+                                .background(.black.opacity(0.45), in: .circle)
+                        }
+                        .buttonStyle(.pressable)
+                        .padding(Spacing.sm)
+                        .accessibilityLabel("查看整张照片")
+                    }
                     .padding(10)
                     .accessibilityLabel("在「\(scan.displayTitle)」里看到的词")
+                    .fullScreenCover(isPresented: $showingPhoto) {
+                        FullPhotoView(scan: scan)
+                    }
             }
 
             Spacer(minLength: Spacing.md)
 
             VStack(spacing: Spacing.sm) {
-                Pill(
-                    text: card.isNew
-                        ? String(localized: "card.tag.new", defaultValue: "新词", comment: "Tag on a single flashcard: this is a new word (singular)")
-                        : (card.attempt > 0 ? String(localized: "再试一次") : (card.isPractice ? String(localized: "再看一遍") : String(localized: "复习"))),
-                    emoji: card.isNew ? "✨" : "🔁",
-                    style: .tinted(card.isNew ? Theme.brandSoft : Pastel.lavender)
-                )
                 Text(word.word)
                     .font(.system(size: 46, weight: .bold, design: .serif))
                     .foregroundStyle(Theme.ink)
@@ -259,7 +286,7 @@ private struct CardFront: View {
 
             Spacer(minLength: Spacing.md)
 
-            Text(card.isNew ? "第一次见？猜猜它是什么意思 🤔" : "还记得它的意思吗？")
+            Text(card.isNew ? "认识这个词吗？" : "还记得它的意思吗？")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.bottom, Spacing.lg)
@@ -330,40 +357,55 @@ private struct CardBack: View {
 // MARK: - 评分按钮
 
 private extension ReviewRating {
-    var buttonWeight: CGFloat {
+    /// 按钮上的喜鹊
+    var mascot: String {
         switch self {
-        case .good: 1.4
-        case .easy: 0.8
-        default:    1
+        case .again: "RatingAgain"
+        case .easy:  "RatingEasy"
+        default:     "RatingGood"
+        }
+    }
+
+    /// 按钮上的小字：点了会怎样
+    var buttonHint: String {
+        switch self {
+        case .again: String(localized: "查看提示", comment: "Rating button subtitle: flips the card to show the meaning")
+        case .easy:  String(localized: "不再复习", comment: "Rating button subtitle: this word leaves the review queue")
+        default:     String(localized: "继续复习", comment: "Rating button subtitle: keep reviewing this word on schedule")
         }
     }
 }
 
-/// 按比例分宽度的一排，高度取最高的那个
-private struct WeightedHStack: Layout {
-    var weights: [CGFloat]
-    var spacing: CGFloat
+// MARK: - 整张照片
 
-    private func widths(total: CGFloat, count: Int) -> [CGFloat] {
-        let ws = (0..<count).map { $0 < weights.count ? weights[$0] : 1 }
-        let available = max(total - spacing * CGFloat(max(count - 1, 0)), 0)
-        let sum = ws.reduce(0, +)
-        return ws.map { available * $0 / max(sum, 0.0001) }
-    }
+/// 全屏看拍的那张照片，可以双指放大
+private struct FullPhotoView: View {
+    let scan: Scan
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let total = proposal.width ?? subviews.reduce(0) { $0 + $1.sizeThatFits(.unspecified).width } + spacing * CGFloat(max(subviews.count - 1, 0))
-        let ws = widths(total: total, count: subviews.count)
-        let height = zip(subviews, ws).map { $0.sizeThatFits(ProposedViewSize(width: $1, height: nil)).height }.max() ?? 0
-        return CGSize(width: total, height: height)
-    }
+    @Environment(\.dismiss) private var dismiss
+    @State private var zoom: CGFloat = 1
+    @GestureState private var pinch: CGFloat = 1
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let ws = widths(total: bounds.width, count: subviews.count)
-        var x = bounds.minX
-        for (subview, width) in zip(subviews, ws) {
-            subview.place(at: CGPoint(x: x, y: bounds.minY), proposal: ProposedViewSize(width: width, height: bounds.height))
-            x += width + spacing
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            if let image = scan.fullImage ?? scan.thumbnailImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .scaleEffect(min(max(zoom * pinch, 1), 4))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .gesture(
+                        MagnifyGesture()
+                            .updating($pinch) { value, state, _ in state = value.magnification }
+                            .onEnded { value in zoom = min(max(zoom * value.magnification, 1), 4) }
+                    )
+                    .onTapGesture(count: 2) { withAnimation(.smooth) { zoom = zoom > 1 ? 1 : 2.5 } }
+                    .accessibilityLabel(scan.displayTitle)
+            }
+            CircleIconButton(symbol: "xmark", size: 40) { dismiss() }
+                .padding(Spacing.lg)
+                .accessibilityLabel("关闭")
         }
     }
 }
@@ -408,24 +450,25 @@ private struct UndoBar: View {
 
 private struct RatingButton: View {
     var rating: ReviewRating
-    var interval: Int?
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 2) {
-                Text(rating.emoji)
-                    .font(.system(size: rating == .easy ? 22 : 28))
+                Image(rating.mascot)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 58)
+                    .padding(.bottom, 6)
                 Text(rating.title)
-                    .font(.subheadline.weight(.heavy))
+                    .font(.headline.weight(.heavy))
                     .foregroundStyle(Theme.ink)
-                Text(intervalText)
-                    .font(.caption2.weight(.semibold))
-                    .multilineTextAlignment(.center)
+                Text(rating.buttonHint)
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.ink.opacity(0.55))
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
             .background(rating.pastel, in: .rect(cornerRadius: Radius.card - 2, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.card - 2, style: .continuous)
@@ -433,20 +476,6 @@ private struct RatingButton: View {
             )
         }
         .buttonStyle(.pressable)
-        .accessibilityLabel("\(rating.title)，\(intervalText)")
-    }
-
-    private var intervalText: String {
-        if rating == .easy { return String(localized: "不再出现", comment: "Rating button subtitle: this word will not be reviewed again") }
-        guard let interval else {
-            return rating == .again ? String(localized: "再看一遍") : String(localized: "本轮练习", comment: "Rating button subtitle: practice only, schedule unchanged")
-        }
-        if rating == .again { return String(localized: "稍后再来", comment: "Rating button subtitle: see it again later in this session") }
-        switch interval {
-        case 1: return String(localized: "明天")
-        case 2..<14: return String(localized: "\(interval) 天后", comment: "Rating button subtitle: next review in N days")
-        case 14..<60: return String(localized: "\(interval / 7) 周后", comment: "Rating button subtitle: next review in N weeks")
-        default: return String(localized: "\(interval / 30) 个月后", comment: "Rating button subtitle: next review in N months")
-        }
+        .accessibilityLabel("\(rating.title)，\(rating.buttonHint)")
     }
 }

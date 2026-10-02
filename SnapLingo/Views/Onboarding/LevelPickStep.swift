@@ -55,31 +55,31 @@ struct LevelPickStep: View {
     var onPick: (SelfLevel) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var selection: SelfLevel?
+    /// 和参考图一样默认选中第一档：宁可一开始的词偏简单，也不要一上来就太难
+    @State private var selection: SelfLevel = .beginner
     @State private var appeared = false
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 Text("你现在的英语水平？")
-                    .font(.brand(30))
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundStyle(Theme.homeInk)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
                 Text("我们会按你的水平挑例子，之后随时可以改。")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Theme.homeMuted)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.homeInk.opacity(0.75))
                     .multilineTextAlignment(.center)
+                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.top, Spacing.xl)
-            .padding(.horizontal, Spacing.sm)
+            .padding(.horizontal, Spacing.md)
             .opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : 10)
             .animation(motion(.smooth(duration: 0.5), delay: 0), value: appeared)
-
-            Spacer(minLength: Spacing.lg)
 
             VStack(spacing: 12) {
                 ForEach(SelfLevel.allCases) { level in
@@ -91,18 +91,17 @@ struct LevelPickStep: View {
                     .animation(motion(.spring(response: 0.5, dampingFraction: 0.8), delay: 0.12 + 0.06 * Double(level.rawValue)), value: appeared)
                 }
             }
+            .padding(.top, 28)
             .sensoryFeedback(.selection, trigger: selection)
 
             Spacer(minLength: Spacing.lg)
 
-            PrimaryButton(title: "继续", trailingSymbol: "arrow.right") {
-                if let selection { onPick(selection) }
-            }
-            .disabled(selection == nil)
-            .opacity(selection == nil ? 0.4 : 1)
-            .animation(.smooth, value: selection == nil)
+            PrimaryButton(title: "继续", trailingSymbol: "arrow.right") { onPick(selection) }
         }
         .padding(Spacing.lg)
+        .background { Theme.cream.ignoresSafeArea() }
+        // 和欢迎页一样固定浅色：黑线小鸟、奶油底、黄色选中
+        .environment(\.colorScheme, .light)
         .onAppear {
             guard !appeared else { return }
             if reduceMotion {
@@ -121,32 +120,33 @@ struct LevelPickStep: View {
     }
 }
 
-/// 一档：小鸟图标 + 名字和说明 + 单选圈；选中时整行变黄
+/// 一档：小鸟 + 名字和说明 + 单选圈；选中时整行变成奶黄色
 private struct LevelRow: View {
     var level: SelfLevel
     var selected: Bool
     var action: () -> Void
 
+    /// 参考图里的奶黄（比荧光笔浅）和米色
+    private static let selectedFill = Color(hex: 0xF7E2A1)
+    private static let fill = Color(hex: 0xF0E8D9)
+
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
+            HStack(spacing: 16) {
                 Image(level.icon)
                     .resizable()
                     .renderingMode(.template)
                     .scaledToFit()
                     .foregroundStyle(Theme.homeInk)
-                    .padding(4)
-                    .frame(width: 56, height: 56)
-                    .background(selected ? Theme.sheet.opacity(0.7) : Theme.sheet, in: .rect(cornerRadius: 16, style: .continuous))
-                    .scaleEffect(selected ? 1.06 : 1)
+                    .frame(width: 44, height: 44)
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(level.title)
-                        .font(.system(size: 18, weight: .heavy))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.homeInk)
                     Text(level.detail)
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.homeInk.opacity(0.65))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.homeInk.opacity(0.75))
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -155,23 +155,20 @@ private struct LevelRow: View {
 
                 ZStack {
                     Circle()
-                        .strokeBorder(selected ? Theme.homeInk : Theme.homeInk.opacity(0.3), lineWidth: 2)
+                        .strokeBorder(Theme.homeInk, lineWidth: selected ? 2 : 1.5)
                     Circle()
                         .fill(Theme.homeInk)
                         .padding(5)
                         .scaleEffect(selected ? 1 : 0.01)
                         .opacity(selected ? 1 : 0)
                 }
-                .frame(width: 24, height: 24)
+                .frame(width: 22, height: 22)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.leading, 16)
+            .padding(.trailing, 20)
+            .frame(height: 72)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? Theme.marker.opacity(0.7) : Theme.insetFill, in: .rect(cornerRadius: 22, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .strokeBorder(selected ? Theme.homeInk.opacity(0.12) : .clear, lineWidth: 1)
-            )
+            .background(selected ? Self.selectedFill : Self.fill, in: .rect(cornerRadius: 20, style: .continuous))
         }
         .buttonStyle(.pressable)
         .accessibilityElement(children: .combine)

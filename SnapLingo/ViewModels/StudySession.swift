@@ -28,6 +28,8 @@ final class StudySession {
     private(set) var queue: [Card]
     private(set) var position = 0
     var revealed = false
+    /// 点了“不会”、翻过来看意思，等用户点“下一个”才真正记下这次评分
+    var missedCurrent = false
     /// 每个词第一次的评分（决定排期）
     private(set) var firstRatings: [UUID: ReviewRating] = [:]
     private(set) var newWordIDs: Set<UUID> = []
@@ -154,6 +156,7 @@ final class StudySession {
         lastRating = rating
         ratingCount += 1
         revealed = false
+        missedCurrent = false
         position += 1
     }
 
@@ -182,6 +185,7 @@ final class StudySession {
 
         position = undo.position
         revealed = false
+        missedCurrent = false
         lastRating = nil
     }
 
