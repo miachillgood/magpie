@@ -137,7 +137,7 @@ struct HomeView: View {
     /// 地点那一行：1 个场景放场景名，多个场景放“3 个场景”
     private static func placeLine(_ day: [Scan]) -> [HeadlinePiece] {
         if day.count == 1, let scan = day.first {
-            return [HomeHeroContent.place(symbol: scan.scene.symbol, title: scan.displayTitle, suffix: placeSuffix(many: false))]
+            return [HomeHeroContent.place(symbol: scan.scene.iconName, title: scan.displayTitle, suffix: placeSuffix(many: false))]
         }
         return [.place(symbol: "mappin.and.ellipse", highlight: String(localized: "\(day.count) 个场景", comment: "Home headline, place line when the photos come from several scenes (inside a white capsule)"), rest: placeSuffix(many: false))]
     }

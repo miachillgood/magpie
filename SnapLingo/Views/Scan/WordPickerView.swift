@@ -27,6 +27,11 @@ struct WordPickerView: View {
     @State private var savedKeys: Set<String> = []
     @State private var title = ""
     @State private var scene: SceneType = .general
+    @Query(sort: \WordFolder.lastUsedAt, order: .reverse) private var folders: [WordFolder]
+    /// 保存时把这次选的词放进这些文件夹
+    @State private var selectedFolders: Set<UUID> = []
+    @State private var choosingCategory = false
+    @State private var creatingFolder = false
     @State private var level: CEFRLevel = .b1
     @State private var prepared = false
     @State private var savedCount: Int?
@@ -91,6 +96,8 @@ struct WordPickerView: View {
                 if prepared && classified.isEmpty && aiError == nil {
                     ContentUnavailableView("没有挑出单词", systemImage: "text.magnifyingglass", description: Text("点照片上的词，把想学的加进来。"))
                 }
+                FolderPickerRow(folders: folders, selected: $selectedFolders) { creatingFolder = true }
+                    .card(padding: Spacing.md)
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.bottom, Spacing.lg)
@@ -109,6 +116,14 @@ struct WordPickerView: View {
         .sensoryFeedback(.selection, trigger: selected)
         .sensoryFeedback(.success, trigger: savedCount) { _, new in new != nil }
         .task { prepare() }
+        .sheet(isPresented: $choosingCategory) {
+            CategoryPickerSheet(selection: $scene)
+        }
+        .sheet(isPresented: $creatingFolder) {
+            FolderEditorView { folder in
+                selectedFolders.insert(folder.id)
+            }
+        }
     }
 
     // MARK: - 照片
@@ -140,16 +155,20 @@ struct WordPickerView: View {
 
     private var sceneCard: some View {
         HStack(spacing: Spacing.sm) {
-            Menu {
-                Picker("场景类型", selection: $scene) {
-                    ForEach(SceneType.allCases) { scene in
-                        Text("\(scene.emoji) \(scene.displayName)").tag(scene)
+            // 点图标改分类
+            Button { choosingCategory = true } label: {
+                IconImage(name: scene.iconName, size: 34)
+                    .frame(width: 52, height: 52)
+                    .background(scene.pastel, in: .rect(cornerRadius: 16, style: .continuous))
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: "chevron.down.circle.fill")
+                            .font(.system(size: 15))
+                            .foregroundStyle(Theme.homeInk, Theme.card)
+                            .offset(x: 4, y: 4)
                     }
-                }
-            } label: {
-                EmojiTile(emoji: scene.emoji, color: scene.pastel, size: 52)
             }
-            .accessibilityLabel("场景类型：\(scene.displayName)")
+            .buttonStyle(.pressable)
+            .accessibilityLabel("分类：\(scene.displayName)")
             VStack(alignment: .leading, spacing: 4) {
                 TextField("给这个场景起个名字", text: $title)
                     .font(.title3.weight(.heavy))
@@ -267,6 +286,8 @@ struct WordPickerView: View {
             savedKeys: savedKeys
         )
         selected = Set(classified.filter(\.preselected).map(\.id))
+        // 默认勾上最近用过的那个文件夹
+        if let recent = folders.first { selectedFolders = [recent.id] }
         buildTokenMap()
         prepared = true
     }
@@ -349,6 +370,15 @@ struct WordPickerView: View {
         case .existing(let scan):
             WordLibrary.addWords(candidates.filter { linkKeys.contains($0.key) }, to: scan, context: context)
             scan.candidates = candidates
+        }
+
+        // 这次选中的词（新词 + 已经存过的）放进勾选的文件夹
+        if !selectedFolders.isEmpty {
+            let keys = linkKeys
+            let picked = ((try? context.fetch(FetchDescriptor<VocabWord>(predicate: #Predicate { keys.contains($0.normalizedForm) }))) ?? [])
+            for folder in folders where selectedFolders.contains(folder.id) {
+                WordLibrary.add(picked, to: folder, context: context)
+            }
         }
 
         LevelService.recordSelection(classified: classified, selectedKeys: selected, in: context)

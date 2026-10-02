@@ -116,8 +116,72 @@ enum WordLibrary {
         deleteAll(Scan.self)
         deleteAll(ReviewLog.self)
         deleteAll(WordFamiliarity.self)
+        deleteAll(WordFolder.self)
         try? context.save()
         ImageCache.shared.removeAll()
+    }
+
+    // MARK: - 文件夹
+
+    /// 最近用过的在前
+    static func folders(_ context: ModelContext) -> [WordFolder] {
+        (try? context.fetch(FetchDescriptor<WordFolder>(sortBy: [SortDescriptor(\.lastUsedAt, order: .reverse)]))) ?? []
+    }
+
+    @discardableResult
+    static func createFolder(name: String, iconName: String, context: ModelContext) -> WordFolder {
+        let folder = WordFolder(name: name.trimmingCharacters(in: .whitespacesAndNewlines), iconName: iconName)
+        context.insert(folder)
+        try? context.save()
+        return folder
+    }
+
+    static func update(_ folder: WordFolder, name: String, iconName: String, context: ModelContext) {
+        folder.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        folder.iconName = iconName
+        try? context.save()
+    }
+
+    /// 只删文件夹，里面的词还在
+    static func delete(_ folder: WordFolder, context: ModelContext) {
+        context.delete(folder)
+        try? context.save()
+    }
+
+    /// 放进文件夹（已经在里面的不重复放）
+    static func add(_ words: [VocabWord], to folder: WordFolder, now: Date = Date(), context: ModelContext) {
+        let existing = Set(folder.words.map(\.id))
+        folder.words.append(contentsOf: words.filter { !existing.contains($0.id) })
+        folder.lastUsedAt = now
+        try? context.save()
+    }
+
+    static func remove(_ word: VocabWord, from folder: WordFolder, context: ModelContext) {
+        remove([word], from: folder, context: context)
+    }
+
+    static func remove(_ words: [VocabWord], from folder: WordFolder, context: ModelContext) {
+        let ids = Set(words.map(\.id))
+        folder.words.removeAll { ids.contains($0.id) }
+        try? context.save()
+    }
+
+    /// 放进目标文件夹；有来源的话从来源里拿出来
+    static func move(_ words: [VocabWord], from source: WordFolder?, to target: WordFolder, context: ModelContext) {
+        add(words, to: target, context: context)
+        if let source, source.id != target.id { remove(words, from: source, context: context) }
+    }
+
+    /// 手动改分类，以后这些词就按这个分类算
+    static func setCategory(_ words: [VocabWord], to scene: SceneType, context: ModelContext) {
+        words.forEach { $0.categoryOverrideRaw = scene.rawValue }
+        try? context.save()
+    }
+
+    /// 批量从词库删除。逐条删：多对多关系下批量删除会静默失败
+    static func delete(_ words: [VocabWord], context: ModelContext) {
+        words.forEach { context.delete($0) }
+        try? context.save()
     }
 
     // MARK: - 状态

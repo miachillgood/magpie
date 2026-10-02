@@ -55,7 +55,7 @@ struct SceneDetailView: View {
                     }
                     Picker(selection: $scan.sceneRaw) {
                         ForEach(SceneType.allCases) { scene in
-                            Label(scene.displayName, systemImage: scene.symbol).tag(scene.rawValue)
+                            Label { Text(scene.displayName) } icon: { Image(scene.iconName) }.tag(scene.rawValue)
                         }
                     } label: {
                         Label("场景类型", systemImage: "tag")
@@ -140,9 +140,7 @@ struct SceneDetailView: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: Spacing.sm) {
-            Image(systemName: scan.scene.symbol)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(Theme.homeInk)
+            IconImage(name: scan.scene.iconName, size: 34)
                 .frame(width: 52, height: 52)
                 .background(Theme.placeChip, in: .rect(cornerRadius: 16, style: .continuous))
                 .accessibilityHidden(true)

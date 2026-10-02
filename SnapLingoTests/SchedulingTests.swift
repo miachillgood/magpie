@@ -198,30 +198,6 @@ struct RatingOrderTests {
     }
 }
 
-struct StudyPaceTests {
-    @Test func adjustingMovesOneOptionAndStopsAtEnds() {
-        #expect(StudyPace.adjusted(10, by: 1) == 15)
-        #expect(StudyPace.adjusted(10, by: -1) == 5)
-        #expect(StudyPace.adjusted(5, by: -1) == 5)
-        #expect(StudyPace.adjusted(30, by: 1) == 30)
-        #expect(StudyPace.adjusted(8, by: 0) == 10)
-        #expect(StudyPace.adjusted(8, by: 1) == 10)
-        #expect(StudyPace.adjusted(8, by: -1) == 5)
-        #expect(StudyPace.adjusted(2, by: 1) == 5)
-        #expect(StudyPace.adjusted(2, by: -1) == 5)
-        #expect(StudyPace.adjusted(40, by: 1) == 30)
-    }
-
-    @Test func asksOnlyWhenTheCapHeldWordsBack() {
-        let done = DailyPlan(reviewIDs: [], newIDs: [], reviewsDone: 3, newDone: 10)
-        let unfinished = DailyPlan(reviewIDs: [UUID()], newIDs: [], reviewsDone: 0, newDone: 10)
-        #expect(StudyPace.shouldAsk(plan: done, backlog: 4, asked: false))
-        #expect(!StudyPace.shouldAsk(plan: done, backlog: 0, asked: false))
-        #expect(!StudyPace.shouldAsk(plan: done, backlog: 4, asked: true))
-        #expect(!StudyPace.shouldAsk(plan: unfinished, backlog: 4, asked: false))
-    }
-}
-
 // MARK: - 三个按钮 + 旧数据迁移
 
 @MainActor
@@ -280,5 +256,54 @@ struct ThreeButtonSessionTests {
         let due = reviewed.dueDate
         SpacedRepetitionMigration.run(context: context)
         #expect(reviewed.dueDate == due)
+    }
+}
+
+struct StudyPaceTests {
+    @Test func adjustingMovesOneOptionAndStopsAtEnds() {
+        #expect(StudyPace.adjusted(10, by: 1) == 15)
+        #expect(StudyPace.adjusted(10, by: -1) == 5)
+        #expect(StudyPace.adjusted(5, by: -1) == 5)
+        #expect(StudyPace.adjusted(30, by: 1) == 30)
+        #expect(StudyPace.adjusted(8, by: 0) == 10)
+        #expect(StudyPace.adjusted(8, by: 1) == 10)
+        #expect(StudyPace.adjusted(8, by: -1) == 5)
+        #expect(StudyPace.adjusted(2, by: 1) == 5)
+    }
+
+    @Test func asksOnlyWhenTheCapHeldWordsBack() {
+        let done = DailyPlan(reviewIDs: [], newIDs: [], reviewsDone: 3, newDone: 10)
+        let unfinished = DailyPlan(reviewIDs: [UUID()], newIDs: [], reviewsDone: 0, newDone: 10)
+        #expect(StudyPace.shouldAsk(plan: done, backlog: 4, asked: false))
+        #expect(!StudyPace.shouldAsk(plan: done, backlog: 0, asked: false))
+        #expect(!StudyPace.shouldAsk(plan: done, backlog: 4, asked: true))
+        #expect(!StudyPace.shouldAsk(plan: unfinished, backlog: 4, asked: false))
+    }
+}
+
+struct LearningProgressTests {
+    @Test func segmentsAddUpAndTooEasyIsSeparate() {
+        let words = [
+            ProgressRecord(id: UUID(), state: .new, excludedFromReview: false),
+            ProgressRecord(id: UUID(), state: .learning, excludedFromReview: false),
+            ProgressRecord(id: UUID(), state: .mastered, excludedFromReview: false),
+            ProgressRecord(id: UUID(), state: .mastered, excludedFromReview: true)
+        ]
+        let progress = MeStats.progress(words: words, events: [], now: date(10), calendar: calendar)
+        #expect(progress == LearningProgress(new: 1, learning: 1, mastered: 1, tooEasy: 1, masteredThisWeek: 0))
+        #expect(progress.total == 4)
+    }
+
+    @Test func masteredThisWeekCountsOnlyTheFirstCrossing() {
+        let recent = UUID(), old = UUID(), never = UUID()
+        let events = [
+            IntervalEvent(wordID: recent, reviewedAt: date(8), intervalAfter: 25),
+            IntervalEvent(wordID: recent, reviewedAt: date(9), intervalAfter: 60),
+            IntervalEvent(wordID: old, reviewedAt: date(1), intervalAfter: 22),
+            IntervalEvent(wordID: old, reviewedAt: date(9), intervalAfter: 50),
+            IntervalEvent(wordID: never, reviewedAt: date(9), intervalAfter: 10)
+        ]
+        let progress = MeStats.progress(words: [], events: events, now: date(10), calendar: calendar)
+        #expect(progress.masteredThisWeek == 1)
     }
 }

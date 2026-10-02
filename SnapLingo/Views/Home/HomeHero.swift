@@ -415,10 +415,15 @@ private struct HeadlineLine: View {
                 .font(.system(size: size * 1.05))
                 .fixedSize()
         case .place(let symbol, let highlight, let rest):
-            Image(systemName: symbol)
-                .font(.system(size: size * 0.85, weight: .semibold))
-                .foregroundStyle(Theme.homeInk)
-                .fixedSize()
+            // 分类用彩色小图标（icon-…），其它地方仍是 SF Symbol
+            if symbol.hasPrefix("icon-") {
+                IconImage(name: symbol, size: size * 1.15)
+            } else {
+                Image(systemName: symbol)
+                    .font(.system(size: size * 0.85, weight: .semibold))
+                    .foregroundStyle(Theme.homeInk)
+                    .fixedSize()
+            }
             Text(highlight)
                 .font(.system(size: size, weight: .heavy))
                 .foregroundStyle(Theme.homeInk)

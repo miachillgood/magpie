@@ -16,6 +16,7 @@ enum DemoData {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("-resetData") {
             wipe(context)
+            UserDefaults.standard.removeObject(forKey: MistakeBackfill.doneKey)
         }
         if arguments.contains("-skipOnboarding") {
             let settings = UserSettings.current(in: context)
@@ -29,12 +30,17 @@ enum DemoData {
             UserSettings.current(in: context).onboardingCompleted = false
             try? context.save()
         }
-        // -newWordsPerDay 2：调小每天的新词上限，让新词排队，方便看结算页的「节奏合适吗？」
+        // -newWordsPerDay 2：调小每天的新词上限，让新词排队，方便看结算页的「再学 5 个新词」
         if let index = arguments.firstIndex(of: "-newWordsPerDay"), index + 1 < arguments.count, let count = Int(arguments[index + 1]) {
             let settings = UserSettings.current(in: context)
             settings.newWordsPerDay = count
-            settings.paceCheckDone = false
             try? context.save()
+        }
+        // -demoFolder：建一个“搬家”文件夹，放进两个词，看文件夹的界面
+        if arguments.contains("-demoFolder"), ((try? context.fetchCount(FetchDescriptor<WordFolder>())) ?? 0) == 0 {
+            let words = ((try? context.fetch(FetchDescriptor<VocabWord>())) ?? []).filter { ["bond", "tenancy", "inspection"].contains($0.normalizedForm) }
+            let folder = WordLibrary.createFolder(name: String(localized: "搬家"), iconName: "icon-box", context: context)
+            WordLibrary.add(words, to: folder, context: context)
         }
         if arguments.contains("-seedDemoData") {
             let count = (try? context.fetchCount(FetchDescriptor<Scan>())) ?? 0
@@ -88,7 +94,7 @@ enum DemoData {
         ),
         DemoScene(
             title: "Countdown 超市货架",
-            scene: .supermarket,
+            scene: .shopping,
             daysAgo: 2,
             lines: ["FREE RANGE EGGS", "12 pack", "Best before 12 OCT", "Club price $6.99", "Contains: wheat, soy"],
             colors: (UIColor(red: 0.98, green: 0.96, blue: 0.9, alpha: 1), UIColor(red: 0.95, green: 0.9, blue: 0.8, alpha: 1)),

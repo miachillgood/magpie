@@ -45,6 +45,7 @@ final class StudySession {
         let srs: SRSState
         let excluded: Bool
         let introducedAt: Date?
+        let mistakeAt: Date?
         let levelScore: Double
         let firstRating: ReviewRating?
         let log: ReviewLog?
@@ -103,6 +104,7 @@ final class StudySession {
                 srs: word.srs,
                 excluded: word.excludedFromReview,
                 introducedAt: word.introducedAt,
+                mistakeAt: word.mistakeAt,
                 levelScore: settings.levelScore,
                 firstRating: firstRatings[word.id],
                 log: nil,
@@ -114,9 +116,15 @@ final class StudySession {
         }
         var insertedLog: ReviewLog?
 
+        // 错词重练：每个词在这一轮第一次的评分算数，本轮重试答对不算（那只是刚看过）
+        if card.attempt == 0 {
+            word.mistakeAt = MeStats.mistakeAt(after: rating, previous: word.mistakeAt, now: now)
+        }
+
         if card.attempt == 0 && card.isPractice {
-            // 顺便再看一遍：只记本轮结果，不改排期、不写复习记录
+            // 顺便再看一遍：只记本轮结果和错词标记，不改排期、不写复习记录
             firstRatings[word.id] = rating
+            try? context.save()
         } else if card.attempt == 0 {
             let settings = UserSettings.current(in: context)
             let wasNew = word.state == .new
@@ -142,7 +150,7 @@ final class StudySession {
             WordLibrary.setMastered(word, true, context: context)
             pendingUndo = Undo(
                 word: undo.word, srs: undo.srs, excluded: undo.excluded, introducedAt: undo.introducedAt,
-                levelScore: undo.levelScore, firstRating: undo.firstRating, log: insertedLog,
+                mistakeAt: undo.mistakeAt, levelScore: undo.levelScore, firstRating: undo.firstRating, log: insertedLog,
                 familiarity: undo.familiarity, position: undo.position
             )
         }
@@ -168,6 +176,7 @@ final class StudySession {
         word.srs = undo.srs
         word.excludedFromReview = undo.excluded
         word.introducedAt = undo.introducedAt
+        word.mistakeAt = undo.mistakeAt
         UserSettings.current(in: context).levelScore = undo.levelScore
         if let log = undo.log { context.delete(log) }
         if let existing = Self.familiarity(for: word, in: context) {
