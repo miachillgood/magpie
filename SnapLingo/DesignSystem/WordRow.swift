@@ -15,9 +15,7 @@ struct WordRow: View {
     var body: some View {
         HStack(spacing: Spacing.sm) {
             if showsScene {
-                Image(systemName: (word.latestScan?.scene ?? .general).symbol)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Theme.homeInk)
+                IconImage(name: SceneType.of(word).iconName, size: 28)
                     .frame(width: 44, height: 44)
                     .background(Theme.placeChip, in: .rect(cornerRadius: 13, style: .continuous))
                     .accessibilityHidden(true)

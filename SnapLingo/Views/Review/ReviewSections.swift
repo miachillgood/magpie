@@ -11,6 +11,10 @@ import SwiftUI
 enum ReviewRoute: Hashable {
     case library(WordsFilter, searching: Bool = false)
     case month(Date)
+    /// 错词重练列表
+    case mistakes
+    /// 一个文件夹或一个分类里的词
+    case collection(CollectionWordsView.Source)
 }
 
 // MARK: - 最近一周
@@ -182,115 +186,46 @@ private struct DayRing: View {
     }
 }
 
-// MARK: - 按场景复习
-
-/// 横向一排场景卡片，该复习的排在前面（和照片墙按时间排区分开）
-struct SceneReviewRow: View {
-    var scans: [Scan]
-    var sidePadding: CGFloat
-    var zoom: Namespace.ID
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("按场景复习")
-                    .font(.system(size: 18, weight: .heavy))
-                    .accessibilityAddTraits(.isHeader)
-                Spacer()
-                Text("该复习的排在前面")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.homeMuted)
-            }
-            .foregroundStyle(Theme.homeInk)
-            .padding(.horizontal, sidePadding)
-            .overlay(alignment: .topTrailing) {
-                JournalStickerView(kind: .sparkleStar).offset(x: -sidePadding - 4, y: -18)
-            }
-
-            ScrollView(.horizontal) {
-                HStack(spacing: 12) {
-                    ForEach(scans) { scan in
-                        NavigationLink(value: scan) {
-                            SceneReviewCard(scan: scan)
-                                .matchedTransitionSource(id: scan.id, in: zoom)
-                        }
-                        .buttonStyle(.pressable)
-                    }
-                }
-                .padding(.vertical, 6)
-            }
-            .contentMargins(.horizontal, sidePadding, for: .scrollContent)
-            .scrollIndicators(.hidden)
-        }
-    }
-}
-
-private struct SceneReviewCard: View {
-    var scan: Scan
-
-    var body: some View {
-        let counts = scan.studyCounts()
-        VStack(alignment: .leading, spacing: 0) {
-            ScanThumbnail(scan: scan)
-                .frame(width: 142, height: 108)
-                .clipped()
-                .overlay(alignment: .topLeading) { badge(counts) }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(scan.displayTitle)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Theme.homeInk)
-                    .lineLimit(1)
-                Text("\(scan.words.count) 个词")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.homeMuted)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-        }
-        .frame(width: 142, alignment: .leading)
-        .background(Theme.sheet, in: .rect(cornerRadius: 18, style: .continuous))
-        .clipShape(.rect(cornerRadius: 18, style: .continuous))
-        .shadow(color: .black.opacity(0.07), radius: 10, y: 4)
-        .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder
-    private func badge(_ counts: (due: Int, new: Int)) -> some View {
-        if counts.due > 0 {
-            tag("\(counts.due) 个待复习", fill: Theme.marker)
-        } else if counts.new > 0 {
-            tag("\(counts.new) 个新词", fill: Theme.placeChip)
-        }
-    }
-
-    private func tag(_ text: LocalizedStringKey, fill: Color) -> some View {
-        Text(text)
-            .font(.system(size: 11, weight: .heavy))
-            .foregroundStyle(Theme.homeInk)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 3)
-            .background(fill, in: .capsule)
-            .padding(8)
-    }
-}
-
 // MARK: - 词库
 
 /// 词库入口：总数 + 待学 / 学习中 / 已掌握，点哪个就打开筛选好的词库
+/// 复习页底部「我的进度」：一条四段的横条（已掌握 / 学习中 / 待学 / 太简单）、这周新掌握几个。
+/// 点标题进词库，点图例里的一段进对应的筛选
 struct LibraryEntryCard: View {
-    var total: Int
-    var counts: [WordsFilter: Int]
+    var progress: LearningProgress
+
+    private struct Segment: Identifiable {
+        var id: String { title }
+        var title: String
+        var count: Int
+        var color: Color
+        var filter: WordsFilter
+    }
+
+    /// 横条只用柔和的颜色：灰绿 = 已掌握，荧光黄 = 学习中，浅米色 = 还没学，和页面的米色底是一家
+    private static let sage = Color(light: UIColor(hex: 0x7FA38D), dark: UIColor(hex: 0x6E9A82))
+    private static let track = Color(light: UIColor(hex: 0xE9E1D3), dark: UIColor(hex: 0x3A352E))
+
+    private var segments: [Segment] {
+        [
+            Segment(title: String(localized: "已掌握", comment: "Progress card segment: mastered"), count: progress.mastered, color: Self.sage, filter: .mastered),
+            Segment(title: String(localized: "学习中", comment: "Progress card segment: learning"), count: progress.learning, color: Theme.marker, filter: .learning),
+            Segment(title: String(localized: "待学", comment: "Progress card segment: new"), count: progress.new, color: Self.track, filter: .new),
+            Segment(title: String(localized: "太简单", comment: "Progress card segment: removed as too easy"), count: progress.tooEasy, color: Self.track.opacity(0.6), filter: .mastered)
+        ]
+    }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             NavigationLink(value: ReviewRoute.library(.all)) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("词库")
+                    Text("我的进度")
                         .font(.system(size: 18, weight: .heavy))
-                    Text("\(total) 个词")
+                        .accessibilityAddTraits(.isHeader)
+                    Spacer()
+                    Text("\(progress.total) 个词")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.homeMuted)
-                    Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Theme.homeMuted)
@@ -300,29 +235,67 @@ struct LibraryEntryCard: View {
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: 8) {
-                ForEach([WordsFilter.new, .learning, .mastered], id: \.self) { filter in
-                    NavigationLink(value: ReviewRoute.library(filter)) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(counts[filter] ?? 0)")
-                                .font(.brand(22))
-                                .foregroundStyle(Theme.homeInk)
-                            Text(filter.title)
-                                .font(.system(size: 12))
-                                .foregroundStyle(Theme.homeMuted)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(verbatim: "\(progress.mastered)")
+                    .font(.brand(30))
+                Text("个已掌握", comment: "After the big mastered-words number on the progress card")
+                    .font(.system(size: 15, weight: .semibold))
+                    .fixedSize()
+                // 横条和数字放在同一行
+                bar
+                    .padding(.leading, 8)
+                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
+                if progress.masteredThisWeek > 0 {
+                    Text("这周 +\(progress.masteredThisWeek)", comment: "Progress card: words newly mastered in the last 7 days")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Theme.success)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Theme.success.opacity(0.12), in: .capsule)
+                }
+            }
+            .foregroundStyle(Theme.homeInk)
+
+            FlowLayout(spacing: 8) {
+                ForEach(segments.filter { $0.count > 0 }) { segment in
+                    NavigationLink(value: ReviewRoute.library(segment.filter)) {
+                        HStack(spacing: 6) {
+                            Circle().fill(segment.color).frame(width: 8, height: 8)
+                                .overlay(Circle().strokeBorder(Theme.homeInk.opacity(segment.color == Self.track ? 0.25 : 0), lineWidth: 1))
+                            Text(verbatim: segment.title)
+                            Text(verbatim: "\(segment.count)")
+                                .fontWeight(.bold)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(Theme.cream, in: .rect(cornerRadius: 14, style: .continuous))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.homeInk)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Theme.cream, in: .capsule)
                     }
                     .buttonStyle(.pressable)
-                    .accessibilityLabel("\(filter.title) \(counts[filter] ?? 0) 个")
                 }
             }
         }
         .padding(16)
         .background(Theme.sheet, in: .rect(cornerRadius: 22, style: .continuous))
         .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
+    }
+
+    /// 四段横条，按词数分宽度
+    private var bar: some View {
+        GeometryReader { proxy in
+            let total = max(progress.total, 1)
+            let shown = segments.filter { $0.count > 0 }
+            let gaps = CGFloat(max(shown.count - 1, 0)) * 3
+            HStack(spacing: 3) {
+                ForEach(shown) { segment in
+                    segment.color
+                        .frame(width: max((proxy.size.width - gaps) * CGFloat(segment.count) / CGFloat(total), 6))
+                }
+            }
+            .clipShape(.capsule)
+        }
+        .frame(height: 12)
+        .accessibilityHidden(true)
     }
 }

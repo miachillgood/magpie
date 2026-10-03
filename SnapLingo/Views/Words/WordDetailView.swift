@@ -30,6 +30,8 @@ struct WordDetailView: View {
                 if !scans.isEmpty {
                     seenIn
                 }
+                WordFoldersRow(word: word)
+                    .card(padding: Spacing.md)
                 progressCard
                 actions
             }

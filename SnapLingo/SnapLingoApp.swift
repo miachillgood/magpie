@@ -20,6 +20,7 @@ struct SnapLingoApp: App {
         DemoData.applyLaunchArguments(to: container.mainContext)
         #endif
         SpacedRepetitionMigration.run(context: container.mainContext)
+        MistakeBackfill.run(context: container.mainContext)
     }
 
     var body: some Scene {
@@ -36,7 +37,8 @@ struct SnapLingoApp: App {
         VocabWord.self,
         ReviewLog.self,
         UserSettings.self,
-        WordFamiliarity.self
+        WordFamiliarity.self,
+        WordFolder.self
     ])
 
     /// 新版数据库使用独立文件，旧版（重新设计前）的数据库直接移除

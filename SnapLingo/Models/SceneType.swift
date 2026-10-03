@@ -5,89 +5,102 @@
 
 import Foundation
 
-/// 场景类型。raw value 使用英文 key，与 Claude 返回值保持一致
+/// 照片的自动分类（12 类），按“在哪儿看到这段英文”来分，拍完由 Claude 选一类，用户可以改。
+/// raw value 是给 Claude 的英文 key，也是数据库里存的值；旧版本的 supermarket / legal 读出来时并进购物 / 钱和办事
 enum SceneType: String, Codable, CaseIterable, Identifiable, Sendable {
     case restaurant
-    case supermarket
     case shopping
+    case transport
+    case signage
     case housing
     case campus
     case medical
-    case transport
     case bank
-    case legal
-    case signage
+    case sports
+    case leisure
+    case tech
     case general
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .restaurant:  String(localized: "餐厅", comment: "Scene type name (short)")
-        case .supermarket: String(localized: "超市", comment: "Scene type name (short)")
-        case .shopping:    String(localized: "购物", comment: "Scene type name (short)")
-        case .housing:     String(localized: "租房", comment: "Scene type name (short)")
-        case .campus:      String(localized: "校园", comment: "Scene type name (short)")
-        case .medical:     String(localized: "医疗", comment: "Scene type name (short)")
-        case .transport:   String(localized: "交通", comment: "Scene type name (short)")
-        case .bank:        String(localized: "银行", comment: "Scene type name (short)")
-        case .legal:       String(localized: "文件", comment: "Scene type name (short)")
-        case .signage:     String(localized: "标识", comment: "Scene type name (short)")
-        case .general:     String(localized: "日常", comment: "Scene type name (short)")
+        case .restaurant: String(localized: "吃喝", comment: "Photo category: menus, cafés, food packaging")
+        case .shopping:   String(localized: "购物", comment: "Photo category: supermarkets, price tags, shops, clothes")
+        case .transport:  String(localized: "出行旅行", comment: "Photo category: buses, trains, airports, parking, hotels, sights")
+        case .signage:    String(localized: "标识告示", comment: "Photo category: street signs, warnings, notices")
+        case .housing:    String(localized: "住家", comment: "Photo category: renting, home appliances, bills, mail")
+        case .campus:     String(localized: "工作学习", comment: "Photo category: office, school, textbooks, forms")
+        case .medical:    String(localized: "医疗健康", comment: "Photo category: pharmacy, clinic, medicine")
+        case .bank:       String(localized: "钱和办事", comment: "Photo category: bank, bills, government forms, insurance, post office")
+        case .sports:     String(localized: "运动户外", comment: "Photo category: gym, park, hiking, beach")
+        case .leisure:    String(localized: "休闲娱乐", comment: "Photo category: cinema, museum, shows, events")
+        case .tech:       String(localized: "数码屏幕", comment: "Photo category: app screenshots, device settings, manuals")
+        case .general:    String(localized: "其他", comment: "Photo category: anything else")
         }
     }
 
-    var symbol: String {
+    /// 分类图标（Assets 里 Icons 文件夹的图）
+    var iconName: String {
         switch self {
-        case .restaurant:  "fork.knife"
-        case .supermarket: "cart"
-        case .shopping:    "bag"
-        case .housing:     "house"
-        case .campus:      "graduationcap"
-        case .medical:     "cross.case"
-        case .transport:   "bus"
-        case .bank:        "creditcard"
-        case .legal:       "doc.text"
-        case .signage:     "signpost.right"
-        case .general:     "text.viewfinder"
+        case .restaurant: "icon-coffee"
+        case .shopping:   "icon-bag"
+        case .transport:  "icon-bus"
+        case .signage:    "icon-signpost"
+        case .housing:    "icon-house"
+        case .campus:     "icon-laptop"
+        case .medical:    "icon-hospital"
+        case .bank:       "icon-card"
+        case .sports:     "icon-trees"
+        case .leisure:    "icon-masks"
+        case .tech:       "icon-phone"
+        case .general:    "icon-pin"
         }
     }
 
-    /// 写给 Claude 的场景名（英文，只给模型看）
+    /// 写给 Claude 的分类名（英文，只给模型看）
     var promptName: String {
         switch self {
-        case .restaurant:  "restaurant or café"
-        case .supermarket: "supermarket"
-        case .shopping:    "shopping"
-        case .housing:     "housing and renting"
-        case .campus:      "campus"
-        case .medical:     "medical"
-        case .transport:   "transport"
-        case .bank:        "banking and tax"
-        case .legal:       "legal and government"
-        case .signage:     "public signs"
-        case .general:     "everyday"
+        case .restaurant: "food and drinks"
+        case .shopping:   "shopping"
+        case .transport:  "transport and travel"
+        case .signage:    "signs and notices"
+        case .housing:    "home and housing"
+        case .campus:     "work and study"
+        case .medical:    "health"
+        case .bank:       "money and admin"
+        case .sports:     "sports and outdoors"
+        case .leisure:    "fun and culture"
+        case .tech:       "tech and screens"
+        case .general:    "everyday"
         }
     }
 
     /// 写给 Claude 的判定说明（英文，只给模型看）
     var promptHint: String {
         switch self {
-        case .restaurant:  "menus, coffee menus, takeaway receipts, drink lists"
-        case .supermarket: "food packaging, shelf labels, ingredient lists, nutrition facts, supermarket promotions"
-        case .shopping:    "store tags, clothing care labels, return policies, electronics packaging"
-        case .housing:     "rental listings, tenancy agreements, property inspection sheets, utility bills, building notices"
-        case .campus:      "timetables, assignment briefs, library, school notices, student cards"
-        case .medical:     "medicine leaflets, prescriptions, clinic forms, supplements, vaccines, health insurance"
-        case .transport:   "bus/train timetables, tickets, parking signs, airport directions"
-        case .bank:        "bank cards, statements, transfer forms, tax letters"
-        case .legal:       "contracts, terms, government documents, legal notices, visa paperwork"
-        case .signage:     "street signs, notices, warning signs, opening hours, directions"
-        case .general:     "when nothing above fits"
+        case .restaurant: "menus, cafés, drink lists, takeaway, food packaging, ingredient and nutrition labels"
+        case .shopping:   "supermarket shelves and promotions, price tags, store signs, receipts, clothing labels, return policies"
+        case .transport:  "bus/train timetables, tickets, stations, airports, parking, hotels, tourist attractions"
+        case .signage:    "street signs, warning signs, notices on doors or walls, opening hours, directions"
+        case .housing:    "rental listings, tenancy agreements, home appliances, utility bills, letters, building notices"
+        case .campus:     "office documents, timetables, assignments, textbooks, school or workplace notices, forms"
+        case .medical:    "pharmacies, medicine leaflets, prescriptions, clinic forms, supplements, health insurance"
+        case .bank:       "bank cards and statements, bills, tax letters, government forms, visas, insurance, post office"
+        case .sports:     "gyms, sports, parks, hiking tracks, beaches, outdoor safety signs"
+        case .leisure:    "cinemas, museums, shows, concerts, events, games, galleries"
+        case .tech:       "phone or app screenshots, device settings, error messages, product manuals"
+        case .general:    "when nothing above fits"
         }
     }
 
+    /// 读 Claude 的返回值或数据库里存的值；旧版本的分类并进新的
     init(key: String) {
-        self = SceneType(rawValue: key.lowercased().trimmingCharacters(in: .whitespaces)) ?? .general
+        let key = key.lowercased().trimmingCharacters(in: .whitespaces)
+        switch key {
+        case "supermarket": self = .shopping
+        case "legal":       self = .bank
+        default:            self = SceneType(rawValue: key) ?? .general
+        }
     }
 }

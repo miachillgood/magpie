@@ -14,7 +14,7 @@ enum StudyPace: Int, CaseIterable, Identifiable, Sendable {
 
     var id: Int { rawValue }
 
-    /// 「我的」页和结算页可选的每天新词数
+    /// 「我的」页、复习页的目标面板、结算页可选的每天新词数
     static let dailyOptions = [5, 10, 15, 20, 30]
 
     /// 在 dailyOptions 里往上（step > 0）或往下挪 step 档，到两头就停住。
@@ -38,6 +38,9 @@ enum StudyPace: Int, CaseIterable, Identifiable, Sendable {
     static func shouldAsk(plan: DailyPlan, backlog: Int, asked: Bool) -> Bool {
         !asked && !plan.hasWork && backlog > 0
     }
+
+    /// 每个新词连同当天的复习大约 1 分钟
+    static func minutes(forNewWords count: Int) -> Int { count }
 }
 
 /// 发音口音
@@ -79,6 +82,7 @@ final class UserSettings {
     var onboardingCompleted: Bool = false
     var newWordsPerDay: Int = StudyPace.standard.rawValue
     /// 结算页的「节奏合适吗？」问过了没有
+    /// 以前结算页会问一次「节奏合适吗？」，现在不问了；留着字段是为了不改数据库结构
     var paceCheckDone: Bool = false
     var maxReviewsPerDay: Int = 100
     var reminderEnabled: Bool = false

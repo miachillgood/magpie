@@ -16,6 +16,7 @@ enum DemoData {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("-resetData") {
             wipe(context)
+            UserDefaults.standard.removeObject(forKey: MistakeBackfill.doneKey)
         }
         if arguments.contains("-skipOnboarding") {
             let settings = UserSettings.current(in: context)
@@ -29,12 +30,17 @@ enum DemoData {
             UserSettings.current(in: context).onboardingCompleted = false
             try? context.save()
         }
-        // -newWordsPerDay 2：调小每天的新词上限，让新词排队，方便看结算页的「节奏合适吗？」
+        // -newWordsPerDay 2：调小每天的新词上限，让新词排队，方便看结算页的「再学 5 个新词」
         if let index = arguments.firstIndex(of: "-newWordsPerDay"), index + 1 < arguments.count, let count = Int(arguments[index + 1]) {
             let settings = UserSettings.current(in: context)
             settings.newWordsPerDay = count
-            settings.paceCheckDone = false
             try? context.save()
+        }
+        // -demoFolder：建一个“搬家”文件夹，放进两个词，看文件夹的界面
+        if arguments.contains("-demoFolder"), ((try? context.fetchCount(FetchDescriptor<WordFolder>())) ?? 0) == 0 {
+            let words = ((try? context.fetch(FetchDescriptor<VocabWord>())) ?? []).filter { ["bond", "tenancy", "inspection"].contains($0.normalizedForm) }
+            let folder = WordLibrary.createFolder(name: String(localized: "搬家"), iconName: "icon-box", context: context)
+            WordLibrary.add(words, to: folder, context: context)
         }
         if arguments.contains("-seedDemoData") {
             let count = (try? context.fetchCount(FetchDescriptor<Scan>())) ?? 0
@@ -63,6 +69,10 @@ enum DemoData {
 
     private struct DemoScene {
         var title: String
+        /// 照片上的店名（首页胶囊）；空 = 没有店名
+        var placeName = ""
+        /// 拍照的街区（首页「刚刚在 Ponsonby 的」）
+        var neighborhood = ""
         var scene: SceneType
         var daysAgo: Int
         var lines: [String]
@@ -73,7 +83,9 @@ enum DemoData {
 
     private static let scenes: [DemoScene] = [
         DemoScene(
-            title: "Little Bird 咖啡菜单",
+            title: "Little Bird " + String(localized: "咖啡菜单", comment: "Demo scene title noun after the shop name Little Bird"),
+            placeName: "Little Bird",
+            neighborhood: "Ponsonby",
             scene: .restaurant,
             daysAgo: 0,
             lines: ["LITTLE BIRD CAFÉ", "Flat white  5.50", "Oat milk  +0.80", "Gluten free options", "Please order at the counter"],
@@ -87,8 +99,9 @@ enum DemoData {
             ]
         ),
         DemoScene(
-            title: "Countdown 超市货架",
-            scene: .supermarket,
+            title: "Countdown " + String(localized: "超市货架", comment: "Demo scene title noun after the supermarket name Countdown"),
+            placeName: "Countdown",
+            scene: .shopping,
             daysAgo: 2,
             lines: ["FREE RANGE EGGS", "12 pack", "Best before 12 OCT", "Club price $6.99", "Contains: wheat, soy"],
             colors: (UIColor(red: 0.98, green: 0.96, blue: 0.9, alpha: 1), UIColor(red: 0.95, green: 0.9, blue: 0.8, alpha: 1)),
@@ -101,7 +114,7 @@ enum DemoData {
             ]
         ),
         DemoScene(
-            title: "租房广告",
+            title: String(localized: "租房广告", comment: "Demo scene title: a rental listing"),
             scene: .housing,
             daysAgo: 5,
             lines: ["FOR RENT", "2 bedroom unit — $620 pw", "Bond: 4 weeks", "Utilities not included", "Viewing by appointment"],
@@ -115,7 +128,7 @@ enum DemoData {
             ]
         ),
         DemoScene(
-            title: "公交站牌",
+            title: String(localized: "公交站牌", comment: "Demo scene title: a bus stop sign"),
             scene: .transport,
             daysAgo: 9,
             lines: ["BUS STOP 7012", "Tap on with your HOP card", "Next departure: 8:15", "Request stop — signal driver"],
@@ -141,6 +154,8 @@ enum DemoData {
             let image = render(demo)
             let scan = Scan(createdAt: date)
             scan.title = demo.title
+            scan.placeName = demo.placeName
+            scan.neighborhood = demo.neighborhood
             scan.scene = demo.scene
             scan.imageData = image.jpegData(compressionQuality: 0.85)
             scan.thumbnailData = ImageUtilities.jpeg(image, maxDimension: 600, quality: 0.8)

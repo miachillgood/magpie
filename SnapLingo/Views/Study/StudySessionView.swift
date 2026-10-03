@@ -19,11 +19,12 @@ struct StudySessionView: View {
             PaperBackground()
             MeshBackdrop(colors: backdropColors)
                 .frame(maxHeight: .infinity, alignment: .top)
-                .opacity(0.9)
+                // 结算页是干净的米色底，和效果图一致
+                .opacity(session?.isFinished == true ? 0 : 0.9)
                 .animation(.easeInOut(duration: 0.6), value: session?.current?.id)
             if let session {
                 if session.isFinished {
-                    SessionCompleteView(session: session, onMore: { learnMore() }, onDone: { finish() })
+                    SessionCompleteView(session: session, onContinue: { continueToday() }, onMore: { learnMore() }, onDone: { finish() })
                         .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 } else {
                     StudyCardsView(session: session, onClose: { finish() })
@@ -60,6 +61,13 @@ struct StudySessionView: View {
     private var backdropColors: [Color] {
         let scene = session?.current?.word.latestScan?.scene ?? .general
         return [scene.pastel, Pastel.pink, Pastel.lavender]
+    }
+
+    /// 今天的计划还没学完：再开一轮（从照片、某一天进来的也回到今日计划）
+    private func continueToday() {
+        withAnimation(.smooth) {
+            session = StudySession.make(scope: .today(extraNew: extraNew), context: context)
+        }
     }
 
     private func learnMore() {
@@ -236,7 +244,7 @@ private struct CardFront: View {
                     .frame(height: 240)
                     .clipShape(.rect(cornerRadius: Radius.card, style: .continuous))
                     .overlay(alignment: .bottomLeading) {
-                        Text("\(scan.scene.emoji) \(scan.displayTitle)")
+                        Label { Text(scan.displayTitle) } icon: { IconImage(name: scan.scene.iconName, size: 18) }
                             .font(.caption.weight(.heavy))
                             .foregroundStyle(Theme.ink)
                             .padding(.horizontal, Spacing.sm)

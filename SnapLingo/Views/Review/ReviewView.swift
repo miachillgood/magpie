@@ -15,8 +15,11 @@ struct ReviewView: View {
     @Query private var words: [VocabWord]
     @Query(sort: \ReviewLog.reviewedAt) private var logs: [ReviewLog]
     @Query(sort: \UserSettings.createdAt) private var settingsRows: [UserSettings]
+    @Query(sort: \WordFolder.lastUsedAt, order: .reverse) private var folders: [WordFolder]
     @State private var path = NavigationPath()
+    @State private var creatingFolder = false
     @State private var pickedDay: PickedDay?
+    @State private var editingGoal = false
     @Namespace private var zoom
 
     var body: some View {
@@ -51,6 +54,20 @@ struct ReviewView: View {
                     WordsView(initialFilter: filter, startsSearching: searching)
                 case .month(let month):
                     MonthCalendarView(month: month) { pickedDay = PickedDay(date: $0) }
+                case .mistakes:
+                    MistakesView()
+                case .collection(let source):
+                    CollectionWordsView(source: source)
+                }
+            }
+            .sheet(isPresented: $editingGoal) {
+                if let settings = settingsRows.first {
+                    DailyGoalSheet(settings: settings)
+                }
+            }
+            .sheet(isPresented: $creatingFolder) {
+                FolderEditorView { folder in
+                    path.append(ReviewRoute.collection(.folder(folder)))
                 }
             }
             .libraryDestinations(zoom: zoom)
@@ -112,31 +129,24 @@ struct ReviewView: View {
         )
     }
 
-    /// 该复习的场景排在前面（到期 + 新词多的在前，一样多时新拍的在前）
-    private var sceneCards: [Scan] {
-        let today = today
-        return scans
-            .filter { !$0.words.isEmpty }
-            .map { scan -> (scan: Scan, score: Int) in
-                let counts = scan.studyCounts(today: today)
-                return (scan, counts.due * 2 + counts.new)
-            }
-            .sorted { $0.score != $1.score ? $0.score > $1.score : $0.scan.createdAt > $1.scan.createdAt }
-            .prefix(12)
-            .map(\.scan)
+    /// 有词的分类，按分类的固定顺序
+    private var categoryCounts: [(scene: SceneType, count: Int)] {
+        let counts = Dictionary(grouping: words, by: SceneType.of).mapValues(\.count)
+        return SceneType.allCases.compactMap { scene in counts[scene].map { (scene, $0) } }
     }
 
-    /// 总是记不住的词：忘过的、还在复习的，按忘记次数排，最多 5 个
-    private var hardestWords: [VocabWord] {
-        let ids = MeStats.hardestWordIDs(words.map { LapseRecord(id: $0.id, lapses: $0.lapses, excludedFromReview: $0.excludedFromReview, addedAt: $0.addedAt) })
+    /// 错词：最近一次点了「不会」、还没答对的词，最近错的在前
+    private var mistakeWords: [VocabWord] {
+        let ids = MeStats.mistakeWordIDs(words.map { MistakeRecord(id: $0.id, mistakeAt: $0.mistakeAt, excludedFromReview: $0.excludedFromReview) })
         let byID = Dictionary(words.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         return ids.compactMap { byID[$0] }
     }
 
-    private var libraryCounts: [WordsFilter: Int] {
-        Dictionary(uniqueKeysWithValues: [WordsFilter.new, .learning, .mastered].map { filter in
-            (filter, words.filter(filter.matches).count)
-        })
+    private var learningProgress: LearningProgress {
+        MeStats.progress(
+            words: words.map { ProgressRecord(id: $0.id, state: $0.state, excludedFromReview: $0.excludedFromReview) },
+            events: logs.map { IntervalEvent(wordID: $0.wordID, reviewedAt: $0.reviewedAt, intervalAfter: $0.intervalAfter) }
+        )
     }
 
     // MARK: - 布局
@@ -173,8 +183,11 @@ struct ReviewView: View {
             upcoming: upcoming,
             backlog: backlog,
             scale: scale,
+            dailyNewGoal: settingsRows.first?.newWordsPerDay ?? StudyPace.standard.rawValue,
             onStart: { coordinator.startStudy() },
-            onMore: { coordinator.startStudy(.today(extraNew: 5)) }
+            onMore: { coordinator.startStudy(.today(extraNew: 5)) },
+            onEditGoal: { editingGoal = true },
+            onOpenSource: { path.append($0) }
         )
         .padding(.horizontal, side)
         .padding(.top, 16)
@@ -188,22 +201,26 @@ struct ReviewView: View {
         .padding(.horizontal, side)
         .padding(.top, 30)
 
-        let cards = sceneCards
-        if !cards.isEmpty {
-            SceneReviewRow(scans: cards, sidePadding: side, zoom: zoom)
-                .padding(.top, 32)
-        }
+        // 自己建的文件夹和自动分类放在同一个格子里，点进去都一样
+        CollectionGrid(
+            folders: folders,
+            categories: categoryCounts,
+            sidePadding: side,
+            onOpen: { path.append(ReviewRoute.collection($0)) },
+            onNew: { creatingFolder = true }
+        )
+        .padding(.top, 32)
 
-        let hardest = hardestWords
-        if !hardest.isEmpty {
-            HardestWordsCard(words: hardest) {
-                coordinator.startStudy(.words(hardest.map(\.id)))
+        let mistakes = mistakeWords
+        if !mistakes.isEmpty {
+            MistakesCard(words: mistakes) {
+                coordinator.startStudy(.words(mistakes.map(\.id)))
             }
             .padding(.horizontal, side - 4)
             .padding(.top, 26)
         }
 
-        LibraryEntryCard(total: words.count, counts: libraryCounts)
+        LibraryEntryCard(progress: learningProgress)
             .padding(.horizontal, side - 4)
             .padding(.top, 26)
             .overlay(alignment: .topTrailing) {

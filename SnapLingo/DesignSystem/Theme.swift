@@ -121,35 +121,38 @@ enum Pastel {
 }
 
 extension SceneType {
+    /// 没有照片时的占位
     var emoji: String {
         switch self {
-        case .restaurant:  "🍽️"
-        case .supermarket: "🛒"
-        case .shopping:    "🛍️"
-        case .housing:     "🏠"
-        case .campus:      "🎓"
-        case .medical:     "💊"
-        case .transport:   "🚌"
-        case .bank:        "🏦"
-        case .legal:       "📄"
-        case .signage:     "🪧"
-        case .general:     "✨"
+        case .restaurant: "☕️"
+        case .shopping:   "🛍️"
+        case .transport:  "🚌"
+        case .signage:    "🪧"
+        case .housing:    "🏠"
+        case .campus:     "💻"
+        case .medical:    "🏥"
+        case .bank:       "💳"
+        case .sports:     "🌳"
+        case .leisure:    "🎭"
+        case .tech:       "📱"
+        case .general:    "📌"
         }
     }
 
     var pastel: Color {
         switch self {
-        case .restaurant:  Pastel.peach
-        case .supermarket: Pastel.mint
-        case .shopping:    Pastel.pink
-        case .housing:     Pastel.lavender
-        case .campus:      Pastel.sky
-        case .medical:     Pastel.aqua
-        case .transport:   Pastel.butter
-        case .bank:        Pastel.sage
-        case .legal:       Pastel.mist
-        case .signage:     Pastel.butter
-        case .general:     Pastel.sand
+        case .restaurant: Pastel.peach
+        case .shopping:   Pastel.pink
+        case .transport:  Pastel.sky
+        case .signage:    Pastel.butter
+        case .housing:    Pastel.lavender
+        case .campus:     Pastel.mist
+        case .medical:    Pastel.aqua
+        case .bank:       Pastel.sage
+        case .sports:     Pastel.mint
+        case .leisure:    Pastel.pink
+        case .tech:       Pastel.sky
+        case .general:    Pastel.sand
         }
     }
 }

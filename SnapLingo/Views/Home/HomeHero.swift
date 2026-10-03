@@ -90,10 +90,24 @@ struct HomeHeroContent {
         if case .scan = action { true } else { false }
     }
 
-    /// 把场景名拆成“关键词 + 其余”：英文店名放进胶囊，后面的中日韩文字照常显示
-    static func place(symbol: String, title: String, suffix: String = "") -> HeadlinePiece {
+    /// 几张照片的街区：都一样才返回（空的不算）；有不一样的就不写街区
+    static func sharedNeighborhood(_ names: [String]) -> String? {
+        let names = Set(names.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
+        return names.count == 1 ? names.first : nil
+    }
+
+    /// 把场景名拆成“关键词 + 其余”：店名放进胶囊，后面的场景名词照常显示。
+    /// 有 placeName（拍照时 Claude 认出的店名）就按它拆；旧数据没有，就用正则猜「英文店名 + 中日韩文字」
+    static func place(symbol: String, title: String, placeName: String = "", suffix: String = "") -> HeadlinePiece {
         let suffix = suffix.trimmingCharacters(in: .whitespaces).isEmpty ? "" : suffix
         let trimmed = title.trimmingCharacters(in: .whitespaces)
+        let name = placeName.trimmingCharacters(in: .whitespaces)
+        if !name.isEmpty, let range = trimmed.range(of: name, options: [.caseInsensitive, .anchored]) {
+            let rest = String(trimmed[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+            if !rest.isEmpty {
+                return .place(symbol: symbol, highlight: String(trimmed[range]), rest: rest + suffix)
+            }
+        }
         if let range = trimmed.range(of: #"^[A-Za-z0-9'&.\- ]+?(?=\s*[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}])"#, options: .regularExpression) {
             let highlight = String(trimmed[range]).trimmingCharacters(in: .whitespaces)
             let rest = String(trimmed[range.upperBound...]).trimmingCharacters(in: .whitespaces)
@@ -415,10 +429,15 @@ private struct HeadlineLine: View {
                 .font(.system(size: size * 1.05))
                 .fixedSize()
         case .place(let symbol, let highlight, let rest):
-            Image(systemName: symbol)
-                .font(.system(size: size * 0.85, weight: .semibold))
-                .foregroundStyle(Theme.homeInk)
-                .fixedSize()
+            // 分类用彩色小图标（icon-…），其它地方仍是 SF Symbol
+            if symbol.hasPrefix("icon-") {
+                IconImage(name: symbol, size: size * 1.15)
+            } else {
+                Image(systemName: symbol)
+                    .font(.system(size: size * 0.85, weight: .semibold))
+                    .foregroundStyle(Theme.homeInk)
+                    .fixedSize()
+            }
             Text(highlight)
                 .font(.system(size: size, weight: .heavy))
                 .foregroundStyle(Theme.homeInk)

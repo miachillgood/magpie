@@ -182,6 +182,24 @@ enum SpacedRepetition {
 // MARK: - 从旧算法迁移
 
 /// 旧版本用的是 SM-2：按复习记录从头重算一遍每个词的稳定性和难度，学过的东西不会丢
+/// 错词标记是后来加的：第一次启动时按复习记录补上——最后一次评分是「不会」的词算错词
+enum MistakeBackfill {
+    static let doneKey = "mistakeBackfillDone"
+
+    static func run(context: ModelContext, defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: doneKey) else { return }
+        let logs = (try? context.fetch(FetchDescriptor<ReviewLog>(sortBy: [SortDescriptor(\.reviewedAt)]))) ?? []
+        var latest: [UUID: ReviewLog] = [:]
+        for log in logs { latest[log.wordID] = log }
+        let words = (try? context.fetch(FetchDescriptor<VocabWord>())) ?? []
+        for word in words where word.mistakeAt == nil {
+            if let log = latest[word.id], !log.rating.isSuccess { word.mistakeAt = log.reviewedAt }
+        }
+        try? context.save()
+        defaults.set(true, forKey: doneKey)
+    }
+}
+
 enum SpacedRepetitionMigration {
     /// 每次启动都可以调用：只处理还没有 FSRS 状态的词（包括调试用的示例数据）
     static func run(context: ModelContext) {

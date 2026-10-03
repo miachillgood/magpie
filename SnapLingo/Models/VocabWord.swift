@@ -83,10 +83,16 @@ final class VocabWord {
     var dueDate: Date = Date()
     var lastReviewedAt: Date?
     var introducedAt: Date?
+    /// 最近一次点「不会」的时间；之后再点「会 / 太简单」就清掉。不为空 = 在「错词重练」里
+    var mistakeAt: Date?
 
     var addedAt: Date = Date()
 
     var scans: [Scan] = []
+    /// 用户自己建的文件夹（多对多，见 WordFolder.words）
+    var folders: [WordFolder] = []
+    /// 用户手动改过的分类（SceneType 的 raw value）；空表示跟着照片走
+    var categoryOverrideRaw: String = ""
 
     init(
         word: String,

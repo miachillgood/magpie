@@ -6,8 +6,12 @@
 import SwiftUI
 import SwiftData
 
+/// 学完一轮的结算页：手写的 Nice! + 撒彩纸的喜鹊，今天完成了多少词，新学 / 复习 / 重练三格
 struct SessionCompleteView: View {
     let session: StudySession
+    /// 今天还有要学的词：再开一轮今日计划
+    var onContinue: () -> Void
+    /// 今天的计划学完了、还有新词在排队：多学 5 个
     var onMore: () -> Void
     var onDone: () -> Void
 
@@ -15,6 +19,7 @@ struct SessionCompleteView: View {
     @Query(sort: \ReviewLog.reviewedAt) private var logs: [ReviewLog]
     @Query(sort: \UserSettings.createdAt) private var settingsRows: [UserSettings]
     @Environment(\.modelContext) private var context
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var celebrate = 0
     @State private var appeared = false
     /// 这一屏里刚回答过「节奏合适吗？」，显示调整后的结果
@@ -26,85 +31,107 @@ struct SessionCompleteView: View {
     }
 
     private var backlog: Int { words.filter { $0.state == .new && !$0.excludedFromReview }.count }
-    private var nextDay: ForecastDay? { DailyPlanner.nextReviewDay(words: words) }
-    private var streak: Int { DailyPlanner.streak(events: logs) }
-    private var accuracy: Int {
-        session.completedCount == 0 ? 0 : session.rememberedCount * 100 / session.completedCount
+
+    /// 今天点过“不会”的词（同一个词只算一次）
+    private var relearnedToday: Int {
+        Set(logs.filter { Calendar.current.isDateInToday($0.reviewedAt) && $0.rating == .again }.map(\.wordID)).count
     }
 
-    /// 结算页要不要放「节奏合适吗？」卡片
+    /// 第一次有新词因为每日上限在排队时，问一次节奏（只在今日计划里问）
     private var showsPaceCheck: Bool {
         guard let settings = settingsRows.first, case .today = session.scope else { return false }
         return paceAnswered || StudyPace.shouldAsk(plan: plan, backlog: backlog, asked: settings.paceCheckDone)
     }
 
+    /// 主按钮：还有要学的就继续，计划学完了还有新词就多学几个，都没有就不放
+    private var primary: (title: LocalizedStringKey, action: () -> Void)? {
+        if plan.hasWork { return ("继续复习", onContinue) }
+        if backlog > 0 { return ("再学 5 个新词", onMore) }
+        return nil
+    }
+
     var body: some View {
-        // 多一张卡片时圆环缩小、间距收紧，小屏也放得下「完成」按钮
-        let tight = showsPaceCheck
-        ZStack {
-            VStack(spacing: tight ? Spacing.sm : Spacing.xl) {
-                Spacer()
+        VStack(spacing: 0) {
+            Spacer(minLength: Spacing.md)
 
-                ZStack {
-                    PlanRingView(newProgress: plan.newProgress, reviewProgress: plan.reviewProgress, lineWidth: 18)
-                        .frame(width: tight ? 120 : 190, height: tight ? 120 : 190)
-                    Text(session.completedCount > 0 ? "🎉" : "☕️")
-                        .font(.system(size: tight ? 44 : 64))
-                        .scaleEffect(appeared ? 1 : 0.3)
-                        .rotationEffect(.degrees(appeared ? 0 : -30))
-                }
+            // 和介绍页一样，手写字所有语言都用英文
+            Text(verbatim: plan.doneToday > 0 ? "Nice!" : "All clear!")
+                .font(.custom("ChalkboardSE-Bold", size: 46))
+                .foregroundStyle(Theme.homeInk)
+                .rotationEffect(.degrees(-5))
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : -12)
+                .animation(motion(.spring(response: 0.5, dampingFraction: 0.6), delay: 0.05), value: appeared)
+                .accessibilityAddTraits(.isHeader)
 
-                VStack(spacing: Spacing.xs) {
-                    Text(title)
-                        .font(.system(size: 32, weight: .heavy))
-                        .foregroundStyle(Theme.ink)
-                    Text(subtitle)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
+            Image("CelebrateMagpie")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: showsPaceCheck ? 170 : 260)
+                .scaleEffect(appeared ? 1 : 0.5, anchor: .bottom)
+                .rotationEffect(.degrees(appeared ? 0 : -12), anchor: .bottom)
+                .opacity(appeared ? 1 : 0)
+                .animation(motion(.spring(response: 0.6, dampingFraction: 0.5), delay: 0.15), value: appeared)
+                .padding(.top, Spacing.sm)
+                .accessibilityHidden(true)
 
-                if session.completedCount > 0 {
-                    HStack(spacing: Spacing.sm) {
-                        StatTile(value: session.newLearnedCount, label: "新词", emoji: "✨", color: Pastel.peach)
-                        StatTile(value: session.reviewedCount, label: "复习", emoji: "🔁", color: Pastel.lavender)
-                        StatTile(value: accuracy, label: "记住率", emoji: "🧠", color: Pastel.mint, suffix: "%")
+            VStack(spacing: 2) {
+                if plan.doneToday > 0 {
+                    Text("今天完成了")
+                        .font(.headline.weight(.bold))
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(appeared ? plan.doneToday : 0, format: .number)
+                            .font(.system(size: 52, weight: .heavy, design: .rounded))
+                            .contentTransition(.numericText())
+                            .animation(motion(.smooth(duration: 0.8), delay: 0.35), value: appeared)
+                        Text("个词", comment: "Follows the big number on the session complete page: 8 words")
+                            .font(.title3.weight(.bold))
                     }
-                    if streak > 0 {
-                        Text("🔥 已经连续学习 \(streak) 天")
-                            .font(.subheadline.weight(.heavy))
-                            .padding(.horizontal, Spacing.md)
-                            .padding(.vertical, Spacing.xs)
-                            .background(Pastel.butter, in: .capsule)
-                    }
-                }
-
-                if showsPaceCheck, let settings = settingsRows.first {
-                    PaceCheckCard(settings: settings, newDone: plan.newDone, backlog: backlog, answered: paceAnswered) { step in
-                        answerPace(settings: settings, step: step)
-                    }
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                }
-
-                Spacer()
-
-                VStack(spacing: Spacing.sm) {
-                    PrimaryButton(title: "完成", symbol: "checkmark", action: onDone)
-                    if !plan.hasWork && backlog > 0, case .today = session.scope {
-                        SecondaryButton(title: "再学 5 个新词", symbol: "plus", action: onMore)
-                    }
+                } else {
+                    Text("今天没有要学的词")
+                        .font(.title3.weight(.bold))
                 }
             }
-            .padding(.horizontal, Spacing.lg)
-            .padding(.bottom, Spacing.md)
+            .foregroundStyle(Theme.homeInk)
+            .padding(.top, Spacing.sm)
+            .modifier(Entrance(appeared: appeared, delay: 0.3, reduceMotion: reduceMotion))
 
-            ConfettiView(trigger: session.completedCount > 0 ? celebrate : 0)
-                .ignoresSafeArea()
+            if plan.doneToday > 0 {
+                HStack(spacing: Spacing.sm) {
+                    tile(plan.newDone, label: "新学", color: Color(UIColor(hex: 0x4A8FD8)))
+                    tile(plan.reviewsDone, label: "复习", color: Color(UIColor(hex: 0xF0A12E)))
+                    tile(relearnedToday, label: "重练", color: Color(UIColor(hex: 0xE05A4E)))
+                }
+                .padding(.top, Spacing.lg)
+                .modifier(Entrance(appeared: appeared, delay: 0.45, reduceMotion: reduceMotion))
+            }
+
+            if showsPaceCheck, let settings = settingsRows.first {
+                PaceCheckCard(settings: settings, newDone: plan.newDone, backlog: backlog, answered: paceAnswered) { step in
+                    answerPace(settings: settings, step: step)
+                }
+                .padding(.top, Spacing.md)
+                .modifier(Entrance(appeared: appeared, delay: 0.55, reduceMotion: reduceMotion))
+            }
+
+            Spacer(minLength: Spacing.md)
+
+            VStack(spacing: Spacing.sm) {
+                if let primary {
+                    PrimaryButton(title: primary.title, action: primary.action)
+                    SecondaryButton(title: "回到首页", action: onDone)
+                } else {
+                    PrimaryButton(title: "回到首页", action: onDone)
+                }
+            }
+            .modifier(Entrance(appeared: appeared, delay: 0.6, reduceMotion: reduceMotion))
         }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.bottom, Spacing.md)
         .sensoryFeedback(.success, trigger: celebrate)
         .onAppear {
             celebrate += 1
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.55).delay(0.15)) { appeared = true }
+            appeared = true
         }
     }
 
@@ -118,24 +145,28 @@ struct SessionCompleteView: View {
         StudyReminder.refresh(context: context)
     }
 
-    private var title: String {
-        if session.completedCount == 0 { return String(localized: "今天没有要学的词") }
-        return plan.hasWork ? String(localized: "这一轮完成！") : String(localized: "今日计划完成！")
+    private func motion(_ animation: Animation, delay: Double) -> Animation? {
+        reduceMotion ? nil : animation.delay(delay)
     }
 
-    private var subtitle: String {
-        if let nextDay {
-            if Calendar.current.isDateInTomorrow(nextDay.date) {
-                return String(localized: "明天有 \(nextDay.count) 个词要复习，记得回来。")
-            }
-            let day = nextDay.date.formatted(.dateTime.month().day())
-            return String(localized: "下次复习在 \(day)，共 \(nextDay.count) 个词。")
+    private func tile(_ value: Int, label: LocalizedStringKey, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(value, format: .number)
+                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .foregroundStyle(color)
+            Text(label)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.homeInk.opacity(0.6))
         }
-        return String(localized: "去扫描一个新场景，积累更多单词吧。")
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.md + 2)
+        .background(Theme.card, in: .rect(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.04), radius: 8, y: 3)
+        .accessibilityElement(children: .combine)
     }
 }
 
-/// 结算页的「节奏合适吗？」：第一次有新词因为每日上限在排队时问一次，往上或往下挪一档
+/// 「节奏合适吗？」：少一点 / 刚好 / 多一点，往下或往上挪一档；答完换成一句结果
 private struct PaceCheckCard: View {
     let settings: UserSettings
     var newDone: Int
@@ -146,9 +177,9 @@ private struct PaceCheckCard: View {
     var body: some View {
         VStack(spacing: Spacing.sm) {
             if answered {
-                Text("以后每天 \(settings.newWordsPerDay) 个新词，可以在“我的”里改")
+                Text("以后每天 \(settings.newWordsPerDay) 个新词，可以在复习页上改")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.homeMuted)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
@@ -157,7 +188,7 @@ private struct PaceCheckCard: View {
                         .font(.headline.weight(.heavy))
                     Text("今天的 \(newDone) 个新词学完了，还有 \(backlog) 个在排队。")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.homeMuted)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -168,9 +199,11 @@ private struct PaceCheckCard: View {
                 }
             }
         }
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(Theme.homeInk)
         .frame(maxWidth: .infinity)
-        .card(padding: Spacing.md)
+        .padding(Spacing.md)
+        .background(Theme.sheet, in: .rect(cornerRadius: 22, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
     }
 
     private func choice(_ title: LocalizedStringKey, step: Int) -> some View {
@@ -181,8 +214,8 @@ private struct PaceCheckCard: View {
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .background(step == 0 ? Theme.ink : Theme.insetFill, in: .capsule)
-                .foregroundStyle(step == 0 ? Theme.onInk : Theme.ink)
+                .background(step == 0 ? Theme.homeInk : Theme.insetFill, in: .capsule)
+                .foregroundStyle(step == 0 ? Theme.cream : Theme.homeInk)
         }
         .buttonStyle(.pressable)
     }

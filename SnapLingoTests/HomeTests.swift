@@ -130,3 +130,50 @@ struct HomePlaceTests {
         #expect(HomeHeroContent.place(symbol: "house", title: "租房通知单", suffix: " 等") == .place(symbol: "house", highlight: "租房通知单", rest: " 等"))
     }
 }
+
+@MainActor
+struct HeroPlaceTests {
+    private func parts(_ piece: HeadlinePiece) -> (String, String)? {
+        if case .place(_, let highlight, let rest) = piece { return (highlight, rest) }
+        return nil
+    }
+
+    @Test func placeNameGoesIntoTheCapsule() {
+        #expect(parts(HomeHeroContent.place(symbol: "", title: "Little Bird café menu", placeName: "Little Bird"))! == ("Little Bird", "café menu"))
+        #expect(parts(HomeHeroContent.place(symbol: "", title: "Little Bird 咖啡菜单", placeName: "Little Bird"))! == ("Little Bird", "咖啡菜单"))
+    }
+
+    @Test func oldTitlesFallBackToTheRegex() {
+        #expect(parts(HomeHeroContent.place(symbol: "", title: "Countdown 超市货架"))! == ("Countdown", "超市货架"))
+        #expect(parts(HomeHeroContent.place(symbol: "", title: "bus stop sign"))! == ("bus stop sign", ""))
+        // 用户改标题时把店名删了：整个标题进胶囊
+        #expect(parts(HomeHeroContent.place(symbol: "", title: "我家楼下的咖啡店", placeName: "Little Bird"))! == ("我家楼下的咖啡店", ""))
+    }
+
+    @Test func titleJoinsPlaceAndNoun() {
+        #expect(SceneExtraction.title(place: "Little Bird", noun: "café menu") == "Little Bird café menu")
+        #expect(SceneExtraction.title(place: "", noun: "bus stop sign") == "bus stop sign")
+        #expect(SceneExtraction.title(place: "Countdown", noun: "Countdown shelf") == "Countdown shelf")
+        #expect(SceneExtraction.title(place: "AT HOP", noun: "") == "AT HOP")
+    }
+}
+
+struct NeighborhoodTests {
+    @Test func suburbBeforeTheCityIsTheNeighborhood() {
+        #expect(PlaceLocator.neighborhood(shortAddress: "4 Brown St, Ponsonby, Auckland", name: "4 Brown St", city: "Auckland") == "Ponsonby")
+        #expect(PlaceLocator.neighborhood(shortAddress: "4 Brown St, Ponsonby, 奥克兰", name: "4 Brown St", city: "奥克兰") == "Ponsonby")
+    }
+
+    @Test func fallsBackToTheCity() {
+        // 澳洲的 city 本身就是 suburb；市中心只有地名没有 suburb
+        #expect(PlaceLocator.neighborhood(shortAddress: "103–107 Johnston St, Fitzroy VIC, Australia", name: "103–107 Johnston St", city: "Fitzroy") == "Fitzroy")
+        #expect(PlaceLocator.neighborhood(shortAddress: "Te Waihorotiu, Auckland", name: "Te Waihorotiu", city: "Auckland") == "Auckland")
+        #expect(PlaceLocator.neighborhood(shortAddress: nil, name: nil, city: nil) == nil)
+    }
+
+    @Test func onlyOneNeighborhoodForTheDay() {
+        #expect(HomeHeroContent.sharedNeighborhood(["Ponsonby", "Ponsonby", ""]) == "Ponsonby")
+        #expect(HomeHeroContent.sharedNeighborhood(["Ponsonby", "Grey Lynn"]) == nil)
+        #expect(HomeHeroContent.sharedNeighborhood(["", ""]) == nil)
+    }
+}

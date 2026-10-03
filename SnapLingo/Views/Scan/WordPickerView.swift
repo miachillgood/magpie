@@ -27,9 +27,18 @@ struct WordPickerView: View {
     @State private var savedKeys: Set<String> = []
     @State private var title = ""
     @State private var scene: SceneType = .general
+    @Query(sort: \WordFolder.lastUsedAt, order: .reverse) private var folders: [WordFolder]
+    /// 保存时把这次选的词放进这些文件夹
+    @State private var selectedFolders: Set<UUID> = []
+    @State private var choosingCategory = false
+    @State private var creatingFolder = false
     @State private var level: CEFRLevel = .b1
     @State private var prepared = false
     @State private var savedCount: Int?
+    /// 拍照的街区：一进选词页就开始定位（相机现拍、有权限时），保存后补到场景上
+    @State private var placeTask: Task<ScanPlace?, Never>?
+    /// 第一次拍完照：问一句要不要记下地点
+    @State private var offeringLocation = false
 
     init(draft: WordLibrary.ScanDraft, onRetake: @escaping () -> Void) {
         self.mode = .new(draft)
@@ -81,6 +90,18 @@ struct WordPickerView: View {
                 }
                 if isNewScan {
                     sceneCard
+                    if offeringLocation {
+                        LocationOfferCard {
+                            withAnimation(.smooth) { offeringLocation = false }
+                            Task {
+                                if await PlaceLocator.shared.requestPermission() { startLocating() }
+                            }
+                        } onDecline: {
+                            PlaceLocator.shared.markAsked()
+                            withAnimation(.smooth) { offeringLocation = false }
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
                 ForEach(CandidateGroup.allCases) { group in
                     let items = classified.filter { $0.group == group }
@@ -91,6 +112,8 @@ struct WordPickerView: View {
                 if prepared && classified.isEmpty && aiError == nil {
                     ContentUnavailableView("没有挑出单词", systemImage: "text.magnifyingglass", description: Text("点照片上的词，把想学的加进来。"))
                 }
+                FolderPickerRow(folders: folders, selected: $selectedFolders) { creatingFolder = true }
+                    .card(padding: Spacing.md)
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.bottom, Spacing.lg)
@@ -109,6 +132,14 @@ struct WordPickerView: View {
         .sensoryFeedback(.selection, trigger: selected)
         .sensoryFeedback(.success, trigger: savedCount) { _, new in new != nil }
         .task { prepare() }
+        .sheet(isPresented: $choosingCategory) {
+            CategoryPickerSheet(selection: $scene)
+        }
+        .sheet(isPresented: $creatingFolder) {
+            FolderEditorView { folder in
+                selectedFolders.insert(folder.id)
+            }
+        }
     }
 
     // MARK: - 照片
@@ -140,16 +171,20 @@ struct WordPickerView: View {
 
     private var sceneCard: some View {
         HStack(spacing: Spacing.sm) {
-            Menu {
-                Picker("场景类型", selection: $scene) {
-                    ForEach(SceneType.allCases) { scene in
-                        Text("\(scene.emoji) \(scene.displayName)").tag(scene)
+            // 点图标改分类
+            Button { choosingCategory = true } label: {
+                IconImage(name: scene.iconName, size: 34)
+                    .frame(width: 52, height: 52)
+                    .background(scene.pastel, in: .rect(cornerRadius: 16, style: .continuous))
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: "chevron.down.circle.fill")
+                            .font(.system(size: 15))
+                            .foregroundStyle(Theme.homeInk, Theme.card)
+                            .offset(x: 4, y: 4)
                     }
-                }
-            } label: {
-                EmojiTile(emoji: scene.emoji, color: scene.pastel, size: 52)
             }
-            .accessibilityLabel("场景类型：\(scene.displayName)")
+            .buttonStyle(.pressable)
+            .accessibilityLabel("分类：\(scene.displayName)")
             VStack(alignment: .leading, spacing: 4) {
                 TextField("给这个场景起个名字", text: $title)
                     .font(.title3.weight(.heavy))
@@ -253,6 +288,13 @@ struct WordPickerView: View {
 
         switch mode {
         case .new(let draft):
+            if draft.fromCamera {
+                if PlaceLocator.shared.isAuthorized {
+                    startLocating()
+                } else if PlaceLocator.shared.shouldOffer {
+                    offeringLocation = true
+                }
+            }
             candidates = draft.extraction?.candidates ?? []
             title = draft.extraction?.title ?? ""
             scene = draft.extraction?.scene ?? .general
@@ -267,6 +309,8 @@ struct WordPickerView: View {
             savedKeys: savedKeys
         )
         selected = Set(classified.filter(\.preselected).map(\.id))
+        // 默认勾上最近用过的那个文件夹
+        if let recent = folders.first { selectedFolders = [recent.id] }
         buildTokenMap()
         prepared = true
     }
@@ -338,17 +382,31 @@ struct WordPickerView: View {
 
         switch mode {
         case .new(let draft):
-            WordLibrary.saveNewScan(
+            let scan = WordLibrary.saveNewScan(
                 draft: draft,
                 title: title,
+                placeName: draft.extraction?.place ?? "",
                 scene: scene,
                 candidates: candidates,
                 selectedKeys: linkKeys,
                 context: context
             )
+            if let placeTask {
+                let context = context
+                Task { if let place = await placeTask.value { WordLibrary.setPlace(place, on: scan, context: context) } }
+            }
         case .existing(let scan):
             WordLibrary.addWords(candidates.filter { linkKeys.contains($0.key) }, to: scan, context: context)
             scan.candidates = candidates
+        }
+
+        // 这次选中的词（新词 + 已经存过的）放进勾选的文件夹
+        if !selectedFolders.isEmpty {
+            let keys = linkKeys
+            let picked = ((try? context.fetch(FetchDescriptor<VocabWord>(predicate: #Predicate { keys.contains($0.normalizedForm) }))) ?? [])
+            for folder in folders where selectedFolders.contains(folder.id) {
+                WordLibrary.add(picked, to: folder, context: context)
+            }
         }
 
         LevelService.recordSelection(classified: classified, selectedKeys: selected, in: context)
@@ -369,6 +427,58 @@ struct WordPickerView: View {
                 dismiss()
             }
         }
+    }
+
+    private func startLocating() {
+        guard placeTask == nil else { return }
+        placeTask = Task { await PlaceLocator.shared.currentPlace() }
+    }
+}
+
+// MARK: - 要不要记下地点
+
+/// 第一次拍完照时出现一次：先说清楚用来干嘛，用户点「好」才弹系统授权
+private struct LocationOfferCard: View {
+    var onAllow: () -> Void
+    var onDecline: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "mappin.and.ellipse")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Theme.brand)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("记下你在哪里碰到这些词？")
+                        .font(.subheadline.weight(.heavy))
+                    Text("首页会写成「在 Ponsonby 的咖啡店」，更容易想起来。地点只存在手机上，不会发给 AI。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack(spacing: 8) {
+                Button(action: onDecline) {
+                    Text("不用了")
+                        .font(.subheadline.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(Theme.insetFill, in: .capsule)
+                }
+                Button(action: onAllow) {
+                    Text("好，记下地点")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Theme.onInk)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(Theme.ink, in: .capsule)
+                }
+            }
+            .buttonStyle(.pressable)
+        }
+        .foregroundStyle(Theme.ink)
+        .card(padding: Spacing.md)
     }
 }
 

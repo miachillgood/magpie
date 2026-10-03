@@ -9,8 +9,21 @@ import Foundation
 
 struct SceneExtraction: Sendable {
     var scene: SceneType
+    /// 场景标题：店名（如果有）+ 场景名词，界面语言，比如「Little Bird 咖啡菜单」/「Little Bird café menu」
     var title: String
     var candidates: [WordCandidate]
+    /// 照片上认出的店名或品牌，原拼写；没有就是空的。首页把它放进胶囊
+    var place: String = ""
+
+    /// 店名 + 场景名词拼成标题；店名已经在名词里了就不重复
+    static func title(place: String, noun: String) -> String {
+        let place = place.trimmingCharacters(in: .whitespacesAndNewlines)
+        let noun = noun.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !place.isEmpty else { return noun }
+        guard !noun.isEmpty else { return place }
+        if noun.localizedCaseInsensitiveContains(place) { return noun }
+        return "\(place) \(noun)"
+    }
 }
 
 /// 要解释的一个词
@@ -87,6 +100,8 @@ final class ClaudeAPIService: Sendable {
             .map { "- \($0.rawValue): \($0.promptHint)" }
             .joined(separator: "\n")
         let native = language.promptName
+        // 标题显示在界面里，跟界面语言走（释义才用母语）
+        let interface = NativeLanguage(preferredLanguages: Bundle.main.preferredLocalizations)
 
         let system = """
         You are an English teacher helping people whose native language is \(native) live in an English-speaking country. \
@@ -106,16 +121,19 @@ final class ClaudeAPIService: Sendable {
         Pick the one `scene` that fits best:
         \(sceneList)
 
-        `title` is a short, specific title for this scene in \(native) (\(language.lengthLimit(characters: 10, words: 5))). \
-        Keep shop or brand names in their original spelling, e.g. "Countdown" + a word for supermarket shelf, or a word for rental contract, or "Little Bird" + a word for café menu.
+        `place` is the shop, brand or venue name shown in the text, in its original spelling (e.g. "Countdown", "Little Bird", "AT HOP"); \
+        use an empty string if there is none. Never invent one.
+        `title` is a short noun for what was photographed, in \(interface.promptName) (\(interface.lengthLimit(characters: 6, words: 3))), \
+        without the place name, e.g. café menu, supermarket shelf, bus stop sign, rental listing.
         """
 
         let schema: [String: Any] = [
             "type": "object",
             "additionalProperties": false,
-            "required": ["scene", "title", "words"],
+            "required": ["scene", "place", "title", "words"],
             "properties": [
                 "scene": ["type": "string", "enum": SceneType.allCases.map(\.rawValue)],
+                "place": ["type": "string"],
                 "title": ["type": "string"],
                 "words": [
                     "type": "array",
@@ -144,6 +162,7 @@ final class ClaudeAPIService: Sendable {
                 let gloss: String
             }
             let scene: String
+            let place: String
             let title: String
             let words: [Word]
         }
@@ -167,7 +186,13 @@ final class ClaudeAPIService: Sendable {
             guard !candidate.key.isEmpty, candidate.key.count > 1, seen.insert(candidate.key).inserted else { return nil }
             return candidate
         }
-        return SceneExtraction(scene: SceneType(key: raw.scene), title: raw.title, candidates: candidates)
+        let place = raw.place.trimmingCharacters(in: .whitespacesAndNewlines)
+        return SceneExtraction(
+            scene: SceneType(key: raw.scene),
+            title: SceneExtraction.title(place: place, noun: raw.title),
+            candidates: candidates,
+            place: place
+        )
     }
 
     // MARK: 2. 批量生成解释

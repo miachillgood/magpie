@@ -11,7 +11,8 @@ import VisionKit
 /// 取景页：黑底 + 日期 + 取景框 + 底部三个按钮（关闭 / 黄色快门 / 相册）。
 /// 支持的设备用 VisionKit 实时高亮文字；不支持时按快门打开系统相机，没有相机就打开相册
 struct ScanCameraView: View {
-    var onCapture: (UIImage) -> Void
+    /// 第二个参数：是不是相机现拍的（相册里选的是 false，不定位）
+    var onCapture: (UIImage, _ fromCamera: Bool) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var scanner = LiveScannerController()
@@ -90,7 +91,7 @@ struct ScanCameraView: View {
         .fullScreenCover(isPresented: $showingSystemCamera) {
             SystemCameraPicker { image in
                 showingSystemCamera = false
-                if let image { onCapture(image) }
+                if let image { onCapture(image, true) }
             }
             .ignoresSafeArea()
         }
@@ -244,7 +245,7 @@ struct ScanCameraView: View {
         Task {
             defer { isCapturing = false }
             if let image = await scanner.capture() {
-                onCapture(image)
+                onCapture(image, true)
             }
         }
     }
@@ -256,7 +257,7 @@ struct ScanCameraView: View {
                 loadError = String(localized: "这张照片无法打开，换一张试试。")
                 return
             }
-            onCapture(image)
+            onCapture(image, false)
         } catch {
             loadError = String(localized: "读取照片失败：\(error.localizedDescription)")
         }

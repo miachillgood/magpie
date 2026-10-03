@@ -13,6 +13,7 @@ struct WordsView: View {
     @State private var query = ""
     @State private var filter: WordsFilter
     @FocusState private var searchFocused: Bool
+    @State private var didAutoFocus = false
     private let startsSearching: Bool
 
     init(initialFilter: WordsFilter = .all, startsSearching: Bool = false) {
@@ -102,13 +103,70 @@ struct WordsView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Theme.cream.ignoresSafeArea())
-        .searchable(text: $query, prompt: "搜索单词或释义")
-        .searchFocused($searchFocused)
+        .scrollDismissesKeyboard(.immediately)
+        // 自己的搜索框钉在导航栏下面：系统的 .searchable 一激活会把导航栏收起来，整页往上跳
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !words.isEmpty {
+                searchField
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.top, 4)
+                    .padding(.bottom, 8)
+                    .background(Theme.cream)
+            }
+        }
         .navigationTitle("词库")
         .sensoryFeedback(.selection, trigger: filter)
-        .onAppear {
-            if startsSearching { searchFocused = true }
+        .task {
+            // 从复习页的放大镜进来：等 push 动画走完再聚焦，不然焦点会丢
+            guard startsSearching, !didAutoFocus else { return }
+            didAutoFocus = true
+            try? await Task.sleep(for: .milliseconds(600))
+            searchFocused = true
         }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: Spacing.xs) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.homeInk)
+                TextField("搜索单词或释义", text: $query)
+                    .font(.system(size: 17))
+                    .foregroundStyle(Theme.homeInk)
+                    .focused($searchFocused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                if !query.isEmpty {
+                    Button {
+                        query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 17))
+                            .foregroundStyle(Theme.homeMuted)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("清除")
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 44)
+            .background(Theme.homeInk.opacity(0.06), in: .capsule)
+            .contentShape(.capsule)
+            .onTapGesture { searchFocused = true }
+
+            if searchFocused {
+                Button("取消") {
+                    query = ""
+                    searchFocused = false
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.homeInk)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: searchFocused)
     }
 
     private var filterBar: some View {

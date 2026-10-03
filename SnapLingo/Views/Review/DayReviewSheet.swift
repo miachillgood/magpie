@@ -56,7 +56,7 @@ struct DayReviewSheet: View {
 
                 FlowLayout(spacing: 16) {
                     ForEach(scans) { scan in
-                        Label(scan.displayTitle, systemImage: scan.scene.symbol)
+                        Label { Text(scan.displayTitle) } icon: { IconImage(name: scan.scene.iconName, size: 20) }
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(Theme.homeInk)
                             .labelStyle(PlaceLabelStyle())

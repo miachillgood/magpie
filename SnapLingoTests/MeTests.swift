@@ -34,15 +34,20 @@ struct MeStatsTests {
         #expect(MeStats.daysSinceFirst([date(18), date(3, hour: 22)], now: date(20, hour: 7), calendar: calendar) == 18)
     }
 
-    @Test func hardestWordsSkipNeverForgottenAndExcluded() {
-        let a = LapseRecord(id: UUID(), lapses: 2, excludedFromReview: false, addedAt: date(1))
-        let b = LapseRecord(id: UUID(), lapses: 4, excludedFromReview: false, addedAt: date(2))
-        let c = LapseRecord(id: UUID(), lapses: 2, excludedFromReview: false, addedAt: date(9))
-        let never = LapseRecord(id: UUID(), lapses: 0, excludedFromReview: false, addedAt: date(3))
-        let excluded = LapseRecord(id: UUID(), lapses: 9, excludedFromReview: true, addedAt: date(3))
+    @Test func mistakesAreRecentFirstAndSkipClearedAndExcluded() {
+        let old = MistakeRecord(id: UUID(), mistakeAt: date(1), excludedFromReview: false)
+        let recent = MistakeRecord(id: UUID(), mistakeAt: date(9), excludedFromReview: false)
+        let cleared = MistakeRecord(id: UUID(), mistakeAt: nil, excludedFromReview: false)
+        let excluded = MistakeRecord(id: UUID(), mistakeAt: date(5), excludedFromReview: true)
 
-        #expect(MeStats.hardestWordIDs([a, b, c, never, excluded]) == [b.id, c.id, a.id])
-        #expect(MeStats.hardestWordIDs([a, b, c], limit: 2) == [b.id, c.id])
+        #expect(MeStats.mistakeWordIDs([old, recent, cleared, excluded]) == [recent.id, old.id])
+    }
+
+    @Test func forgettingMarksAMistakeAndRememberingClearsIt() {
+        #expect(MeStats.mistakeAt(after: .again, previous: nil, now: date(3)) == date(3))
+        #expect(MeStats.mistakeAt(after: .again, previous: date(1), now: date(3)) == date(3))
+        #expect(MeStats.mistakeAt(after: .good, previous: date(1), now: date(3)) == nil)
+        #expect(MeStats.mistakeAt(after: .easy, previous: date(1), now: date(3)) == nil)
     }
 
     @Test func longestStreakFindsTheLongestRun() {

@@ -169,8 +169,7 @@ struct SceneCard: View {
                 .clipShape(.rect(cornerRadius: Radius.card - 6, style: .continuous))
 
             HStack(spacing: Spacing.xs) {
-                Text(scan.scene.emoji)
-                    .font(.title3)
+                IconImage(name: scan.scene.iconName, size: 28)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(scan.displayTitle)
                         .font(.subheadline.weight(.heavy))
