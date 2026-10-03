@@ -132,6 +132,53 @@
         }
       }
     },
+    "%@在 %@ 的" : {
+      "comment" : "Home headline line 1 with the suburb where the photo was taken, followed by a place on the next line (e.g. 'Just now in Ponsonby, at'). Arguments: Just now / Today / Yesterday / a weekday / a date, then a suburb like Ponsonby",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ in %2$@, at"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ en %2$@, en"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@、%2$@の"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$@의"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ em %2$@, em"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@在 %2$@ 的"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@在 %2$@ 的"
+          }
+        }
+      }
+    },
     "%@，%@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2715,6 +2762,53 @@
         }
       }
     },
+    "上次是 %@，在 %@ 的" : {
+      "comment" : "Home headline line 1 when the user hasn't scanned for over a week, with the suburb where the photo was taken; followed by a place on the next line. Arguments: a date like Sep 20, a suburb like Ponsonby",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last time, %1$@ in %2$@, at"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La última vez, el %1$@ en %2$@, en"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前回は%1$@、%2$@の"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지난번 %1$@, %2$@의"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da última vez, em %1$@, em %2$@, em"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次是 %1$@，在 %2$@ 的"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次是 %1$@，在 %2$@ 的"
+          }
+        }
+      }
+    },
     "上车刷卡" : {
       "comment" : "Meaning of 'tap on' (tap your bus card)",
       "localizations" : {
@@ -3351,6 +3445,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "不同意也可以拍照、自己挑單字和複習，只是沒有自動挑單字和釋義。隨時可以在「我的」裡修改。"
+          }
+        }
+      }
+    },
+    "不用了" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No thanks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, gracias"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今はしない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "괜찮아요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不用了"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不用了"
           }
         }
       }
@@ -5887,35 +6027,36 @@
       }
     },
     "公交站牌" : {
+      "comment" : "Demo scene title: a bus stop sign",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bus stop sign"
+            "value" : "bus stop sign"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Parada de autobús"
+            "value" : "parada de autobús"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "バス停の標識"
+            "value" : "バス停の看板"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "버스 정류장"
+            "value" : "버스 정류장 표지판"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ponto de ônibus"
+            "value" : "placa do ponto de ônibus"
           }
         },
         "zh-Hans" : {
@@ -7863,6 +8004,52 @@
         }
       }
     },
+    "取消全选" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deselect All"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anular selección"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての選択を解除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모두 선택 해제"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desmarcar Tudo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消全选"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消全選"
+          }
+        }
+      }
+    },
     "取消勾选会让推荐更懂你" : {
       "localizations" : {
         "en" : {
@@ -8505,6 +8692,53 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "咖啡店菜單"
+          }
+        }
+      }
+    },
+    "咖啡菜单" : {
+      "comment" : "Demo scene title noun after the shop name Little Bird",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "café menu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "menú del café"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カフェのメニュー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "카페 메뉴"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cardápio do café"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "咖啡菜单"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "咖啡菜單"
           }
         }
       }
@@ -10204,6 +10438,52 @@
         }
       }
     },
+    "好，记下地点" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yes, remember it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sí, guardarlo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "はい、記録する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "네, 기록할게요"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sim, guardar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好，记下地点"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好，記下地點"
+          }
+        }
+      }
+    },
     "学习中" : {
       "comment" : "Word learning state",
       "localizations" : {
@@ -11394,6 +11674,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已選 %lld 個"
+          }
+        }
+      }
+    },
+    "已选择 %lld 项" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Selected"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld seleccionadas"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld項目を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld개 선택됨"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld selecionadas"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选择 %lld 项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取 %lld 項"
           }
         }
       }
@@ -18032,6 +18358,53 @@
         }
       }
     },
+    "清除" : {
+      "comment" : "Accessibility label for the clear button in the search field",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリア"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지우기"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除"
+          }
+        }
+      }
+    },
     "灰粉" : {
       "comment" : "Theme color name (a muted color)",
       "localizations" : {
@@ -19559,6 +19932,53 @@
         }
       }
     },
+    "租房广告" : {
+      "comment" : "Demo scene title: a rental listing",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rental listing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "anuncio de alquiler"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "賃貸の広告"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "임대 광고"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "anúncio de aluguel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "租房广告"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "租屋廣告"
+          }
+        }
+      }
+    },
     "租房账单" : {
       "localizations" : {
         "en" : {
@@ -19647,6 +20067,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移出"
+          }
+        }
+      }
+    },
+    "移出这个文件夹" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Folder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar de la carpeta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダから外す"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "폴더에서 빼기"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover da pasta"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移出这个文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移出這個資料夾"
           }
         }
       }
@@ -21130,6 +21596,52 @@
         }
       }
     },
+    "记下你在哪里碰到这些词？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remember where you found these words?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Guardar dónde encontraste estas palabras?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この単語に出会った場所を記録しますか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 단어를 어디서 만났는지 기록할까요?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar onde você encontrou estas palavras?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记下你在哪里碰到这些词？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記下你在哪裡碰到這些詞？"
+          }
+        }
+      }
+    },
     "记住了，下一个" : {
       "comment" : "Button on the back of a flashcard after tapping 'Don't know'",
       "localizations" : {
@@ -21957,6 +22469,53 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "超市價格標籤"
+          }
+        }
+      }
+    },
+    "超市货架" : {
+      "comment" : "Demo scene title noun after the supermarket name Countdown",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "supermarket shelf"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "estante del súper"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スーパーの棚"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "마트 진열대"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "prateleira do mercado"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超市货架"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超市貨架"
           }
         }
       }
@@ -23637,6 +24196,52 @@
         }
       }
     },
+    "选择单词" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Words"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionar palabras"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "単語を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "단어 선택"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecionar palavras"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择单词"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇單字"
+          }
+        }
+      }
+    },
     "选择要加入的词" : {
       "localizations" : {
         "en" : {
@@ -24916,6 +25521,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "餐廳"
+          }
+        }
+      }
+    },
+    "首页会写成「在 Ponsonby 的咖啡店」，更容易想起来。地点只存在手机上，不会发给 AI。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home will say “in Ponsonby, at a café”, so it's easier to remember. The location stays on your phone and is never sent to AI."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El inicio dirá “en Ponsonby, en una cafetería” para que lo recuerdes mejor. La ubicación se queda en tu teléfono y nunca se envía a la IA."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホームに「Ponsonbyのカフェで」のように表示され、思い出しやすくなります。場所はこのiPhoneにだけ保存され、AIには送られません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "홈에 ‘Ponsonby의 카페에서’처럼 표시돼 기억하기 쉬워요. 위치는 휴대폰에만 저장되고 AI로 보내지 않아요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O início vai mostrar “em Ponsonby, em um café”, para lembrar melhor. A localização fica só no seu celular e nunca é enviada à IA."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首页会写成「在 Ponsonby 的咖啡店」，更容易想起来。地点只存在手机上，不会发给 AI。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首頁會寫成「在 Ponsonby 的咖啡店」，更容易想起來。地點只存在手機上，不會傳給 AI。"
           }
         }
       }

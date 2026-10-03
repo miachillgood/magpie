@@ -186,7 +186,8 @@ struct ReviewView: View {
             dailyNewGoal: settingsRows.first?.newWordsPerDay ?? StudyPace.standard.rawValue,
             onStart: { coordinator.startStudy() },
             onMore: { coordinator.startStudy(.today(extraNew: 5)) },
-            onEditGoal: { editingGoal = true }
+            onEditGoal: { editingGoal = true },
+            onOpenSource: { path.append($0) }
         )
         .padding(.horizontal, side)
         .padding(.top, 16)

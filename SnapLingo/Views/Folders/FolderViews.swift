@@ -12,11 +12,13 @@ import SwiftData
 // MARK: - 颜色
 
 enum CollectionStyle {
-    /// 分类格子外面那一大块粉色
-    static let gridBackground = Color(light: UIColor(hex: 0xFBE3E6), dark: UIColor(hex: 0x3A2A2D))
-    /// 格子交替用的暖橙和米色
-    static let warmTile = Color(light: UIColor(hex: 0xFCE3C8), dark: UIColor(hex: 0x4A3624))
-    static let creamTile = Color(light: UIColor(hex: 0xFDF3E7), dark: UIColor(hex: 0x2E2822))
+        /// 和米色底同一色系的浅杏色，换任何主题都不冲突
+    static let warmTile = Color(light: UIColor(hex: 0xF6E9D6), dark: UIColor(hex: 0x3A3127))
+
+    /// 格子交替：主题色淡色 / 浅杏色
+    static func tile(_ index: Int, theme: HomeTheme) -> Color {
+        index.isMultiple(of: 2) ? theme.tint : warmTile
+    }
     static let selected = Color(light: UIColor(hex: 0xF6E3A8), dark: UIColor(hex: 0x5A4A1E))
 }
 
@@ -32,6 +34,7 @@ extension SceneType {
 
 /// 一个格子：先放自己建的文件夹，再放有词的自动分类，最后一格是「＋ 新建」
 struct CollectionGrid: View {
+    @AppStorage(HomeTheme.storageKey) private var themeRaw = HomeTheme.sky.rawValue
     var folders: [WordFolder]
     var categories: [(scene: SceneType, count: Int)]
     var sidePadding: CGFloat
@@ -57,16 +60,29 @@ struct CollectionGrid: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("我的词夹")
-                .font(.system(size: 18, weight: .heavy))
-                .foregroundStyle(Theme.homeInk)
-                .accessibilityAddTraits(.isHeader)
-                .padding(.horizontal, sidePadding)
+            HStack(alignment: .firstTextBaseline) {
+                Text("我的词夹")
+                    .font(.system(size: 18, weight: .heavy))
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                NavigationLink(value: ReviewRoute.library(.all)) {
+                    HStack(spacing: 4) {
+                        Text("管理")
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.homeMuted)
+                }
+                .buttonStyle(.plain)
+            }
+            .foregroundStyle(Theme.homeInk)
+            .padding(.horizontal, sidePadding)
 
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                     Button { onOpen(entry.source) } label: {
-                        CollectionTile(icon: entry.icon, name: entry.name, count: entry.count, due: entry.due, fill: index.isMultiple(of: 2) ? CollectionStyle.warmTile : CollectionStyle.creamTile)
+                        CollectionTile(icon: entry.icon, name: entry.name, count: entry.count, due: entry.due, fill: CollectionStyle.tile(index, theme: HomeTheme(storedValue: themeRaw)))
                     }
                     .buttonStyle(.pressable)
                 }
@@ -88,9 +104,7 @@ struct CollectionGrid: View {
                 .buttonStyle(.pressable)
                 .accessibilityLabel("新建文件夹")
             }
-            .padding(12)
-            .background(CollectionStyle.gridBackground, in: .rect(cornerRadius: 28, style: .continuous))
-            .padding(.horizontal, sidePadding - 4)
+            .padding(.horizontal, sidePadding)
         }
     }
 }
@@ -125,7 +139,7 @@ private struct CollectionTile: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 6)
                     .frame(minWidth: 20, minHeight: 20)
-                    .background(Theme.brand, in: .capsule)
+                    .background(Theme.homeInk, in: .capsule)
                     .padding(6)
                     .accessibilityLabel("\(due) 个要复习")
             }
@@ -167,6 +181,7 @@ private struct CategoryTile: View {
 // MARK: - 拍完照：改分类
 
 struct CategoryPickerSheet: View {
+    @AppStorage(HomeTheme.storageKey) private var themeRaw = HomeTheme.sky.rawValue
     @Binding var selection: SceneType
     @Environment(\.dismiss) private var dismiss
 
@@ -181,13 +196,11 @@ struct CategoryPickerSheet: View {
                             selection = scene
                             dismiss()
                         } label: {
-                            CategoryTile(scene: scene, count: nil, fill: index.isMultiple(of: 2) ? CollectionStyle.warmTile : CollectionStyle.creamTile, isSelected: scene == selection)
+                            CategoryTile(scene: scene, count: nil, fill: CollectionStyle.tile(index, theme: HomeTheme(storedValue: themeRaw)), isSelected: scene == selection)
                         }
                         .buttonStyle(.pressable)
                     }
                 }
-                .padding(12)
-                .background(CollectionStyle.gridBackground, in: .rect(cornerRadius: 28, style: .continuous))
                 .padding(Spacing.md)
             }
             .navigationTitle("选个分类")
@@ -278,6 +291,8 @@ struct FolderEditorView: View {
     @State private var name = ""
     @State private var icon = IconLibrary.defaultFolderIcon
     @FocusState private var nameFocused: Bool
+    /// 先弹半屏；点名字输入框时升到满屏，给键盘和图标格留出空间
+    @State private var detent: PresentationDetent = .medium
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
     private var trimmed: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -286,18 +301,19 @@ struct FolderEditorView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Spacing.lg) {
-                    VStack(spacing: Spacing.sm) {
-                        IconImage(name: icon, size: 72)
-                            .frame(width: 104, height: 104)
-                            .background(Theme.card, in: .rect(cornerRadius: 28, style: .continuous))
+                    // 图标和名字横排，半屏时下面还能露出几排图标
+                    HStack(spacing: Spacing.sm) {
+                        IconImage(name: icon, size: 54)
+                            .frame(width: 80, height: 80)
+                            .background(Theme.card, in: .rect(cornerRadius: 22, style: .continuous))
                             .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
                             .contentTransition(.opacity)
                         TextField("文件夹名字", text: $name)
                             .font(.title3.weight(.heavy))
-                            .multilineTextAlignment(.center)
                             .focused($nameFocused)
                             .submitLabel(.done)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, 18)
+                            .frame(height: 56)
                             .background(Theme.card, in: .capsule)
                     }
 
@@ -341,12 +357,18 @@ struct FolderEditorView: View {
             }
             .sensoryFeedback(.selection, trigger: icon)
         }
+        .presentationDetents([.medium, .large], selection: $detent)
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Theme.mist)
+        .presentationCornerRadius(28)
+        .onChange(of: nameFocused) { _, focused in
+            if focused { withAnimation(.smooth) { detent = .large } }
+        }
         .onAppear {
+            // 不自动弹键盘：半屏一弹键盘就被顶满了，用户点输入框时再升到满屏
             if let folder {
                 name = folder.name
                 icon = folder.iconName
-            } else {
-                nameFocused = true
             }
         }
     }
@@ -366,6 +388,8 @@ struct FolderEditorView: View {
 
 // MARK: - 点进去：单词列表
 
+/// 点进一个词夹看到的列表。整理单词的方式和系统 App（照片、文件、邮件）一样：
+/// 右上角「选择」原地进入多选，底部系统工具栏放操作；长按单个词也能直接处理
 struct CollectionWordsView: View {
     enum Source: Hashable {
         case folder(WordFolder)
@@ -381,12 +405,16 @@ struct CollectionWordsView: View {
     @State private var editing = false
     @State private var confirmingDelete = false
 
-    // 多选整理
-    @State private var selecting = false
+    // 整理单词
+    @State private var editMode: EditMode = .inactive
     @State private var selection: Set<UUID> = []
+    /// 这次要处理的词：多选的，或者长按的那一个
+    @State private var pending: [VocabWord] = []
     @State private var picking: MoveTargetSheet.Mode?
     @State private var confirmingBatchDelete = false
     @State private var toast: String?
+
+    private var selecting: Bool { editMode.isEditing }
 
     private var words: [VocabWord] {
         switch source {
@@ -418,10 +446,8 @@ struct CollectionWordsView: View {
 
     var body: some View {
         let words = words
-        List {
-            if !selecting {
-                Section { header(words) }
-            }
+        List(selection: $selection) {
+            Section { header(words) }
 
             if words.isEmpty {
                 Text(folder == nil ? "这一类还没有词" : "还没有词。拍完照保存时选这个文件夹，或者在单词页里把词加进来。")
@@ -434,18 +460,16 @@ struct CollectionWordsView: View {
             } else {
                 Section {
                     ForEach(words) { word in
-                        if selecting {
-                            selectableRow(word)
-                        } else {
-                            NavigationLink(value: word) {
-                                WordRow(word: word, showsScene: folder != nil)
-                            }
-                            .listRowBackground(Theme.card)
-                            .swipeActions(edge: .trailing) {
-                                if let folder {
-                                    Button("移出", role: .destructive) {
-                                        withAnimation { WordLibrary.remove(word, from: folder, context: context) }
-                                    }
+                        NavigationLink(value: word) {
+                            WordRow(word: word, showsScene: folder != nil)
+                        }
+                        .tag(word.id)
+                        .listRowBackground(Theme.card)
+                        .contextMenu { rowMenu(word) }
+                        .swipeActions(edge: .trailing) {
+                            if let folder {
+                                Button("移出", role: .destructive) {
+                                    withAnimation { WordLibrary.remove(word, from: folder, context: context) }
                                 }
                             }
                         }
@@ -453,16 +477,15 @@ struct CollectionWordsView: View {
                 }
             }
         }
+        .environment(\.editMode, $editMode)
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Theme.mist.ignoresSafeArea())
-        .navigationTitle(selecting ? String(localized: "已选 \(selection.count) 个", comment: "Multi-select title: number of selected words") : "")
+        .navigationTitle(selecting ? (selection.isEmpty ? String(localized: "选择单词", comment: "Multi-select title before anything is selected") : String(localized: "已选择 \(selection.count) 项", comment: "Multi-select title: number of selected words, like Photos")) : "")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(selecting)
         .toolbar { toolbar(words) }
-        .safeAreaBar(edge: .bottom) {
-            if selecting { actionBar }
-        }
+        .toolbar(selecting ? .visible : .hidden, for: .bottomBar)
         .overlay(alignment: .bottom) {
             if let toast {
                 Text(toast)
@@ -479,7 +502,6 @@ struct CollectionWordsView: View {
                     }
             }
         }
-        .animation(.smooth, value: selecting)
         .sensoryFeedback(.selection, trigger: selection)
         .sheet(isPresented: $editing) {
             FolderEditorView(folder: folder)
@@ -501,9 +523,9 @@ struct CollectionWordsView: View {
         } message: {
             Text("里面的词不会被删除，仍然在词库里。")
         }
-        .confirmationDialog("删除 \(selection.count) 个词？", isPresented: $confirmingBatchDelete, titleVisibility: .visible) {
+        .confirmationDialog("删除 \(pending.count) 个词？", isPresented: $confirmingBatchDelete, titleVisibility: .visible) {
             Button("删除", role: .destructive) {
-                let targets = selectedWords
+                let targets = pending
                 finish(String(localized: "已删除 \(targets.count) 个词", comment: "Toast after deleting selected words"))
                 WordLibrary.delete(targets, context: context)
             }
@@ -529,6 +551,8 @@ struct CollectionWordsView: View {
                     coordinator.startStudy(.words(words.map(\.id)))
                 }
                 .padding(.top, Spacing.xs)
+                .disabled(selecting)
+                .opacity(selecting ? 0.4 : 1)
             }
         }
         .foregroundStyle(Theme.homeInk)
@@ -536,32 +560,39 @@ struct CollectionWordsView: View {
         .padding(.vertical, Spacing.md)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
+        .selectionDisabled()
     }
 
-    private func selectableRow(_ word: VocabWord) -> some View {
-        let isOn = selection.contains(word.id)
-        return Button {
-            if isOn { selection.remove(word.id) } else { selection.insert(word.id) }
-        } label: {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(isOn ? Theme.brand : Theme.homeInk.opacity(0.25))
-                    .contentTransition(.symbolEffect(.replace))
-                WordRow(word: word, showsScene: folder != nil)
-            }
-            .contentShape(.rect)
+    /// 长按一个词：不用进入多选也能处理
+    @ViewBuilder
+    private func rowMenu(_ word: VocabWord) -> some View {
+        Button("移到…", systemImage: "folder") {
+            pending = [word]
+            picking = .move
         }
-        .buttonStyle(.plain)
-        .listRowBackground(isOn ? CollectionStyle.selected.opacity(0.5) : Theme.card)
-        .accessibilityAddTraits(isOn ? .isSelected : [])
+        if folder != nil {
+            Button("复制到…", systemImage: "plus.square.on.square") {
+                pending = [word]
+                picking = .copy
+            }
+            Button("移出", systemImage: "minus.circle") {
+                guard let folder else { return }
+                WordLibrary.remove([word], from: folder, context: context)
+                finish(String(localized: "已移出 \(1) 个词", comment: "Toast after removing selected words from a folder"))
+            }
+        }
+        Divider()
+        Button("删除", systemImage: "trash", role: .destructive) {
+            pending = [word]
+            confirmingBatchDelete = true
+        }
     }
 
     @ToolbarContentBuilder
     private func toolbar(_ words: [VocabWord]) -> some ToolbarContent {
         if selecting {
             ToolbarItem(placement: .topBarLeading) {
-                Button(selection.count == words.count ? "全不选" : "全选") {
+                Button(selection.count == words.count ? "取消全选" : "全选") {
                     selection = selection.count == words.count ? [] : Set(words.map(\.id))
                 }
             }
@@ -569,10 +600,13 @@ struct CollectionWordsView: View {
                 Button("完成") { stopSelecting() }
                     .fontWeight(.bold)
             }
+            ToolbarItemGroup(placement: .bottomBar) {
+                bottomBar
+            }
         } else {
             if !words.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("选择") { selecting = true }
+                    Button("选择") { withAnimation { editMode = .active } }
                 }
             }
             if folder != nil {
@@ -581,7 +615,7 @@ struct CollectionWordsView: View {
                         Button("编辑名字和图标", systemImage: "pencil") { editing = true }
                         Button("删除文件夹", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "ellipsis")
                     }
                     .accessibilityLabel("文件夹操作")
                 }
@@ -589,51 +623,49 @@ struct CollectionWordsView: View {
         }
     }
 
-    /// 多选时底部的操作：移到 / 复制到 / 移出（文件夹才有）/ 删除
-    private var actionBar: some View {
+    /// 和照片 App 一样：左边整理，右边删除；已选几项显示在标题上
+    @ViewBuilder
+    private var bottomBar: some View {
         let empty = selection.isEmpty
-        return HStack(spacing: 0) {
-            barButton("移到…", symbol: "arrow.right.doc.on.clipboard") { picking = .move }
-            if folder != nil {
-                barButton("复制到…", symbol: "plus.square.on.square") { picking = .copy }
-                barButton("移出", symbol: "minus.circle") {
+        if folder != nil {
+            Menu {
+                Button("移到…", systemImage: "folder") { pickForSelection(.move) }
+                Button("复制到…", systemImage: "plus.square.on.square") { pickForSelection(.copy) }
+                Button("移出这个文件夹", systemImage: "minus.circle") {
                     guard let folder else { return }
                     let targets = selectedWords
                     WordLibrary.remove(targets, from: folder, context: context)
                     finish(String(localized: "已移出 \(targets.count) 个词", comment: "Toast after removing selected words from a folder"))
                 }
+            } label: {
+                Image(systemName: "folder")
             }
-            barButton("删除", symbol: "trash", role: .destructive) { confirmingBatchDelete = true }
+            .disabled(empty)
+            .accessibilityLabel("移到…")
+        } else {
+            Button { pickForSelection(.move) } label: { Image(systemName: "folder") }
+                .disabled(empty)
+                .accessibilityLabel("移到…")
         }
+        Spacer()
+        Button(role: .destructive) {
+            pending = selectedWords
+            confirmingBatchDelete = true
+        } label: {
+            Image(systemName: "trash")
+        }
+        .tint(.red)
         .disabled(empty)
-        .opacity(empty ? 0.45 : 1)
-        .padding(.vertical, 10)
-        .padding(.horizontal, Spacing.sm)
-        .background(Theme.card, in: .rect(cornerRadius: 24, style: .continuous))
-        .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
-        .padding(.horizontal, Spacing.md)
-        .padding(.bottom, 4)
+        .accessibilityLabel("删除")
     }
 
-    private func barButton(_ title: LocalizedStringKey, symbol: String, role: ButtonRole? = nil, action: @escaping () -> Void) -> some View {
-        Button(role: role, action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: symbol)
-                    .font(.system(size: 19, weight: .semibold))
-                Text(title)
-                    .font(.caption.weight(.bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            .foregroundStyle(role == .destructive ? Color.red : Theme.homeInk)
-            .frame(maxWidth: .infinity)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.pressable)
+    private func pickForSelection(_ mode: MoveTargetSheet.Mode) {
+        pending = selectedWords
+        picking = mode
     }
 
     private func apply(_ mode: MoveTargetSheet.Mode, to target: CollectionWordsView.Source) {
-        let targets = selectedWords
+        let targets = pending
         switch (mode, target) {
         case (.move, .folder(let destination)):
             WordLibrary.move(targets, from: folder, to: destination, context: context)
@@ -657,14 +689,16 @@ struct CollectionWordsView: View {
     }
 
     private func stopSelecting() {
-        selecting = false
+        withAnimation { editMode = .inactive }
         selection = []
+        pending = []
     }
 }
 
 // MARK: - 选目标：移到 / 复制到哪里
 
 struct MoveTargetSheet: View {
+    @AppStorage(HomeTheme.storageKey) private var themeRaw = HomeTheme.sky.rawValue
     enum Mode: String, Identifiable {
         case move, copy
         var id: String { rawValue }
@@ -714,7 +748,7 @@ struct MoveTargetSheet: View {
                             .foregroundStyle(Theme.homeInk)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(index.isMultiple(of: 2) ? CollectionStyle.warmTile : CollectionStyle.creamTile, in: .rect(cornerRadius: 18, style: .continuous))
+                            .background(CollectionStyle.tile(index, theme: HomeTheme(storedValue: themeRaw)), in: .rect(cornerRadius: 18, style: .continuous))
                         }
                         .buttonStyle(.pressable)
                         .disabled(isCurrent)
@@ -737,8 +771,6 @@ struct MoveTargetSheet: View {
                     }
                     .buttonStyle(.pressable)
                 }
-                .padding(12)
-                .background(CollectionStyle.gridBackground, in: .rect(cornerRadius: 28, style: .continuous))
                 .padding(Spacing.md)
             }
             .background(Theme.mist.ignoresSafeArea())

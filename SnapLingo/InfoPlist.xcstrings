@@ -73,6 +73,53 @@
           }
         }
       }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "comment" : "Privacy - Location When In Use Usage Description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie notes which neighbourhood you took a photo in, so Home can remind you where you found the words. The location stays on your phone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie guarda el barrio donde tomaste la foto para recordarte en el inicio dónde encontraste las palabras. La ubicación se queda en tu teléfono."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を撮った地域を記録して、単語に出会った場所をホームで思い出せるようにします。位置情報はこのiPhoneにだけ保存されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진을 찍은 동네를 기록해 홈에서 단어를 어디서 만났는지 떠올릴 수 있게 해요. 위치는 휴대폰에만 저장돼요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Magpie anota o bairro onde você tirou a foto para lembrar no início onde encontrou as palavras. A localização fica só no seu celular."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie 会记下你在哪个街区拍的照片，首页会提醒你在哪里碰到这些词。地点只存在手机上。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magpie 會記下你在哪個街區拍的照片，首頁會提醒你在哪裡碰到這些詞。地點只存在手機上。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

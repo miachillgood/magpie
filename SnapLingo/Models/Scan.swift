@@ -51,6 +51,12 @@ final class Scan {
     var id: UUID = UUID()
     var createdAt: Date = Date()
     var title: String = ""
+    /// 照片上认出的店名（原拼写），首页放进胶囊；空 = 没认出来，或者是旧数据
+    var placeName: String = ""
+    /// 拍照时在哪个街区（Ponsonby），只有相机拍的、用户允许定位时才有
+    var neighborhood: String = ""
+    var latitude: Double?
+    var longitude: Double?
     var sceneRaw: String = SceneType.general.rawValue
 
     /// 原图（最长边 2048，JPEG）

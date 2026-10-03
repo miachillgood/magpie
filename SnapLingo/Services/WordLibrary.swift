@@ -19,6 +19,16 @@ enum WordLibrary {
         var extraction: SceneExtraction?
         /// AI 挑词失败时的提示（仍然可以在照片上点词）
         var aiError: String? = nil
+        /// 相机现拍的（相册里的照片可能是在别处拍的，不定位）
+        var fromCamera = false
+    }
+
+    /// 记下拍照的街区（定位往往比选词慢，保存后再补上）
+    static func setPlace(_ place: ScanPlace, on scan: Scan, context: ModelContext) {
+        scan.neighborhood = place.neighborhood
+        scan.latitude = place.latitude
+        scan.longitude = place.longitude
+        try? context.save()
     }
 
     /// 创建一个新场景并保存选中的词
@@ -26,6 +36,7 @@ enum WordLibrary {
     static func saveNewScan(
         draft: ScanDraft,
         title: String,
+        placeName: String = "",
         scene: SceneType,
         candidates: [WordCandidate],
         selectedKeys: Set<String>,
@@ -33,6 +44,8 @@ enum WordLibrary {
     ) -> Scan {
         let scan = Scan()
         scan.title = title
+        // 用户改标题时把店名删了，就不再当店名用
+        scan.placeName = title.localizedCaseInsensitiveContains(placeName) ? placeName : ""
         scan.scene = scene
         scan.imageData = draft.image.jpegData(compressionQuality: 0.82)
         scan.thumbnailData = ImageUtilities.jpeg(draft.image, maxDimension: 600, quality: 0.75)

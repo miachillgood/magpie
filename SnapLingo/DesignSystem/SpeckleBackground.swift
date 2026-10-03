@@ -121,4 +121,18 @@ enum HomeTheme: String, CaseIterable, Identifiable {
     init(storedValue: String) {
         self = HomeTheme(rawValue: storedValue) ?? .sky
     }
+
+    /// 主题色调淡：和页面米色底按比例混合，复习页的词夹格子用它，和顶部的斑点底是同一个颜色
+    var tint: Color {
+        Color(light: Self.mix(base, Theme.mist, 0.62, .light), dark: Self.mix(base, Theme.mist, 0.6, .dark))
+    }
+
+    private static func mix(_ a: Color, _ b: Color, _ amount: CGFloat, _ style: UIUserInterfaceStyle) -> UIColor {
+        let traits = UITraitCollection(userInterfaceStyle: style)
+        let x = UIColor(a).resolvedColor(with: traits), y = UIColor(b).resolvedColor(with: traits)
+        var (r1, g1, b1, a1, r2, g2, b2, a2): (CGFloat, CGFloat, CGFloat, CGFloat, CGFloat, CGFloat, CGFloat, CGFloat) = (0, 0, 0, 0, 0, 0, 0, 0)
+        x.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+        y.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+        return UIColor(red: r1 * amount + r2 * (1 - amount), green: g1 * amount + g2 * (1 - amount), blue: b1 * amount + b2 * (1 - amount), alpha: 1)
+    }
 }

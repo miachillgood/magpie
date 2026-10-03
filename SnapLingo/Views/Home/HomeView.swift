@@ -87,6 +87,12 @@ struct HomeView: View {
             return (0..<count).map { scans[$0 % scans.count] }
         }
         #endif
+        // 拍了但一个词都没存的照片不算，不然会出现「捡到 0 个词」
+        return Self.latestDay(of: scans.filter { !$0.words.isEmpty }, calendar: calendar)
+    }
+
+    /// 最近一次拍照那天的所有照片（scans 按时间倒序）
+    static func latestDay(of scans: [Scan], calendar: Calendar = .current) -> [Scan] {
         guard let latest = scans.first else { return [] }
         return scans.filter { calendar.isDate($0.createdAt, inSameDayAs: latest.createdAt) }
     }
@@ -102,7 +108,7 @@ struct HomeView: View {
         #if DEBUG
         if let forced = Self.forcedMood, forced == .empty || !scans.isEmpty { return forced }
         #endif
-        return HomeMood.pick(latestScanDate: scans.first?.createdAt)
+        return HomeMood.pick(latestScanDate: latestDayScans.first?.createdAt)
     }
 
     #if DEBUG
@@ -137,7 +143,7 @@ struct HomeView: View {
     /// 地点那一行：1 个场景放场景名，多个场景放“3 个场景”
     private static func placeLine(_ day: [Scan]) -> [HeadlinePiece] {
         if day.count == 1, let scan = day.first {
-            return [HomeHeroContent.place(symbol: scan.scene.iconName, title: scan.displayTitle, suffix: placeSuffix(many: false))]
+            return [HomeHeroContent.place(symbol: scan.scene.iconName, title: scan.displayTitle, placeName: scan.placeName, suffix: placeSuffix(many: false))]
         }
         return [.place(symbol: "mappin.and.ellipse", highlight: String(localized: "\(day.count) 个场景", comment: "Home headline, place line when the photos come from several scenes (inside a white capsule)"), rest: placeSuffix(many: false))]
     }
@@ -153,7 +159,7 @@ struct HomeView: View {
         return HomeHeroContent(
             mood: .today,
             label: "Nice find!",
-            lines: [[.caption(Self.whereCaption(day[0].createdAt))], Self.placeLine(day), Self.pickedUp(dayWords.count)],
+            lines: [[.caption(Self.whereCaption(day[0].createdAt, neighborhood: Self.neighborhood(of: day)))], Self.placeLine(day), Self.pickedUp(dayWords.count)],
             chips: dayWords.prefix(4).map { .word($0) },
             chipsNote: nil,
             action: single ? .openScan(day[0]) : .studyDay(day[0].createdAt),
@@ -169,7 +175,7 @@ struct HomeView: View {
         let plan = plan
         let byID = Dictionary(words.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let due = (plan.reviewIDs + plan.newIDs).compactMap { byID[$0] }
-        let lines = [[HeadlinePiece.caption(Self.whereCaption(day[0].createdAt))], Self.placeLine(day), Self.pickedUp(dayWords.count)]
+        let lines = [[HeadlinePiece.caption(Self.whereCaption(day[0].createdAt, neighborhood: Self.neighborhood(of: day)))], Self.placeLine(day), Self.pickedUp(dayWords.count)]
         if due.isEmpty {
             return HomeHeroContent(
                 mood: .recent,
@@ -199,7 +205,10 @@ struct HomeView: View {
     /// 上次是 9 月 20 日 / 在 [公交站] / 捡到 [5 个词]，好久不见
     private func awayHero(_ day: [Scan]) -> HomeHeroContent {
         let dayWords = Self.words(of: day)
-        let when = String(localized: "上次是 \(HomeDates.dateText(for: day[0].createdAt))，在", comment: "Home headline line 1 when the user hasn't scanned for over a week; followed by a place on the next line. The argument is a date like Sep 20")
+        let date = HomeDates.dateText(for: day[0].createdAt)
+        let when = Self.neighborhood(of: day).map {
+            String(localized: "上次是 \(date)，在 \($0) 的", comment: "Home headline line 1 when the user hasn't scanned for over a week, with the suburb where the photo was taken; followed by a place on the next line. Arguments: a date like Sep 20, a suburb like Ponsonby")
+        } ?? String(localized: "上次是 \(date)，在", comment: "Home headline line 1 when the user hasn't scanned for over a week; followed by a place on the next line. The argument is a date like Sep 20")
         return HomeHeroContent(
             mood: .away,
             label: "Miss you!",
@@ -234,8 +243,17 @@ struct HomeView: View {
     }
 
     /// 句子第一行：刚刚在 / 昨天在 / Yesterday at
-    private static func whereCaption(_ date: Date) -> String {
-        String(localized: "\(HomeDates.whenPhrase(for: date))在", comment: "Home headline line 1, followed by a place on the next line. The argument is Just now / Today / Yesterday / a weekday / a date")
+    private static func whereCaption(_ date: Date, neighborhood: String?) -> String {
+        let when = HomeDates.whenPhrase(for: date)
+        if let neighborhood {
+            return String(localized: "\(when)在 \(neighborhood) 的", comment: "Home headline line 1 with the suburb where the photo was taken, followed by a place on the next line (e.g. 'Just now in Ponsonby, at'). Arguments: Just now / Today / Yesterday / a weekday / a date, then a suburb like Ponsonby")
+        }
+        return String(localized: "\(when)在", comment: "Home headline line 1, followed by a place on the next line. The argument is Just now / Today / Yesterday / a weekday / a date")
+    }
+
+    /// 那天的照片都在同一个街区才写街区名（拍了好几个街区就不写）
+    static func neighborhood(of day: [Scan]) -> String? {
+        HomeHeroContent.sharedNeighborhood(day.map(\.neighborhood))
     }
 
     /// 地点胶囊后面接的小尾巴：中文不需要（或“等”），日文“で”，韩文“에서”

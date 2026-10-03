@@ -23,6 +23,8 @@ struct TodayReviewCard: View {
     var onStart: () -> Void
     var onMore: () -> Void
     var onEditGoal: () -> Void
+    /// 点「来自…」那张卡片：打开词最多的那张照片
+    var onOpenSource: (Scan) -> Void = { _ in }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
@@ -125,7 +127,8 @@ struct TodayReviewCard: View {
         let text = sources.count == 1
             ? String(localized: "来自 \(first) · 约 \(minutes) 分钟", comment: "First argument is a scene title")
             : String(localized: "来自 \(first) 等 \(sources.count) 个场景 · 约 \(minutes) 分钟", comment: "First argument is a scene title; second is the total number of scenes")
-        return HStack(spacing: 10) {
+        return Button { onOpenSource(sources[0]) } label: {
+            HStack(spacing: 10) {
             HStack(spacing: -9) {
                 ForEach(sources.prefix(4)) { scan in
                     ScanThumbnail(scan: scan)
@@ -140,7 +143,18 @@ struct TodayReviewCard: View {
                 .foregroundStyle(Theme.homeMuted)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.homeMuted)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Theme.sheet.opacity(0.85), in: .rect(cornerRadius: 16, style: .continuous))
+            .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
         }
+        .buttonStyle(.pressable)
     }
 
     // MARK: - 复习完了 / 今天没有

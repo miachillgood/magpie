@@ -202,12 +202,16 @@ struct LibraryEntryCard: View {
         var filter: WordsFilter
     }
 
+    /// 横条只用柔和的颜色：灰绿 = 已掌握，荧光黄 = 学习中，浅米色 = 还没学，和页面的米色底是一家
+    private static let sage = Color(light: UIColor(hex: 0x7FA38D), dark: UIColor(hex: 0x6E9A82))
+    private static let track = Color(light: UIColor(hex: 0xE9E1D3), dark: UIColor(hex: 0x3A352E))
+
     private var segments: [Segment] {
         [
-            Segment(title: String(localized: "已掌握", comment: "Progress card segment: mastered"), count: progress.mastered, color: Theme.success, filter: .mastered),
-            Segment(title: String(localized: "学习中", comment: "Progress card segment: learning"), count: progress.learning, color: Theme.reviews, filter: .learning),
-            Segment(title: String(localized: "待学", comment: "Progress card segment: new"), count: progress.new, color: Theme.newWords, filter: .new),
-            Segment(title: String(localized: "太简单", comment: "Progress card segment: removed as too easy"), count: progress.tooEasy, color: Theme.homeMuted.opacity(0.45), filter: .mastered)
+            Segment(title: String(localized: "已掌握", comment: "Progress card segment: mastered"), count: progress.mastered, color: Self.sage, filter: .mastered),
+            Segment(title: String(localized: "学习中", comment: "Progress card segment: learning"), count: progress.learning, color: Theme.marker, filter: .learning),
+            Segment(title: String(localized: "待学", comment: "Progress card segment: new"), count: progress.new, color: Self.track, filter: .new),
+            Segment(title: String(localized: "太简单", comment: "Progress card segment: removed as too easy"), count: progress.tooEasy, color: Self.track.opacity(0.6), filter: .mastered)
         ]
     }
 
@@ -236,7 +240,11 @@ struct LibraryEntryCard: View {
                     .font(.brand(30))
                 Text("个已掌握", comment: "After the big mastered-words number on the progress card")
                     .font(.system(size: 15, weight: .semibold))
-                Spacer(minLength: 0)
+                    .fixedSize()
+                // 横条和数字放在同一行
+                bar
+                    .padding(.leading, 8)
+                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
                 if progress.masteredThisWeek > 0 {
                     Text("这周 +\(progress.masteredThisWeek)", comment: "Progress card: words newly mastered in the last 7 days")
                         .font(.system(size: 13, weight: .bold))
@@ -248,13 +256,12 @@ struct LibraryEntryCard: View {
             }
             .foregroundStyle(Theme.homeInk)
 
-            bar
-
             FlowLayout(spacing: 8) {
                 ForEach(segments.filter { $0.count > 0 }) { segment in
                     NavigationLink(value: ReviewRoute.library(segment.filter)) {
                         HStack(spacing: 6) {
                             Circle().fill(segment.color).frame(width: 8, height: 8)
+                                .overlay(Circle().strokeBorder(Theme.homeInk.opacity(segment.color == Self.track ? 0.25 : 0), lineWidth: 1))
                             Text(verbatim: segment.title)
                             Text(verbatim: "\(segment.count)")
                                 .fontWeight(.bold)
