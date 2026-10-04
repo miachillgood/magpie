@@ -14,6 +14,8 @@ struct DailyGoalSheet: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    /// 按内容高度定面板高度：字调大了也不会被截断
+    @State private var contentHeight: CGFloat = 230
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -22,7 +24,7 @@ struct DailyGoalSheet: View {
                 .foregroundStyle(Theme.homeInk)
                 .accessibilityAddTraits(.isHeader)
             Text("到期的复习会先排，不算在里面")
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(Theme.homeMuted)
                 .padding(.top, 4)
 
@@ -33,14 +35,15 @@ struct DailyGoalSheet: View {
             }
             .padding(.top, 22)
             .sensoryFeedback(.selection, trigger: settings.newWordsPerDay)
-
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.top, 28)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, Spacing.lg)
+        .fixedSize(horizontal: false, vertical: true)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.cream.ignoresSafeArea())
-        .presentationDetents([.height(230)])
+        .presentationDetents([.height(contentHeight)])
         .presentationDragIndicator(.visible)
     }
 
@@ -53,7 +56,7 @@ struct DailyGoalSheet: View {
                 Text(verbatim: "\(count)")
                     .font(.brand(24))
                 Text("约 \(StudyPace.minutes(forNewWords: count)) 分钟", comment: "Under a daily new-word goal option: about N minutes a day")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption2.weight(.medium))
                     .opacity(0.7)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

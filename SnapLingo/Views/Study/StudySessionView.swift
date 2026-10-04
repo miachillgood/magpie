@@ -149,9 +149,31 @@ private struct StudyCardsView: View {
     @ViewBuilder
     private var controls: some View {
         if session.missedCurrent {
-            PrimaryButton(title: "记住了，下一个", trailingSymbol: "arrow.right") {
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                    session.rate(.again, context: context)
+            HStack(spacing: Spacing.sm) {
+                // 看完释义可以返回正面再看一眼单词和照片；在正面时可以再去看释义
+                Button { reveal() } label: {
+                    Group {
+                        if session.revealed {
+                            Label("返回", systemImage: "chevron.left")
+                        } else {
+                            Label("看释义", systemImage: "text.book.closed")
+                        }
+                    }
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                        .padding(.horizontal, Spacing.md)
+                        .frame(height: 56)
+                        .background(Theme.card, in: .capsule)
+                        .overlay(Capsule().strokeBorder(Theme.hairline))
+                        .contentShape(.capsule)
+                }
+                .buttonStyle(.pressable)
+                .fixedSize()
+
+                PrimaryButton(title: "下一个", trailingSymbol: "chevron.right") {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                        session.rate(.again, context: context)
+                    }
                 }
             }
             .transition(.move(edge: .bottom).combined(with: .opacity))

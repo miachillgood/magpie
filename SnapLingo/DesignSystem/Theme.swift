@@ -79,6 +79,10 @@ enum Theme {
     /// 墨色（首页用）
     static let homeInk = Color(light: UIColor(hex: 0x1B2A3A), dark: UIColor(hex: 0xEEE7D8))
     static let homeMuted = Color(light: UIColor(hex: 0x877E72), dark: UIColor(hex: 0x9C948B))
+    /// 蜡笔插画页（欢迎、介绍）的米白纸底，和插画的白纸融在一起；这几页固定浅色
+    static let sketchPaper = Color(UIColor(hex: 0xFDFCF5))
+    /// 蜡笔插画里的亮黄（字标的光芒、下划线）
+    static let sketchYellow = Color(UIColor(hex: 0xF3C934))
     /// 荧光笔（芥末黄调淡）：数字高亮、New! 标签
     static let marker = Color(light: UIColor(hex: 0xE4C47C), dark: UIColor(hex: 0x6E5724))
     /// 地点胶囊（灰蓝调淡）

@@ -3,7 +3,7 @@
 //  SnapLingo
 //
 //  「我的」：头像和昵称、可选的 Apple 登录、水平、足迹、设置、账号、数据。
-//  视觉和复习页一致：顶部主题色斑点底纹，往下是浅灰底 + 白卡片。
+//  系统导航栏 + 分组列表；顶部保留主题色斑点底纹和头像、水平、足迹三张卡片。
 //
 
 import AuthenticationServices
@@ -25,20 +25,24 @@ struct MeView: View {
     @State private var signInError: String?
 
     var body: some View {
-        Group {
-            if let settings = settingsRows.first {
-                content(settings)
-            } else {
-                ProgressView()
+        NavigationStack {
+            Group {
+                if let settings = settingsRows.first {
+                    content(settings)
+                } else {
+                    ProgressView()
+                }
             }
+            .background(Theme.mist.ignoresSafeArea())
         }
-        .background(Theme.mist.ignoresSafeArea())
+        // 图标、选择器、关闭按钮用墨色，和首页一致（系统默认会用橙色主色）
+        .tint(Theme.homeInk)
     }
 
     private func content(_ settings: UserSettings) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                header
+        // 系统分组列表：设置、账号、数据和 iPhone 设置 App 一样；上面三张卡片保留自己的样式
+        List {
+            Section {
                 ProfileHeader(
                     settings: settings,
                     onAvatar: { showingAvatarPicker = true },
@@ -48,11 +52,8 @@ struct MeView: View {
                     },
                     onSignIn: { result in signIn(result, settings: settings) }
                 )
-                .padding(.top, 14)
-
                 LevelCard(settings: settings) { showingLevelTest = true }
-                    .padding(.top, 24)
-
+                    .padding(.top, 10)
                 FootprintCard(
                     days: MeStats.daysSinceFirst(scans.map(\.createdAt)),
                     scenes: scans.count,
@@ -60,34 +61,40 @@ struct MeView: View {
                     streak: DailyPlanner.streak(events: logs),
                     longest: DailyPlanner.longestStreak(events: logs)
                 )
-                .padding(.top, 14)
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 0))
+            .listRowSeparator(.hidden)
 
-                SettingsCard(settings: settings, wordCount: words.count)
-                    .padding(.top, 30)
+            SettingsCard(settings: settings)
 
-                if settings.isSignedIn {
-                    AccountCard(settings: settings) {
-                        nicknameDraft = settings.nickname
-                        editingNickname = true
-                    }
-                    .padding(.top, 30)
+            if settings.isSignedIn {
+                AccountCard(settings: settings) {
+                    nicknameDraft = settings.nickname
+                    editingNickname = true
                 }
+            }
 
-                DataCard(words: words)
-                    .padding(.top, 30)
+            DataCard(words: words)
 
+            Section {
                 Text("Magpie \(Bundle.main.shortVersion) · 把生活里遇见的英文变成每天几分钟的复习")
-                    .font(.system(size: 12))
+                    .font(.footnote)
                     .foregroundStyle(Theme.homeMuted)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 28)
-                    .padding(.bottom, 40)
+                    .listRowBackground(Color.clear)
             }
-            .padding(.horizontal, 20)
-            .background(alignment: .top) { ThemeWash().padding(.horizontal, -20) }
         }
-        .scrollIndicators(.hidden)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(alignment: .top) { ThemeWash().ignoresSafeArea() }
+        .navigationTitle("我的")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(role: .close) { dismiss() }
+            }
+        }
         .sheet(isPresented: $showingAvatarPicker) {
             AvatarPickerSheet(settings: settings)
                 .presentationDetents([.height(360)])
@@ -121,29 +128,6 @@ struct MeView: View {
         } message: {
             Text(signInError ?? "")
         }
-    }
-
-    private var header: some View {
-        HStack {
-            Text("我的")
-                .font(.system(size: 30, weight: .heavy))
-                .foregroundStyle(Theme.homeInk)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Theme.homeInk)
-                    .frame(width: 42, height: 42)
-                    .background(Theme.sheet, in: .circle)
-                    .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
-            }
-            .buttonStyle(.pressable)
-            .accessibilityLabel("关闭")
-        }
-        .frame(height: 50)
-        .padding(.top, 12)
-        .padding(.horizontal, 4)
     }
 
     private func signIn(_ result: Result<ASAuthorization, Error>, settings: UserSettings) {

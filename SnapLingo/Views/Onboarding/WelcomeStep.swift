@@ -2,9 +2,9 @@
 //  WelcomeStep.swift
 //  SnapLingo
 //
-//  第一次打开：奶油色底，手写字标「Magpie」和一句口号，下面是举着相机的喜鹊。
-//  插画是透明底的 PNG（WelcomeWordmark / WelcomeMagpie），深色模式下也保持浅色底，黑色的喜鹊才看得清。
-//  出场顺序：字标落下 → 口号淡入 → 喜鹊弹出来，之后轻轻上下浮动。
+//  第一次打开：米白底，蜡笔手写字标「Magpie」和一句手写口号，下面是叼着信飞过街道的喜鹊。
+//  插画是透明底的 PNG（WelcomeWordmark / WelcomeMagpie），深色模式下也保持浅色底，黑色线条才看得清。
+//  出场顺序：字标落下 → 口号淡入 → 街景插画浮现，之后喜鹊轻轻上下浮动。
 //
 
 import SwiftUI
@@ -20,45 +20,51 @@ struct WelcomeStep: View {
         GeometryReader { proxy in
             let compact = proxy.size.height < 700
             VStack(spacing: 0) {
-                Spacer(minLength: compact ? 12 : 24)
+                Spacer(minLength: compact ? 8 : 24)
 
                 Image("WelcomeWordmark")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: compact ? 72 : 92)
+                    .frame(width: min(proxy.size.width * 0.64, 280))
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : -16)
                     .animation(motion(.spring(response: 0.6, dampingFraction: 0.7), delay: 0.05), value: appeared)
                     .accessibilityLabel(Text(verbatim: "Magpie"))
                     .accessibilityAddTraits(.isHeader)
 
-                Text("Real English\nfor everyday life.", comment: "Welcome tagline under the Magpie wordmark; keep the line break")
-                    .font(.system(size: compact ? 19 : 22, weight: .medium))
-                    .foregroundStyle(Theme.homeInk)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, compact ? 10 : 16)
+                // 手写口号原图（所有语言都一样），读屏读当地语言
+                Image("WelcomeTagline")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: min(proxy.size.width * 0.44, 190))
+                    .accessibilityLabel(Text("Pick up words\nas you go.", comment: "Handwritten welcome tagline under the Magpie wordmark; keep the line break"))
+                    .padding(.top, compact ? 8 : 14)
                     .opacity(appeared ? 1 : 0)
                     .animation(motion(.easeOut(duration: 0.5), delay: 0.3), value: appeared)
 
-                Spacer(minLength: 16)
+                Spacer(minLength: 8)
 
+                // 街景插画左右贴边，不受页面内边距限制
                 Image("WelcomeMagpie")
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: min(proxy.size.width * 0.82, 340))
-                    .offset(y: floating ? -6 : 0)
-                    .scaleEffect(appeared ? 1 : 0.6, anchor: .bottom)
+                    .frame(width: proxy.size.width)
+                    .frame(maxHeight: proxy.size.height * (compact ? 0.48 : 0.56))
+                    .offset(y: floating ? -4 : 0)
                     .opacity(appeared ? 1 : 0)
-                    .animation(motion(.spring(response: 0.7, dampingFraction: 0.6), delay: 0.45), value: appeared)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: floating)
+                    .offset(y: appeared ? 0 : 12)
+                    .animation(motion(.easeOut(duration: 0.7), delay: 0.45), value: appeared)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 2.2).repeatForever(autoreverses: true), value: floating)
+                    .padding(.horizontal, -24)
                     .accessibilityHidden(true)
 
-                Spacer(minLength: 16)
+                Spacer(minLength: 12)
 
-                PrimaryButton(title: "开始", trailingSymbol: "arrow.right", action: onContinue)
+                // 「Get started →」原图比 Continue 扁长，矮一点，看起来分量差不多
+                SketchImageButton(image: "GetStartedButton", label: "开始", height: 70, action: onContinue)
+
                 Text("不用注册", comment: "Small note under the welcome page's Get started button")
-                    .font(.system(size: 14))
+                    .font(.custom("ChalkboardSE-Light", size: 15))
                     .foregroundStyle(Theme.homeMuted)
                     .padding(.top, 12)
             }
@@ -67,7 +73,7 @@ struct WelcomeStep: View {
             .padding(.bottom, 8)
         }
         .background {
-            Theme.cream.ignoresSafeArea()
+            Theme.sketchPaper.ignoresSafeArea()
         }
         // 插画是黑色线条，固定浅色底和浅色文字配色
         .environment(\.colorScheme, .light)

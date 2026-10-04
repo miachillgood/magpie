@@ -41,6 +41,12 @@ struct CollectionGrid: View {
     var onOpen: (CollectionWordsView.Source) -> Void
     var onNew: () -> Void
 
+    @Environment(\.modelContext) private var context
+    @Environment(AppCoordinator.self) private var coordinator
+    /// 长按词夹：改名 / 删除
+    @State private var editingFolder: WordFolder?
+    @State private var deletingFolder: WordFolder?
+
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
     private var today: Date { Calendar.current.startOfDay(for: Date()) }
 
@@ -62,7 +68,7 @@ struct CollectionGrid: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 Text("我的词夹")
-                    .font(.system(size: 18, weight: .heavy))
+                    .font(.headline.weight(.heavy))
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 NavigationLink(value: ReviewRoute.library(.all)) {
@@ -71,7 +77,7 @@ struct CollectionGrid: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .semibold))
                     }
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.homeMuted)
                 }
                 .buttonStyle(.plain)
@@ -85,6 +91,7 @@ struct CollectionGrid: View {
                         CollectionTile(icon: entry.icon, name: entry.name, count: entry.count, due: entry.due, fill: CollectionStyle.tile(index, theme: HomeTheme(storedValue: themeRaw)))
                     }
                     .buttonStyle(.pressable)
+                    .contextMenu { menu(for: entry) }
                 }
                 Button(action: onNew) {
                     VStack(spacing: 6) {
@@ -92,9 +99,9 @@ struct CollectionGrid: View {
                             .font(.system(size: 26, weight: .semibold))
                             .frame(height: 40)
                         Text("新建")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.footnote.weight(.bold))
                         Text(verbatim: " ")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.caption2.weight(.semibold))
                     }
                     .foregroundStyle(Theme.homeMuted)
                     .frame(maxWidth: .infinity)
@@ -105,6 +112,37 @@ struct CollectionGrid: View {
                 .accessibilityLabel("新建文件夹")
             }
             .padding(.horizontal, sidePadding)
+        }
+        .sheet(item: $editingFolder) { folder in
+            FolderEditorView(folder: folder)
+        }
+        .confirmationDialog(
+            "删除文件夹“\(deletingFolder?.name ?? "")”？",
+            isPresented: Binding(get: { deletingFolder != nil }, set: { if !$0 { deletingFolder = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                guard let folder = deletingFolder else { return }
+                withAnimation { WordLibrary.delete(folder, context: context) }
+            }
+        } message: {
+            Text("里面的词不会被删除，仍然在词库里。")
+        }
+    }
+
+    @ViewBuilder
+    private func menu(for entry: Entry) -> some View {
+        Button("打开", systemImage: "folder") { onOpen(entry.source) }
+        if case .folder(let folder) = entry.source {
+            if entry.due > 0 {
+                Button("复习到期的 \(entry.due) 个词", systemImage: "play") {
+                    let today = today
+                    coordinator.startStudy(.words(folder.words.filter { $0.isDue(today: today) }.map(\.id)))
+                }
+            }
+            Button("编辑名字和图标", systemImage: "pencil") { editingFolder = folder }
+            Divider()
+            Button("删除文件夹", systemImage: "trash", role: .destructive) { deletingFolder = folder }
         }
     }
 }
@@ -120,11 +158,11 @@ private struct CollectionTile: View {
         VStack(spacing: 6) {
             IconImage(name: icon, size: 40)
             Text(name)
-                .font(.system(size: 13, weight: .bold))
+                .font(.footnote.weight(.bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
             Text("\(count) 个词", comment: "Category tile: number of words in it")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(Theme.homeMuted)
         }
         .foregroundStyle(Theme.homeInk)
@@ -135,7 +173,7 @@ private struct CollectionTile: View {
         .overlay(alignment: .topTrailing) {
             if due > 0 {
                 Text(due, format: .number)
-                    .font(.system(size: 11, weight: .heavy).monospacedDigit())
+                    .font(.caption2.weight(.heavy).monospacedDigit())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 6)
                     .frame(minWidth: 20, minHeight: 20)
@@ -158,12 +196,12 @@ private struct CategoryTile: View {
         VStack(spacing: 6) {
             IconImage(name: scene.iconName, size: 40)
             Text(scene.displayName)
-                .font(.system(size: 13, weight: .bold))
+                .font(.footnote.weight(.bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
             if let count {
                 Text("\(count) 个词", comment: "Category tile: number of words in it")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(Theme.homeMuted)
             }
         }
@@ -552,7 +590,6 @@ struct CollectionWordsView: View {
                 }
                 .padding(.top, Spacing.xs)
                 .disabled(selecting)
-                .opacity(selecting ? 0.4 : 1)
             }
         }
         .foregroundStyle(Theme.homeInk)
@@ -741,7 +778,7 @@ struct MoveTargetSheet: View {
                             VStack(spacing: 6) {
                                 IconImage(name: target.icon, size: 38)
                                 Text(target.name)
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(.footnote.weight(.bold))
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.75)
                             }
@@ -760,7 +797,7 @@ struct MoveTargetSheet: View {
                                 .font(.system(size: 24, weight: .semibold))
                                 .frame(height: 38)
                             Text("新建文件夹")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.footnote.weight(.bold))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.75)
                         }

@@ -33,8 +33,7 @@ struct HomeView: View {
                                 background: theme.base,
                                 minHeight: metrics.heroMinHeight,
                                 metrics: metrics,
-                                onAction: { perform($0, scroll: reader) },
-                                onProfile: { showingMe = true }
+                                onAction: { perform($0, scroll: reader) }
                             )
                             .id(content.mood)
 
@@ -54,7 +53,25 @@ struct HomeView: View {
                 }
             }
             .appTabBar()
-            .toolbarVisibility(.hidden, for: .navigationBar)
+            // 字标和「我的」放进系统导航栏：右上角是 iOS 26 的玻璃按钮
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    // 手写字标图（模板渲染，跟着墨色变，深色模式下也看得清）
+                    Image("HomeWordmark")
+                        .resizable()
+                        // 导航栏会把图往小里压，宽高都写死（原图 1468 × 518）
+                        .frame(width: 30 * 1468 / 518, height: 30)
+                        .foregroundStyle(Theme.homeInk)
+                        .accessibilityLabel(Text(verbatim: "Magpie"))
+                        .accessibilityAddTraits(.isHeader)
+                }
+                .sharedBackgroundVisibility(.hidden)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("我的", systemImage: "person") { showingMe = true }
+                    .tint(Theme.homeInk)
+                }
+            }
             .libraryDestinations(zoom: zoom)
             .sheet(isPresented: $showingMe) {
                 MeView()
@@ -140,10 +157,13 @@ struct HomeView: View {
             .filter { seen.insert($0.id).inserted }
     }
 
-    /// 地点那一行：1 个场景放场景名，多个场景放“3 个场景”
+    /// 地点那一行：1 个场景放场景名；多个场景在同一个街区就放街区名，否则放“3 个场景”
     private static func placeLine(_ day: [Scan]) -> [HeadlinePiece] {
         if day.count == 1, let scan = day.first {
             return [HomeHeroContent.place(symbol: scan.scene.iconName, title: scan.displayTitle, placeName: scan.placeName, suffix: placeSuffix(many: false))]
+        }
+        if let neighborhood = neighborhood(of: day) {
+            return [.place(symbol: "mappin.and.ellipse", highlight: neighborhood, rest: placeSuffix(many: false))]
         }
         return [.place(symbol: "mappin.and.ellipse", highlight: String(localized: "\(day.count) 个场景", comment: "Home headline, place line when the photos come from several scenes (inside a white capsule)"), rest: placeSuffix(many: false))]
     }
@@ -159,7 +179,7 @@ struct HomeView: View {
         return HomeHeroContent(
             mood: .today,
             label: "Nice find!",
-            lines: [[.caption(Self.whereCaption(day[0].createdAt, neighborhood: Self.neighborhood(of: day)))], Self.placeLine(day), Self.pickedUp(dayWords.count)],
+            lines: [[Self.whereCaption(day)], Self.placeLine(day), Self.pickedUp(dayWords.count)],
             chips: dayWords.prefix(4).map { .word($0) },
             chipsNote: nil,
             action: single ? .openScan(day[0]) : .studyDay(day[0].createdAt),
@@ -175,7 +195,7 @@ struct HomeView: View {
         let plan = plan
         let byID = Dictionary(words.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let due = (plan.reviewIDs + plan.newIDs).compactMap { byID[$0] }
-        let lines = [[HeadlinePiece.caption(Self.whereCaption(day[0].createdAt, neighborhood: Self.neighborhood(of: day)))], Self.placeLine(day), Self.pickedUp(dayWords.count)]
+        let lines = [[Self.whereCaption(day)], Self.placeLine(day), Self.pickedUp(dayWords.count)]
         if due.isEmpty {
             return HomeHeroContent(
                 mood: .recent,
@@ -193,8 +213,9 @@ struct HomeView: View {
             mood: .recent,
             label: "Still remember?",
             lines: lines,
-            chips: due.compactMap { word in Self.shortGloss(word.gloss).map { .text($0) } }.prefix(4).map { $0 },
-            chipsNote: String(localized: "先想想这些用英文怎么说"),
+            // 胶囊里放英文原词（点开是单词详情），先想想意思再去测
+            chips: due.prefix(4).map { .word($0) },
+            chipsNote: String(localized: "还记得它们是什么意思吗？", comment: "Home hero note above the English words due for review"),
             action: .study,
             actionTitle: String(localized: "测一测", comment: "Button: quiz yourself"),
             actionSymbol: "arrow.right",
@@ -206,13 +227,14 @@ struct HomeView: View {
     private func awayHero(_ day: [Scan]) -> HomeHeroContent {
         let dayWords = Self.words(of: day)
         let date = HomeDates.dateText(for: day[0].createdAt)
-        let when = Self.neighborhood(of: day).map {
+        let neighborhood = Self.captionNeighborhood(of: day)
+        let when = neighborhood.map {
             String(localized: "上次是 \(date)，在 \($0) 的", comment: "Home headline line 1 when the user hasn't scanned for over a week, with the suburb where the photo was taken; followed by a place on the next line. Arguments: a date like Sep 20, a suburb like Ponsonby")
         } ?? String(localized: "上次是 \(date)，在", comment: "Home headline line 1 when the user hasn't scanned for over a week; followed by a place on the next line. The argument is a date like Sep 20")
         return HomeHeroContent(
             mood: .away,
             label: "Miss you!",
-            lines: [[.caption(when)], Self.placeLine(day), Self.pickedUp(dayWords.count)],
+            lines: [[.caption(when, place: neighborhood)], Self.placeLine(day), Self.pickedUp(dayWords.count)],
             chips: dayWords.prefix(4).map { .word($0) },
             chipsNote: String(localized: "好久不见，出去拍一张？"),
             action: .scan,
@@ -240,6 +262,21 @@ struct HomeView: View {
             actionSymbol: "camera",
             photos: []
         )
+    }
+
+    /// 句子第一行；街区名已经放进下一行的胶囊（多个场景）就不再写
+    private static func whereCaption(_ day: [Scan]) -> HeadlinePiece {
+        if day.count > 1, neighborhood(of: day) != nil {
+            let when = HomeDates.whenPhrase(for: day[0].createdAt)
+            return .caption(String(localized: "hero.whenIn", defaultValue: "\(when)在", comment: "Home headline line 1 when the next line is a suburb in a white capsule (e.g. 'Just now in' + [Ponsonby]). The argument is Just now / Today / Yesterday / a weekday / a date"))
+        }
+        let neighborhood = captionNeighborhood(of: day)
+        return .caption(whereCaption(day[0].createdAt, neighborhood: neighborhood), place: neighborhood)
+    }
+
+    /// 只有一个场景时街区名写在第一行；多个场景时它在胶囊里
+    private static func captionNeighborhood(of day: [Scan]) -> String? {
+        day.count == 1 ? neighborhood(of: day) : nil
     }
 
     /// 句子第一行：刚刚在 / 昨天在 / Yesterday at

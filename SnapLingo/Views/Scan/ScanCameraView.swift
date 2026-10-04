@@ -24,10 +24,8 @@ struct ScanCameraView: View {
     /// 先确认相机权限再决定是否实时取景（未授权时 isAvailable 为 false）
     @State private var cameraChecked = false
     @State private var cameraDenied = false
-    /// 不为 nil 时盖一层相机权限说明页
-    @State private var permission: CameraPermissionView.Mode?
-    /// 取景页固定深色，说明页跟随系统
-    @Environment(\.colorScheme) private var systemScheme
+    /// 有相机但权限被关掉：取景框里显示“去设置开启”
+    @State private var showsDeniedNotice = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var liveScanAvailable: Bool {
@@ -61,24 +59,12 @@ struct ScanCameraView: View {
                 controls
                     .padding(.bottom, 16)
             }
-
-            if let permission {
-                CameraPermissionView(mode: permission) {
-                    Task { await requestCamera() }
-                } onPickPhoto: {
-                    showingPhotoPicker = true
-                } onLater: {
-                    dismiss()
-                }
-                .environment(\.colorScheme, systemScheme)
-                .transition(.opacity)
-            }
         }
-        .animation(.smooth, value: permission)
+        .animation(.smooth, value: showsDeniedNotice)
         .task { await checkCamera() }
         .onChange(of: scenePhase) { _, phase in
             // 从设置里打开权限回来
-            if phase == .active, permission == .denied { Task { await checkCamera() } }
+            if phase == .active, showsDeniedNotice { Task { await checkCamera() } }
         }
         .toolbarVisibility(.hidden, for: .navigationBar)
         .environment(\.colorScheme, .dark)
@@ -108,28 +94,52 @@ struct ScanCameraView: View {
         ViewfinderCorners()
             .stroke(.white, style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
             .aspectRatio(0.8, contentMode: .fit)
-            .overlay(alignment: .bottom) {
-                VStack(spacing: 10) {
-                    Text(hintText)
-                        .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .contentTransition(.numericText())
-                        .animation(.snappy, value: scanner.recognizedCount)
-                    if cameraDenied && UIImagePickerController.isSourceTypeAvailable(.camera) {
-                        Button("相机权限已关闭，去设置开启") {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
-                                UIApplication.shared.open(url)
-                            }
-                        }
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.6))
-                    }
+            .overlay {
+                if showsDeniedNotice {
+                    deniedNotice
+                        .transition(.opacity)
                 }
-                .padding(.horizontal, 36)
-                .padding(.bottom, 30)
+            }
+            .overlay(alignment: .bottom) {
+                Text(hintText)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: scanner.recognizedCount)
+                    .padding(.horizontal, 36)
+                    .padding(.bottom, 30)
             }
             .padding(.horizontal, 52)
+    }
+
+    /// 权限被关掉时取景框中间的说明，样式参照系统的 ContentUnavailableView
+    private var deniedNotice: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "video.slash.fill")
+                .font(.system(size: 40, weight: .regular))
+                .foregroundStyle(.white.opacity(0.6))
+                .accessibilityHidden(true)
+            Text("相机权限已关闭")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white)
+            Text("在设置中允许 Magpie 使用相机，就能实时识别身边的英文。")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("去设置开启") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .tint(.white)
+            .padding(.top, 4)
+        }
+        .padding(.horizontal, 32)
+        .padding(.bottom, 60)
     }
 
     private var hintText: String {
@@ -207,34 +217,35 @@ struct ScanCameraView: View {
     private func checkCamera() async {
         let hasCamera = UIImagePickerController.isSourceTypeAvailable(.camera)
         #if DEBUG
-        // 截图用：-cameraPermission ask / denied（模拟器没有相机）
-        if let forced = OnboardingDebug.value(after: "-cameraPermission") {
-            permission = forced == "denied" ? .denied : .ask
+        // 截图用：-cameraPermission denied（模拟器没有相机）
+        if OnboardingDebug.value(after: "-cameraPermission") == "denied" {
+            cameraDenied = true
+            showsDeniedNotice = true
+            cameraChecked = true
             return
         }
         #endif
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .notDetermined:
+            // 用户点了拍照，直接弹系统框，用途写在 NSCameraUsageDescription 里
             if hasCamera {
-                // 先看说明页，点“允许”再弹系统框
-                permission = .ask
+                await requestCamera()
                 return
             }
             cameraDenied = false
         case .denied, .restricted:
             cameraDenied = true
-            permission = hasCamera ? .denied : nil
         default:
             cameraDenied = false
-            permission = nil
         }
+        showsDeniedNotice = cameraDenied && hasCamera
         cameraChecked = true
     }
 
     private func requestCamera() async {
         let granted = await AVCaptureDevice.requestAccess(for: .video)
         cameraDenied = !granted
-        permission = granted ? nil : .denied
+        showsDeniedNotice = !granted
         cameraChecked = true
     }
 

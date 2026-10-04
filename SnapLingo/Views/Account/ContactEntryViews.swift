@@ -42,7 +42,7 @@ struct PhoneEntryView: View {
                             Text(verbatim: "\(PhoneEntryView.flag(region.code)) +\(region.dialCode)")
                             Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
                         }
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.callout.weight(.bold))
                         .foregroundStyle(Theme.homeInk)
                         .padding(.horizontal, 10)
                         .frame(height: 40)
@@ -53,7 +53,7 @@ struct PhoneEntryView: View {
                     TextField("手机号", text: $number)
                         .keyboardType(.phonePad)
                         .textContentType(.telephoneNumber)
-                        .font(.system(size: 19, weight: .bold))
+                        .font(.title3.weight(.bold))
                         .foregroundStyle(Theme.homeInk)
                         .focused($focused)
                         .onChange(of: number) { error = nil }
@@ -113,7 +113,7 @@ struct EmailEntryView: View {
                     .textContentType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(Theme.homeInk)
                     .padding(.horizontal, 6)
                     .focused($focused)

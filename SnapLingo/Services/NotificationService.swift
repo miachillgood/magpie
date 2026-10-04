@@ -8,7 +8,8 @@ import UserNotifications
 
 /// 每日学习提醒
 enum NotificationService {
-    private static let prefix = "daily-study-reminder-"
+    static let reminderPrefix = "daily-study-reminder-"
+    private static var prefix: String { reminderPrefix }
     private static let daysAhead = 7
 
     static func requestAuthorization() async -> Bool {
@@ -49,5 +50,23 @@ enum NotificationService {
             )
             center.add(UNNotificationRequest(identifier: "\(prefix)\(offset)", content: content, trigger: trigger))
         }
+    }
+}
+
+/// 通知的点击处理：点每日提醒切到复习页；App 在前台时也照常显示横幅
+final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = NotificationRouter()
+    weak var coordinator: AppCoordinator?
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        guard response.notification.request.identifier.hasPrefix(NotificationService.reminderPrefix) else { return }
+        await MainActor.run {
+            coordinator?.showingScan = false
+            coordinator?.selectedTab = .review
+        }
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        [.banner, .sound]
     }
 }

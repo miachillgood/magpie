@@ -65,14 +65,14 @@ struct DayReviewSheet: View {
 
                 if !words.isEmpty {
                     Text("那天遇见的词")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(Theme.homeMuted)
                         .padding(.top, 4)
                     FlowLayout(spacing: 8) {
                         ForEach(Array(words.prefix(12).enumerated()), id: \.element.id) { index, word in
                             Button { onOpenWord(word) } label: {
                                 Text(word.word)
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundStyle(Theme.homeInk)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 7)
@@ -89,7 +89,7 @@ struct DayReviewSheet: View {
                         Text("复习这一天")
                         Image(systemName: "arrow.right")
                     }
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.body.weight(.bold))
                     .foregroundStyle(Theme.cream)
                     .frame(maxWidth: .infinity)
                     .frame(height: 54)
@@ -100,7 +100,7 @@ struct DayReviewSheet: View {
                 .padding(.top, 8)
 
                 Text(footnote(words))
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(Theme.homeMuted)
                     .frame(maxWidth: .infinity)
                     .multilineTextAlignment(.center)
@@ -118,11 +118,11 @@ struct DayReviewSheet: View {
             Text(HomeDates.dateText(for: day))
                 .font(.brand(28))
             Text(HomeDates.weekday(for: day))
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(Theme.homeMuted)
             Spacer(minLength: 8)
             Text("\(scans.count) 个场景 · \(wordCount) 个词")
-                .font(.system(size: 13))
+                .font(.footnote)
                 .foregroundStyle(Theme.homeMuted)
         }
         .foregroundStyle(Theme.homeInk)

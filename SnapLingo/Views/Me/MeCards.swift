@@ -2,7 +2,7 @@
 //  MeCards.swift
 //  SnapLingo
 //
-//  「我的」页的几张白卡片：我的水平、我的足迹、设置、账号、数据。
+//  「我的」页：水平、足迹两张白卡片；设置、账号、数据是系统列表的分组。
 //
 
 import SwiftData
@@ -24,77 +24,6 @@ private struct MeCard<Content: View>: View {
     }
 }
 
-/// 卡片外面的分组标题（同复习页「按场景复习」）
-private struct MeSectionTitle: View {
-    var title: LocalizedStringKey
-    var note: String?
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title)
-                .font(.system(size: 18, weight: .heavy))
-                .foregroundStyle(Theme.homeInk)
-                .accessibilityAddTraits(.isHeader)
-            Spacer(minLength: 8)
-            if let note {
-                Text(note)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.homeMuted)
-                    .lineLimit(1)
-            }
-        }
-        .padding(.horizontal, 4)
-        .padding(.bottom, 12)
-    }
-}
-
-/// 设置行：淡蓝底的线条图标 + 标题 + 右边的控件
-private struct SettingRow<Trailing: View>: View {
-    var icon: String
-    var title: LocalizedStringKey
-    var subtitle: LocalizedStringKey?
-    var danger = false
-    var showsDivider = true
-    @ViewBuilder var trailing: Trailing
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(danger ? Theme.danger : Theme.homeInk)
-                .frame(width: 34, height: 34)
-                .background(danger ? Theme.danger.opacity(0.1) : Theme.placeChip, in: .rect(cornerRadius: 11, style: .continuous))
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(danger ? Theme.danger : Theme.homeInk)
-                if let subtitle {
-                    Text(subtitle)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.homeMuted)
-                }
-            }
-            Spacer(minLength: 8)
-            trailing
-        }
-        .padding(.vertical, 10)
-        .overlay(alignment: .bottom) {
-            if showsDivider {
-                Rectangle().fill(Theme.homeInk.opacity(0.07)).frame(height: 1).padding(.leading, 46)
-            }
-        }
-        .contentShape(.rect)
-    }
-}
-
-private struct Chevron: View {
-    var body: some View {
-        Image(systemName: "chevron.right")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Theme.homeInk.opacity(0.25))
-    }
-}
-
 // MARK: - 我的水平
 
 struct LevelCard: View {
@@ -106,12 +35,12 @@ struct LevelCard: View {
         MeCard {
             HStack(alignment: .firstTextBaseline) {
                 Text("我的水平")
-                    .font(.system(size: 18, weight: .heavy))
+                    .font(.headline.weight(.heavy))
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 Button(action: onRetest) {
                     Label("重新测一次", systemImage: "arrow.clockwise")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.footnote.weight(.bold))
                 }
                 .buttonStyle(.plain)
             }
@@ -132,7 +61,7 @@ struct LevelCard: View {
                 .padding(.top, 10)
 
             Text(level.summary)
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(Theme.homeInk.opacity(0.75))
                 .padding(.top, 4)
 
@@ -140,7 +69,7 @@ struct LevelCard: View {
                 let progress = CEFRLevel.progressWithinLevel(score: settings.levelScore)
                 HStack {
                     Text("离「\(next.displayName)」还差一点")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                     Spacer()
                     Text(progress, format: .percent.precision(.fractionLength(0)))
                         .font(.brand(12))
@@ -158,7 +87,7 @@ struct LevelCard: View {
                 .padding(.top, 7)
             } else {
                 Text("已经是最高等级了")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.homeMuted)
                     .padding(.top, 14)
             }
@@ -178,7 +107,7 @@ struct FootprintCard: View {
     var body: some View {
         MeCard {
             Text("我的足迹")
-                .font(.system(size: 18, weight: .heavy))
+                .font(.headline.weight(.heavy))
                 .foregroundStyle(Theme.homeInk)
                 .accessibilityAddTraits(.isHeader)
             HStack(alignment: .firstTextBaseline) {
@@ -204,7 +133,7 @@ struct FootprintCard: View {
                 Text("· 最长 \(longest) 天")
                     .foregroundStyle(Theme.homeMuted)
             }
-            .font(.system(size: 14))
+            .font(.subheadline)
             .foregroundStyle(Theme.homeInk)
             .padding(.top, 12)
         }
@@ -221,7 +150,7 @@ struct FootprintCard: View {
                         .contentTransition(.numericText())
                 } else {
                     Text(piece.plainText)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(Theme.homeMuted)
                 }
             }
@@ -239,86 +168,95 @@ struct FootprintCard: View {
 
 // MARK: - 设置
 
+/// 设置分组：系统列表的样式（和 iPhone 设置 App 一致），放在 MeView 的 List 里
 struct SettingsCard: View {
     @Bindable var settings: UserSettings
-    var wordCount: Int
 
     @Environment(\.modelContext) private var context
     @AppStorage(HomeTheme.storageKey) private var themeRaw = HomeTheme.sky.rawValue
     @State private var notificationsDenied = false
-    @State private var pendingLanguage: NativeLanguage?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            MeSectionTitle(title: "设置")
-            MeCard(padding: 14) {
-                SettingRow(icon: "plus", title: "每天学新词") {
-                    Picker("每天学新词", selection: $settings.newWordsPerDay) {
-                        ForEach(StudyPace.dailyOptions, id: \.self) { count in
-                            Text("\(count) 个").tag(count)
-                        }
-                    }
-                    .labelsHidden()
-                    .tint(Theme.homeMuted)
+        Section {
+            Picker(selection: $settings.newWordsPerDay) {
+                ForEach(StudyPace.dailyOptions, id: \.self) { count in
+                    Text("\(count) 个").tag(count)
                 }
-                SettingRow(icon: "arrow.2.squarepath", title: "每天最多复习") {
-                    Picker("每天最多复习", selection: $settings.maxReviewsPerDay) {
-                        ForEach([30, 50, 100, 200, 500], id: \.self) { count in
-                            Text("\(count) 个").tag(count)
-                        }
-                    }
-                    .labelsHidden()
-                    .tint(Theme.homeMuted)
-                }
-                SettingRow(
-                    icon: "bell",
-                    title: "每日提醒",
-                    subtitle: notificationsDenied ? "通知权限已关闭，请在系统设置里允许" : nil
-                ) {
-                    Toggle("每日提醒", isOn: Binding(
-                        get: { settings.reminderEnabled },
-                        set: { enabled in Task { await setReminder(enabled) } }
-                    ))
-                    .labelsHidden()
-                }
-                if settings.reminderEnabled {
-                    SettingRow(icon: "clock", title: "提醒时间") {
-                        DatePicker("提醒时间", selection: $settings.reminderTime, displayedComponents: .hourAndMinute)
-                            .labelsHidden()
-                    }
-                }
-                SettingRow(icon: "waveform", title: "口音") {
-                    Picker("口音", selection: $settings.accentRaw) {
-                        ForEach(SpeechAccent.allCases) { accent in
-                            Text(accent.title).tag(accent.rawValue)
-                        }
-                    }
-                    .labelsHidden()
-                    .tint(Theme.homeMuted)
-                }
-                Button {
-                    SpeechService.shared.accent = settings.accent
-                    SpeechService.shared.speak("Could I get a flat white, please?")
-                } label: {
-                    SettingRow(icon: "speaker.wave.2", title: "试听一句") { Chevron() }
-                }
-                .buttonStyle(.plain)
-                SettingRow(icon: "globe", title: "母语", subtitle: "单词释义和例句翻译用这种语言") {
-                    Picker("母语", selection: Binding(
-                        get: { settings.nativeLanguage },
-                        set: { chooseLanguage($0) }
-                    )) {
-                        ForEach(NativeLanguage.allCases) { language in
-                            Text(verbatim: language.endonym).tag(language)
-                        }
-                    }
-                    .labelsHidden()
-                    .tint(Theme.homeMuted)
-                }
-                SettingRow(icon: "paintpalette", title: "主题色", showsDivider: false) { EmptyView() }
-                ThemePicker(selection: $themeRaw)
-                    .padding(.top, 4)
+            } label: {
+                Label("每天学新词", systemImage: "plus")
             }
+            Picker(selection: $settings.maxReviewsPerDay) {
+                ForEach([30, 50, 100, 200, 500], id: \.self) { count in
+                    Text("\(count) 个").tag(count)
+                }
+            } label: {
+                Label("每天最多复习", systemImage: "arrow.2.squarepath")
+            }
+            Toggle(isOn: Binding(
+                get: { settings.reminderEnabled },
+                set: { enabled in Task { await setReminder(enabled) } }
+            )) {
+                Label {
+                    Text("每日提醒")
+                    if notificationsDenied {
+                        Text("通知权限已关闭，请在系统设置里允许")
+                    }
+                } icon: {
+                    Image(systemName: "bell")
+                }
+            }
+            if settings.reminderEnabled {
+                DatePicker(selection: $settings.reminderTime, displayedComponents: .hourAndMinute) {
+                    Label("提醒时间", systemImage: "clock")
+                }
+            }
+            // 绑到 accent 而不是 accentRaw：旧版本存的 en-NZ 等值会被映射成现有选项，不会显示成空白
+            Picker(selection: Binding(
+                get: { settings.accent },
+                set: { settings.accent = $0 }
+            )) {
+                ForEach(SpeechAccent.allCases) { accent in
+                    Text(accent.title).tag(accent)
+                }
+            } label: {
+                Label("口音", systemImage: "waveform")
+            }
+            Button {
+                SpeechService.shared.accent = settings.accent
+                SpeechService.shared.speak("Could I get a flat white, please?")
+            } label: {
+                Label("试听一句", systemImage: "speaker.wave.2")
+            }
+            .foregroundStyle(Theme.homeInk)
+            // 界面语言跟随 iOS，这里只是跳到 iPhone 设置里 Magpie 那一页
+            Button {
+                InterfaceLanguage.openSystemSettings()
+            } label: {
+                LabeledContent {
+                    HStack(spacing: 6) {
+                        Text(verbatim: InterfaceLanguage.current.endonym)
+                        // 跳出 App 到系统设置：用斜箭头
+                        Image(systemName: "arrow.up.forward")
+                            .font(.footnote.weight(.semibold))
+                    }
+                } label: {
+                    Label {
+                        Text("界面语言")
+                        Text("在 iPhone 设置里更改")
+                            .foregroundStyle(.secondary)
+                    } icon: {
+                        Image(systemName: "character.bubble")
+                    }
+                }
+            }
+            .foregroundStyle(Theme.homeInk)
+            VStack(alignment: .leading, spacing: 10) {
+                Label("主题色", systemImage: "paintpalette")
+                ThemePicker(selection: $themeRaw)
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text("设置")
         }
         .onChange(of: settings.newWordsPerDay) { try? context.save(); StudyReminder.refresh(context: context) }
         .onChange(of: settings.maxReviewsPerDay) { try? context.save() }
@@ -328,35 +266,6 @@ struct SettingsCard: View {
             SpeechService.shared.accent = settings.accent
             try? context.save()
         }
-        .confirmationDialog(
-            Text("把已有的 \(wordCount) 个词换成\(pendingLanguage?.endonym ?? "")释义？", comment: "Confirm dialog after changing native language; the argument is a language name like Español"),
-            isPresented: Binding(get: { pendingLanguage != nil }, set: { if !$0 { pendingLanguage = nil } }),
-            titleVisibility: .visible
-        ) {
-            if let language = pendingLanguage {
-                Button("全部换成\(language.endonym)") { applyLanguage(language, regenerate: true) }
-                Button("只用于以后的新词") { applyLanguage(language, regenerate: false) }
-            }
-            Button("取消", role: .cancel) { pendingLanguage = nil }
-        } message: {
-            Text("需要联网重新生成，场景标题不会改，你可以自己重命名。")
-        }
-    }
-
-    private func chooseLanguage(_ language: NativeLanguage) {
-        guard language != settings.nativeLanguage else { return }
-        if wordCount > 0 {
-            pendingLanguage = language
-        } else {
-            applyLanguage(language, regenerate: false)
-        }
-    }
-
-    private func applyLanguage(_ language: NativeLanguage, regenerate: Bool) {
-        settings.nativeLanguage = language
-        try? context.save()
-        if regenerate { ExplanationQueue.shared.regenerateAll(context: context) }
-        pendingLanguage = nil
     }
 
     private func setReminder(_ enabled: Bool) async {
@@ -382,25 +291,24 @@ struct AccountCard: View {
     @State private var confirmingSignOut = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            MeSectionTitle(title: "账号", note: settings.appleEmail.isEmpty ? nil : "Apple ID · \(AppleAccount.maskedEmail(settings.appleEmail))")
-            MeCard(padding: 14) {
-                Button(action: onEditName) {
-                    SettingRow(icon: "pencil", title: "昵称") {
-                        HStack(spacing: 4) {
-                            Text(settings.nickname)
-                                .font(.system(size: 15))
-                                .foregroundStyle(Theme.homeMuted)
-                                .lineLimit(1)
-                            Chevron()
-                        }
-                    }
+        Section {
+            Button(action: onEditName) {
+                LabeledContent {
+                    Text(settings.nickname)
+                        .lineLimit(1)
+                } label: {
+                    Label("昵称", systemImage: "pencil")
                 }
-                .buttonStyle(.plain)
-                Button { confirmingSignOut = true } label: {
-                    SettingRow(icon: "rectangle.portrait.and.arrow.right", title: "退出登录", showsDivider: false) { EmptyView() }
-                }
-                .buttonStyle(.plain)
+            }
+            .foregroundStyle(Theme.homeInk)
+            Button("退出登录", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                confirmingSignOut = true
+            }
+        } header: {
+            Text("账号")
+        } footer: {
+            if !settings.appleEmail.isEmpty {
+                Text(verbatim: "Apple ID · \(AppleAccount.maskedEmail(settings.appleEmail))")
             }
         }
         .confirmationDialog("退出登录？", isPresented: $confirmingSignOut, titleVisibility: .visible) {
@@ -423,38 +331,45 @@ struct DataCard: View {
     @AppStorage(AIConsent.storageKey) private var consentRaw = AIConsent.State.undecided.rawValue
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            MeSectionTitle(title: "数据")
-            MeCard(padding: 14) {
-                SettingRow(icon: "lock", title: "照片和单词只存在这台手机上") { EmptyView() }
-                SettingRow(icon: "sparkles", title: "AI 挑词和释义", subtitle: "识别出的文字会发给 Anthropic 的 Claude") {
-                    // 打开时先看一遍说明再同意；关掉立刻生效
-                    Toggle("AI 挑词和释义", isOn: Binding(
-                        get: { consentRaw == AIConsent.State.granted.rawValue },
-                        set: { on in
-                            if on { showingConsent = true } else { consentRaw = AIConsent.State.declined.rawValue }
-                        }
-                    ))
-                    .labelsHidden()
+        Section {
+            // 打开时先看一遍说明再同意；关掉立刻生效
+            Toggle(isOn: Binding(
+                get: { consentRaw == AIConsent.State.granted.rawValue },
+                set: { on in
+                    if on { showingConsent = true } else { consentRaw = AIConsent.State.declined.rawValue }
                 }
-                ShareLink(item: WordExportFile(rows: WordExport.rows(from: words)), preview: SharePreview(Text("Magpie 单词"))) {
-                    SettingRow(icon: "square.and.arrow.up", title: "导出单词", subtitle: "表格文件，可以导入 Anki") { Chevron() }
+            )) {
+                Label {
+                    Text("AI 挑词和释义")
+                    Text("识别出的文字会发给 Anthropic 的 Claude")
+                } icon: {
+                    Image(systemName: "sparkles")
                 }
-                .buttonStyle(.plain)
-                .disabled(words.isEmpty)
-                #if DEBUG
-                Button {
-                    DemoData.seed(into: context)
-                } label: {
-                    SettingRow(icon: "wand.and.stars", title: "导入示例数据") { EmptyView() }
-                }
-                .buttonStyle(.plain)
-                #endif
-                Button { confirmingWipe = true } label: {
-                    SettingRow(icon: "trash", title: "清空所有数据", danger: true, showsDivider: false) { EmptyView() }
-                }
-                .buttonStyle(.plain)
             }
+            ShareLink(item: WordExportFile(rows: WordExport.rows(from: words)), preview: SharePreview(Text("Magpie 单词"))) {
+                Label {
+                    Text("导出单词")
+                    Text("表格文件，可以导入 Anki")
+                        .foregroundStyle(.secondary)
+                } icon: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+            }
+            .foregroundStyle(Theme.homeInk)
+            .disabled(words.isEmpty)
+            #if DEBUG
+            Button("导入示例数据", systemImage: "wand.and.stars") {
+                DemoData.seed(into: context)
+            }
+            .foregroundStyle(Theme.homeInk)
+            #endif
+            Button("清空所有数据", systemImage: "trash", role: .destructive) {
+                confirmingWipe = true
+            }
+        } header: {
+            Text("数据")
+        } footer: {
+            Text("照片和单词只存在这台手机上。")
         }
         .sheet(isPresented: $showingConsent) {
             AIConsentSheet()
@@ -475,7 +390,7 @@ struct ThemePicker: View {
     @Binding var selection: String
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 4) {
             ForEach(HomeTheme.allCases) { theme in
                 let selected = HomeTheme(storedValue: selection) == theme
                 Button {
@@ -493,8 +408,9 @@ struct ThemePicker: View {
                         Text(theme.title)
                             .font(.caption2.weight(selected ? .bold : .medium))
                             .foregroundStyle(selected ? Theme.homeInk : Theme.homeMuted)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity)
                     .contentShape(.rect)

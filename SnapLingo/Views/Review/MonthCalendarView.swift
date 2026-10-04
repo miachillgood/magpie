@@ -37,7 +37,7 @@ struct MonthCalendarView: View {
                 grid(days)
                 stats(days)
                 Text("点有照片的日子，复习那一天的词")
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(Theme.homeMuted)
             }
             .padding(.horizontal, 20)
@@ -80,7 +80,7 @@ struct MonthCalendarView: View {
             LazyVGrid(columns: columns, spacing: 0) {
                 ForEach(Array(symbols.enumerated()), id: \.offset) { _, symbol in
                     Text(symbol)
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(Theme.homeMuted)
                 }
             }
@@ -160,7 +160,7 @@ struct MonthCalendarView: View {
                 .foregroundStyle(Theme.homeInk)
                 .contentTransition(.numericText())
             Text(label)
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(Theme.homeMuted)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

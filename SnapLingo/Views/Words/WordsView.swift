@@ -12,12 +12,16 @@ struct WordsView: View {
     @Query(sort: \VocabWord.addedAt, order: .reverse) private var words: [VocabWord]
     @State private var query = ""
     @State private var filter: WordsFilter
-    @FocusState private var searchFocused: Bool
-    @State private var didAutoFocus = false
+    @State private var searching = false
+    /// 左滑删除先确认（和词夹里的删除一致）
+    @State private var pendingDelete: VocabWord?
+    @State private var deletedCount = 0
     private let startsSearching: Bool
 
     init(initialFilter: WordsFilter = .all, startsSearching: Bool = false) {
         _filter = State(initialValue: initialFilter)
+        // 从放大镜进来：搜索框一开始就是激活的，跟着页面一起出现（不要等动画走完再跳一下）
+        _searching = State(initialValue: startsSearching)
         self.startsSearching = startsSearching
     }
 
@@ -81,7 +85,25 @@ struct WordsView: View {
                     .listRowSeparator(.hidden)
                     .swipeActions(edge: .trailing) {
                         Button("删除", systemImage: "trash", role: .destructive) {
-                            WordLibrary.delete(word, context: context)
+                            pendingDelete = word
+                        }
+                    }
+                    .contextMenu {
+                        Button("读一遍", systemImage: "speaker.wave.2") {
+                            SpeechService.shared.speak(word.word)
+                        }
+                        if word.excludedFromReview {
+                            Button("恢复复习", systemImage: "arrow.uturn.backward") {
+                                WordLibrary.setMastered(word, false, context: context)
+                            }
+                        } else {
+                            Button("标记为已掌握", systemImage: "checkmark.seal") {
+                                WordLibrary.setMastered(word, true, context: context)
+                            }
+                        }
+                        Divider()
+                        Button("删除", systemImage: "trash", role: .destructive) {
+                            pendingDelete = word
                         }
                     }
                     .swipeActions(edge: .leading) {
@@ -104,69 +126,27 @@ struct WordsView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.cream.ignoresSafeArea())
         .scrollDismissesKeyboard(.immediately)
-        // 自己的搜索框钉在导航栏下面：系统的 .searchable 一激活会把导航栏收起来，整页往上跳
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if !words.isEmpty {
-                searchField
-                    .padding(.horizontal, Spacing.lg)
-                    .padding(.top, 4)
-                    .padding(.bottom, 8)
-                    .background(Theme.cream)
-            }
-        }
         .navigationTitle("词库")
+        // 系统搜索框：一直显示在导航栏下面，激活时不收起导航栏和筛选
+        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("搜索单词或释义"))
+        .searchPresentationToolbarBehavior(.avoidHidingContent)
+        .autocorrectionDisabled()
+        .textInputAutocapitalization(.never)
         .sensoryFeedback(.selection, trigger: filter)
-        .task {
-            // 从复习页的放大镜进来：等 push 动画走完再聚焦，不然焦点会丢
-            guard startsSearching, !didAutoFocus else { return }
-            didAutoFocus = true
-            try? await Task.sleep(for: .milliseconds(600))
-            searchFocused = true
-        }
-    }
-
-    private var searchField: some View {
-        HStack(spacing: Spacing.xs) {
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.homeInk)
-                TextField("搜索单词或释义", text: $query)
-                    .font(.system(size: 17))
-                    .foregroundStyle(Theme.homeInk)
-                    .focused($searchFocused)
-                    .submitLabel(.search)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                if !query.isEmpty {
-                    Button {
-                        query = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 17))
-                            .foregroundStyle(Theme.homeMuted)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("清除")
-                }
+        .sensoryFeedback(.impact(weight: .medium), trigger: deletedCount)
+        .confirmationDialog(
+            "删除“\(pendingDelete?.word ?? "")”？",
+            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                guard let word = pendingDelete else { return }
+                withAnimation { WordLibrary.delete(word, context: context) }
+                deletedCount += 1
             }
-            .padding(.horizontal, 14)
-            .frame(height: 44)
-            .background(Theme.homeInk.opacity(0.06), in: .capsule)
-            .contentShape(.capsule)
-            .onTapGesture { searchFocused = true }
-
-            if searchFocused {
-                Button("取消") {
-                    query = ""
-                    searchFocused = false
-                }
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Theme.homeInk)
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-            }
+        } message: {
+            Text("复习记录也会一起删掉。")
         }
-        .animation(.snappy, value: searchFocused)
     }
 
     private var filterBar: some View {

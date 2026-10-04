@@ -73,7 +73,7 @@ struct DayGroupSection: View {
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 8)
             Text("\(group.scans.count) 个场景 · \(group.wordCount) 个词")
-                .font(.system(size: 13, weight: .medium))
+                .font(.footnote.weight(.medium))
                 .foregroundStyle(Theme.homeMuted)
         }
     }
@@ -93,6 +93,7 @@ struct DayGroupSection: View {
                         .matchedTransitionSource(id: scan.id, in: zoom)
                 }
                 .buttonStyle(.pressable)
+                .sceneContextMenu(scan)
                 .accessibilityLabel("\(scan.displayTitle)，\(scan.words.count) 个词")
 
                 ForEach(spots) { spot in
@@ -112,7 +113,7 @@ struct DayGroupSection: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Theme.homeMuted)
                     Text(scan.displayTitle)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.homeInk)
                         .lineLimit(1)
                 }

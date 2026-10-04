@@ -43,32 +43,40 @@ enum StudyPace: Int, CaseIterable, Identifiable, Sendable {
     static func minutes(forNewWords count: Int) -> Int { count }
 }
 
-/// 发音口音
+/// 发音口音：只留系统真有语音的三种。
+/// 系统英文语音只有美、英、澳、爱尔兰、印度、南非；以前列过的新西兰、加拿大没有语音，会悄悄退回美式
 enum SpeechAccent: String, CaseIterable, Identifiable, Sendable {
-    case newZealand = "en-NZ"
-    case australia = "en-AU"
-    case britain = "en-GB"
     case america = "en-US"
-    case canada = "en-CA"
-    case ireland = "en-IE"
+    case britain = "en-GB"
+    case australia = "en-AU"
 
     var id: String { rawValue }
 
-    /// 国家名，跟随界面语言（新西兰 / New Zealand / ニュージーランド）
     var title: String {
-        let region = String(rawValue.suffix(2))
-        return Locale.current.localizedString(forRegionCode: region) ?? region
+        switch self {
+        case .america:   String(localized: "美式", comment: "Pronunciation accent option: American English")
+        case .britain:   String(localized: "英式", comment: "Pronunciation accent option: British English")
+        case .australia: String(localized: "澳式", comment: "Pronunciation accent option: Australian English")
+        }
     }
 
-    /// 根据当前地区选择默认口音
+    /// 读存下来的值；旧版本存过的新西兰 / 加拿大 / 爱尔兰换成最接近的一种
+    static func stored(_ raw: String) -> SpeechAccent {
+        if let accent = SpeechAccent(rawValue: raw) { return accent }
+        switch raw {
+        case "en-NZ": return .australia
+        case "en-IE": return .britain
+        case "en-CA": return .america
+        default:      return .regionDefault
+        }
+    }
+
+    /// 根据当前地区选择默认口音：澳新用澳式，英国爱尔兰用英式，其他美式
     static var regionDefault: SpeechAccent {
         switch Locale.current.region?.identifier {
-        case "NZ": .newZealand
-        case "AU": .australia
-        case "GB": .britain
-        case "CA": .canada
-        case "IE": .ireland
-        default:   .america
+        case "NZ", "AU": .australia
+        case "GB", "IE": .britain
+        default:         .america
         }
     }
 }
@@ -113,7 +121,7 @@ final class UserSettings {
     var level: CEFRLevel { CEFRLevel.from(score: levelScore) }
 
     var accent: SpeechAccent {
-        get { SpeechAccent(rawValue: accentRaw) ?? .regionDefault }
+        get { SpeechAccent.stored(accentRaw) }
         set { accentRaw = newValue.rawValue }
     }
 

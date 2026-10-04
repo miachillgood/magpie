@@ -7,13 +7,19 @@
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct SnapLingoApp: App {
     let container: ModelContainer
-    @State private var coordinator = AppCoordinator()
+    @State private var coordinator: AppCoordinator
 
     init() {
+        let coordinator = AppCoordinator()
+        _coordinator = State(initialValue: coordinator)
+        // 点每日提醒直接打开复习页
+        NotificationRouter.shared.coordinator = coordinator
+        UNUserNotificationCenter.current().delegate = NotificationRouter.shared
         container = Self.makeContainer()
         Typography.configureNavigationBar()
         #if DEBUG

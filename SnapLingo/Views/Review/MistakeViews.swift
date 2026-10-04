@@ -23,10 +23,10 @@ struct MistakesCard: View {
             NavigationLink(value: ReviewRoute.mistakes) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("错词重练")
-                        .font(.system(size: 18, weight: .heavy))
+                        .font(.headline.weight(.heavy))
                         .accessibilityAddTraits(.isHeader)
                     Text("\(words.count) 个词")
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(Theme.homeMuted)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -41,7 +41,7 @@ struct MistakesCard: View {
             FlowLayout(spacing: 8) {
                 ForEach(Array(words.prefix(5).enumerated()), id: \.element.id) { index, word in
                     Text(verbatim: word.word)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.homeInk)
                         .padding(.horizontal, 13)
                         .padding(.vertical, 7)
@@ -52,7 +52,7 @@ struct MistakesCard: View {
                 }
                 if words.count > 5 {
                     Text(verbatim: "+\(words.count - 5)")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.homeMuted)
                         .padding(.vertical, 7)
                 }
@@ -64,7 +64,7 @@ struct MistakesCard: View {
                     Text("开始重练")
                     Image(systemName: "arrow.right")
                 }
-                .font(.system(size: 15, weight: .bold))
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(Theme.cream)
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
@@ -83,7 +83,6 @@ struct MistakesCard: View {
 struct MistakesView: View {
     @Query private var allWords: [VocabWord]
     @Environment(AppCoordinator.self) private var coordinator
-    @Environment(\.dismiss) private var dismiss
 
     private var words: [VocabWord] {
         let ids = MeStats.mistakeWordIDs(allWords.map { MistakeRecord(id: $0.id, mistakeAt: $0.mistakeAt, excludedFromReview: $0.excludedFromReview) })
@@ -95,31 +94,14 @@ struct MistakesView: View {
         let words = words
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    CircleIconButton(symbol: "chevron.left", size: 40) { dismiss() }
-                        .accessibilityLabel("返回")
-                    Spacer()
-                }
-                .padding(.top, 4)
-
-                Text("错词重练")
-                    .font(.system(size: 30, weight: .heavy))
-                    .foregroundStyle(Theme.homeInk)
-                    .padding(.top, 14)
-                    .accessibilityAddTraits(.isHeader)
-                Text("\(words.count) 个词")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Theme.homeMuted)
-                    .padding(.top, 4)
-
                 if words.isEmpty {
                     VStack(spacing: 10) {
                         Text("🎉").font(.system(size: 44))
                         Text("错词都练对了")
-                            .font(.system(size: 17, weight: .heavy))
+                            .font(.body.weight(.heavy))
                             .foregroundStyle(Theme.homeInk)
                         Text("复习时点了「不会」的词会出现在这里")
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(Theme.homeMuted)
                     }
                     .frame(maxWidth: .infinity)
@@ -133,7 +115,7 @@ struct MistakesView: View {
                             .buttonStyle(.pressable)
                         }
                     }
-                    .padding(.top, 18)
+                    .padding(.top, 8)
                 }
             }
             .padding(.horizontal, Spacing.lg)
@@ -141,7 +123,9 @@ struct MistakesView: View {
         }
         .scrollIndicators(.hidden)
         .background(Theme.mist.ignoresSafeArea())
-        .toolbarVisibility(.hidden, for: .navigationBar)
+        // 和同一栈里的词库、场景页一样用系统导航栏（返回按钮、边缘右滑）
+        .navigationTitle("错词重练")
+        .navigationSubtitle(Text("\(words.count) 个词"))
         .safeAreaInset(edge: .bottom) {
             if !words.isEmpty {
                 PrimaryButton(title: "开始重练") {
@@ -161,11 +145,11 @@ private struct MistakeRow: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: word.word)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(Theme.homeInk)
                 if !word.gloss.isEmpty {
                     Text(verbatim: word.gloss)
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(Theme.homeMuted)
                 }
             }

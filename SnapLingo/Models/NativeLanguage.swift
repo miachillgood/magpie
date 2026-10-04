@@ -3,7 +3,7 @@
 //  SnapLingo
 //
 //  用户的母语：决定单词释义、例句翻译、场景标题用什么语言生成。
-//  和界面语言分开——界面跟随 iPhone 系统语言。
+//  和界面语言分开——界面跟随 iOS；两者不一样时会问要不要把界面也换过去（见 InterfaceLanguage）。
 //
 
 import Foundation

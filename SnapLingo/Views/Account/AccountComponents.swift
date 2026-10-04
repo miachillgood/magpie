@@ -42,7 +42,7 @@ struct AccountScaffold<Content: View>: View {
                     .padding(.top, 22)
                     .accessibilityAddTraits(.isHeader)
                 subtitle
-                    .font(.system(size: 15))
+                    .font(.subheadline)
                     .foregroundStyle(Theme.homeMuted)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
@@ -68,7 +68,7 @@ struct AccountFieldCard<Field: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(label)
-                .font(.system(size: 13, weight: .bold))
+                .font(.footnote.weight(.bold))
                 .foregroundStyle(Theme.homeMuted)
             HStack(spacing: 8) { field }
                 .padding(.horizontal, 8)
@@ -113,7 +113,7 @@ struct AccountPrimaryButton: View {
                     Image(systemName: "arrow.right")
                 }
             }
-            .font(.system(size: 17, weight: .bold))
+            .font(.body.weight(.bold))
             .foregroundStyle(Theme.cream)
             .frame(maxWidth: .infinity)
             .frame(height: 56)

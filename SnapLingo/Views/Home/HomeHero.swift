@@ -13,8 +13,8 @@ import SwiftUI
 
 /// 句子里的一段
 enum HeadlinePiece: Hashable {
-    /// 灰色小字，单独一行（今天在）
-    case caption(String)
+    /// 灰色小字，单独一行（今天在）；place 是句子里的街区名，加粗加图钉突出
+    case caption(String, place: String? = nil)
     case text(String)
     /// 场景图标 + 蓝色胶囊里的地点关键词 + 其余部分（Little Bird｜咖啡菜单）
     case place(symbol: String, highlight: String, rest: String)
@@ -24,7 +24,7 @@ enum HeadlinePiece: Hashable {
 
     var plainText: String {
         switch self {
-        case .caption(let text), .text(let text), .emoji(let text), .marker(let text): text
+        case .caption(let text, _), .text(let text), .emoji(let text), .marker(let text): text
         case .place(_, let highlight, let rest): highlight + rest
         }
     }
@@ -129,7 +129,6 @@ struct HomeHero: View {
     var minHeight: CGFloat
     var metrics: HomeMetrics
     var onAction: (HomeHeroAction) -> Void
-    var onProfile: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
@@ -138,9 +137,6 @@ struct HomeHero: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
-                .padding(.horizontal, metrics.sidePadding)
-
             // 屏幕高、内容放得下时，多出来的空间平均分到这几段留白里
             Spacer(minLength: metrics.gap(4))
 
@@ -196,33 +192,6 @@ struct HomeHero: View {
         reduceMotion ? nil : animation.delay(delay)
     }
 
-    // MARK: 头部
-
-    private var header: some View {
-        HStack {
-            Text("Magpie")
-                .font(.brand(21))
-                .kerning(-0.4)
-                .foregroundStyle(Theme.homeInk)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            HStack(spacing: 8) {
-                Button(action: onProfile) {
-                    Image(systemName: "person")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.homeInk)
-                        .frame(width: 36, height: 36)
-                        .background(Theme.sheet, in: .circle)
-                        .overlay(Circle().strokeBorder(Theme.homeInk.opacity(0.06)))
-                        .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
-                }
-                .buttonStyle(.pressable)
-                .accessibilityLabel("我的")
-            }
-        }
-        .frame(height: 44)
-    }
-
     // MARK: 句子
 
     private var headline: some View {
@@ -256,7 +225,7 @@ struct HomeHero: View {
         VStack(alignment: .leading, spacing: 10) {
             if let note = content.chipsNote {
                 Text(note)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(Theme.homeMuted)
             }
             // 只排一行：放不下就少放一个
@@ -314,7 +283,7 @@ struct HomeHero: View {
                 Text(content.actionTitle)
                 if !content.symbolLeads { Image(systemName: content.actionSymbol) }
             }
-            .font(.system(size: 16, weight: .bold))
+            .font(.callout.weight(.bold))
             .foregroundStyle(Theme.cream)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -332,7 +301,6 @@ struct HomeHero: View {
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 10)
         .animation(motion(.smooth(duration: 0.5), delay: 0.95), value: appeared)
-        .sensoryFeedback(.impact(weight: .light), trigger: appeared)
     }
 }
 
@@ -411,12 +379,20 @@ private struct HeadlineLine: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// 灰色小字里的街区名换成深色、加粗、前面带图钉
+    private func captionText(_ text: String, place: String?) -> Text {
+        guard let place, let range = text.range(of: place) else { return Text(text) }
+        let pin = Text(Image(systemName: "mappin.circle.fill")).foregroundStyle(Theme.sparkle)
+        let name = Text(place).font(.body.weight(.heavy)).foregroundStyle(Theme.homeInk)
+        return Text("\(Text(text[..<range.lowerBound]))\(pin)\u{2009}\(name)\(Text(text[range.upperBound...]))")
+    }
+
     @ViewBuilder
     private func segment(_ piece: HeadlinePiece, size: CGFloat) -> some View {
         switch piece {
-        case .caption(let text):
-            Text(text)
-                .font(.system(size: 15, weight: .semibold))
+        case .caption(let text, let place):
+            captionText(text, place: place)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.homeMuted)
                 .fixedSize()
         case .text(let text):

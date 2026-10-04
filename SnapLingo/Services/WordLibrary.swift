@@ -278,6 +278,13 @@ final class ExplanationQueue {
         let descriptor = FetchDescriptor<VocabWord>(predicate: #Predicate { $0.explanationStatusRaw != readyRaw })
         let pending = (try? context.fetch(descriptor)) ?? []
         guard !pending.isEmpty else { return }
+        #if DEBUG
+        if DemoData.demoAI {
+            pending.forEach { _ = DemoData.fillExplanation($0) }
+            try? context.save()
+            return
+        }
+        #endif
 
         // 按场景分组，让解释贴合场景
         let groups = Dictionary(grouping: pending) { $0.latestScan?.scene ?? .general }

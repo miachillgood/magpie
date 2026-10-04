@@ -82,7 +82,7 @@ struct CodeEntryView: View {
                         .fontWeight(.bold)
                         .foregroundStyle(Theme.homeInk)
                 }
-                .font(.system(size: 14))
+                .font(.subheadline)
             }
         }
         .onAppear { focused = true }

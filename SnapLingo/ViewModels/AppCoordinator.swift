@@ -10,6 +10,8 @@ enum AppTab: Hashable {
     case home
     /// 复习（包含词库）
     case review
+    /// 标签栏右边单独的圆形快门：点了打开相机，不会真的切过去
+    case snap
 }
 
 /// 学习会话的范围
@@ -37,6 +39,8 @@ final class AppCoordinator {
     /// 今天还有要学 / 要复习的词（底部“复习”图标上的小红点）
     var reviewPending = false
     var studyRequest: StudyRequest?
+    /// 从 Spotlight 点开的单词：复习页收到后推入单词详情
+    var openWordID: UUID?
 
     func startScan() {
         showingScan = true

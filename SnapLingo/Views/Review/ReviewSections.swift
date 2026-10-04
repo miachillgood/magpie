@@ -71,7 +71,7 @@ struct RecentDaysStrip: View {
                     Text("复习")
                 }
             }
-            .font(.system(size: 11))
+            .font(.caption2)
             .foregroundStyle(Theme.homeMuted)
             .accessibilityHidden(true)
         }
@@ -79,7 +79,7 @@ struct RecentDaysStrip: View {
 
     private var title: some View {
         Text("最近一周")
-            .font(.system(size: 18, weight: .heavy))
+            .font(.headline.weight(.heavy))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .accessibilityAddTraits(.isHeader)
@@ -87,7 +87,7 @@ struct RecentDaysStrip: View {
 
     private var hint: some View {
         Text("点一天，复习那天的词")
-            .font(.system(size: 12))
+            .font(.caption)
             .foregroundStyle(Theme.homeMuted)
             .lineLimit(1)
     }
@@ -98,7 +98,7 @@ struct RecentDaysStrip: View {
                 Text(monthLabel)
                 Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold))
             }
-            .font(.system(size: 13, weight: .bold))
+            .font(.footnote.weight(.bold))
             .foregroundStyle(Theme.homeInk)
             .contentShape(.rect)
         }
@@ -132,7 +132,7 @@ private struct DayRing: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Text(HomeDates.narrowWeekday(for: day.date))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption2.weight(.medium))
                     .foregroundStyle(Theme.homeMuted)
 
                 ZStack {
@@ -220,11 +220,11 @@ struct LibraryEntryCard: View {
             NavigationLink(value: ReviewRoute.library(.all)) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("我的进度")
-                        .font(.system(size: 18, weight: .heavy))
+                        .font(.headline.weight(.heavy))
                         .accessibilityAddTraits(.isHeader)
                     Spacer()
                     Text("\(progress.total) 个词")
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(Theme.homeMuted)
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
@@ -239,7 +239,7 @@ struct LibraryEntryCard: View {
                 Text(verbatim: "\(progress.mastered)")
                     .font(.brand(30))
                 Text("个已掌握", comment: "After the big mastered-words number on the progress card")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .fixedSize()
                 // 横条和数字放在同一行
                 bar
@@ -247,7 +247,7 @@ struct LibraryEntryCard: View {
                     .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
                 if progress.masteredThisWeek > 0 {
                     Text("这周 +\(progress.masteredThisWeek)", comment: "Progress card: words newly mastered in the last 7 days")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.footnote.weight(.bold))
                         .foregroundStyle(Theme.success)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
@@ -266,7 +266,7 @@ struct LibraryEntryCard: View {
                             Text(verbatim: "\(segment.count)")
                                 .fontWeight(.bold)
                         }
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(Theme.homeInk)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)

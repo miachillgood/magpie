@@ -39,6 +39,8 @@ struct WordPickerView: View {
     @State private var placeTask: Task<ScanPlace?, Never>?
     /// 第一次拍完照：问一句要不要记下地点
     @State private var offeringLocation = false
+    /// 新拍的照片还没保存就点关闭：先确认
+    @State private var confirmingDiscard = false
 
     init(draft: WordLibrary.ScanDraft, onRetake: @escaping () -> Void) {
         self.mode = .new(draft)
@@ -269,7 +271,15 @@ struct WordPickerView: View {
                 Button("重拍", systemImage: "arrow.counterclockwise", action: onRetake)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("关闭", systemImage: "xmark") { coordinator.showingScan = false }
+                Button("关闭", systemImage: "xmark") {
+                    if savedCount == nil { confirmingDiscard = true } else { coordinator.showingScan = false }
+                }
+                .confirmationDialog("放弃这张照片？", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                    Button("放弃", role: .destructive) { coordinator.showingScan = false }
+                    Button("继续选词", role: .cancel) {}
+                } message: {
+                    Text("还没保存，选好的词不会加进词库。")
+                }
             }
         } else {
             ToolbarItem(placement: .cancellationAction) {

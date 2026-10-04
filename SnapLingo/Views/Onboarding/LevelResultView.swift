@@ -132,7 +132,7 @@ struct LevelResultView: View {
     private func focusCard(compact: Bool) -> some View {
         VStack(alignment: .leading, spacing: compact ? 10 : 14) {
             Text("拍照时会重点学这些")
-                .font(.system(size: 16, weight: .bold))
+                .font(.callout.weight(.bold))
                 .foregroundStyle(Theme.homeInk)
             HStack(alignment: .top, spacing: 8) {
                 ForEach(band.focus, id: \.title) { item in
@@ -153,7 +153,7 @@ struct LevelResultView: View {
         let artHeight: CGFloat = compact ? 104 : 118
         return VStack(alignment: .leading, spacing: 10) {
             Text("适合你水平的例子")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.homeMuted)
             // 横向翻页，高度跟着最高的那一页走（释义长的语言也不会被截断）
             ScrollView(.horizontal) {
@@ -287,7 +287,7 @@ private struct FocusTile: View {
                 .frame(width: compact ? 50 : 58, height: compact ? 50 : 58)
                 .background(item.tint, in: .circle)
             Text(item.title)
-                .font(.system(size: 14, weight: .bold))
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(Theme.homeInk)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
@@ -327,12 +327,12 @@ private struct ExampleRow: View {
                     .padding(.vertical, 4)
                     .background(Pastel.butter, in: .capsule)
                 Text(verbatim: example.phrase)
-                    .font(.system(size: 18, weight: .heavy))
+                    .font(.headline.weight(.heavy))
                     .foregroundStyle(Theme.homeInk)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
                 Text(example.meaning)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundStyle(Theme.homeMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }

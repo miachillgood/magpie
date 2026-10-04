@@ -22,8 +22,10 @@ struct PhotoWall: View {
     private static let columns = 3
     private static let rotations: [Double] = [-3, 2, -1.5, 2.5, -2, 1.5]
 
-    /// 标签那一行的设计稿高度
-    private static let labelHeight: CGFloat = 34
+    /// 标签那一行的设计稿高度：手写标签整个放在这一行里，永远不压到照片上
+    private static let labelHeight: CGFloat = 64
+    /// 标签底部和照片之间留的空（手写字是斜的，旋转后会往下多出一截）
+    private static let labelGap: CGFloat = 12
 
     /// 设计稿坐标系里的高度：随张数变化（空位 / 1–2 张 / 一行 / 两行）
     static func designHeight(photoCount: Int) -> CGFloat {
@@ -50,6 +52,7 @@ struct PhotoWall: View {
     var body: some View {
         VStack(spacing: 0) {
             label(for: label)
+                .padding(.bottom, Self.labelGap * scale)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .frame(height: Self.labelHeight * scale, alignment: .bottom)
                 .padding(.trailing, 26 * scale)
@@ -101,6 +104,7 @@ struct PhotoWall: View {
                 }
         }
         .buttonStyle(.pressable)
+        .sceneContextMenu(scan)
         .rotationEffect(.degrees(appeared ? Self.rotations[index % Self.rotations.count] : Self.rotations[index % Self.rotations.count] + 8))
         .scaleEffect(appeared ? 1 : 0.85)
         .offset(y: appeared ? 0 : 24)
@@ -109,8 +113,33 @@ struct PhotoWall: View {
         .accessibilityLabel(scan.displayTitle)
     }
 
-    /// 右上角的手写标签 + 闪光线 + 波浪线
+    /// 设计好的手写字图（字、闪光线、波浪线都画在图上）；没有图的标签用下面的手写字体
+    private static let artwork: [String: (image: String, height: CGFloat)] = [
+        "Nice find!": ("LabelNiceFind", 52),
+        "Go explore!": ("LabelGoExplore", 44),
+        "Snap!": ("LabelSnap", 40)
+    ]
+
+    /// 右上角的手写标签：有设计图就用图，像被写出来一样从左往右露出
+    @ViewBuilder
     private func label(for text: String) -> some View {
+        if let art = Self.artwork[text] {
+            Image(art.image)
+                .resizable()
+                .scaledToFit()
+                .frame(height: art.height * scale)
+                .mask(alignment: .leading) {
+                    Rectangle().scaleEffect(x: appeared ? 1 : 0.001, anchor: .leading)
+                }
+                .animation(animated ? .easeOut(duration: 0.8).delay(0.8) : nil, value: appeared)
+                .accessibilityHidden(true)
+        } else {
+            drawnLabel(for: text)
+        }
+    }
+
+    /// 手写字体 + 闪光线 + 波浪线
+    private func drawnLabel(for text: String) -> some View {
         HStack(alignment: .top, spacing: 0) {
             SparkleLines()
                 .trim(from: 0, to: appeared ? 1 : 0)

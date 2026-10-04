@@ -29,9 +29,6 @@ struct ReviewView: View {
                 let side: CGFloat = proxy.size.width < 380 ? 20 : 24
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        header
-                            .padding(.horizontal, side)
-                            .padding(.top, 4)
                         if words.isEmpty {
                             emptyState
                                 .padding(.horizontal, side)
@@ -46,11 +43,22 @@ struct ReviewView: View {
                 .scrollIndicators(.hidden)
             }
             .background(Theme.mist.ignoresSafeArea())
-            .toolbarVisibility(.hidden, for: .navigationBar)
+            // 系统大标题 + 右上角玻璃按钮，往上滚标题自动收进导航栏
+            .navigationTitle("复习")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("搜索词库", systemImage: "magnifyingglass") {
+                        path.append(ReviewRoute.library(.all, searching: true))
+                    }
+                    .tint(Theme.homeInk)
+                }
+            }
             .appTabBar()
             .navigationDestination(for: ReviewRoute.self) { route in
                 switch route {
                 case .library(let filter, let searching):
+                    // 用系统的普通推入：放大过渡和大标题 + 搜索框一起用时，动画里排版是错的，结束时会跳一下
                     WordsView(initialFilter: filter, startsSearching: searching)
                 case .month(let month):
                     MonthCalendarView(month: month) { pickedDay = PickedDay(date: $0) }
@@ -71,6 +79,12 @@ struct ReviewView: View {
                 }
             }
             .libraryDestinations(zoom: zoom)
+            .onChange(of: coordinator.openWordID, initial: true) { _, id in
+                guard let id, let word = words.first(where: { $0.id == id }) else { return }
+                coordinator.openWordID = nil
+                path = NavigationPath()
+                path.append(word)
+            }
             .sheet(item: $pickedDay) { picked in
                 DayReviewSheet(
                     day: picked.date,
@@ -151,28 +165,6 @@ struct ReviewView: View {
 
     // MARK: - 布局
 
-    private var header: some View {
-        HStack {
-            Text("复习")
-                .font(.system(size: 30, weight: .heavy))
-                .foregroundStyle(Theme.homeInk)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            Button {
-                path.append(ReviewRoute.library(.all, searching: true))
-            } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Theme.homeInk)
-                    .frame(width: 42, height: 42)
-                    .background(Theme.sheet, in: .circle)
-                    .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
-            }
-            .buttonStyle(.pressable)
-            .accessibilityLabel("搜索词库")
-        }
-        .frame(height: 50)
-    }
 
     @ViewBuilder
     private func content(scale: CGFloat, side: CGFloat) -> some View {
@@ -233,12 +225,12 @@ struct ReviewView: View {
             Text("还没有要复习的词")
                 .font(.system(size: 22, weight: .heavy))
             Text("拍一个英文场景，挑几个词，之后每天在这里按计划复习。")
-                .font(.system(size: 15))
+                .font(.subheadline)
                 .foregroundStyle(Theme.homeMuted)
                 .multilineTextAlignment(.center)
             Button { coordinator.startScan() } label: {
                 Label("去拍一个", systemImage: "camera")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.callout.weight(.bold))
                     .foregroundStyle(Theme.cream)
                     .padding(.horizontal, 24)
                     .frame(height: 50)

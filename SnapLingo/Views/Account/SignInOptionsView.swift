@@ -50,7 +50,7 @@ struct SignInOptionsView: View {
                         .padding(.top, compact ? 14 : 22)
                         .accessibilityAddTraits(.isHeader)
                     Text("自动备份到云端，换手机登录就能找回。不登录也能用全部功能。")
-                        .font(.system(size: 15))
+                        .font(.subheadline)
                         .foregroundStyle(Theme.homeMuted)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -89,12 +89,12 @@ struct SignInOptionsView: View {
                 MethodButton(title: "用邮箱登录", symbol: "envelope", action: onEmail)
 
                 Button("先不登录", action: onSkip)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.callout.weight(.bold))
                     .foregroundStyle(Theme.homeMuted)
                     .frame(height: 40)
                     .padding(.top, 2)
                 Text("不登录的话，数据只存在这台手机上")
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(Theme.homeMuted)
             }
             .padding(.horizontal, 24)
@@ -118,7 +118,7 @@ private struct BenefitRow: View {
                 .background(Pastel.peach, in: .rect(cornerRadius: 11, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.subheadline.weight(.bold))
                 if let detail {
                     Text(detail)
                         .font(.system(size: 12.5))
@@ -143,7 +143,7 @@ private struct MethodButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: symbol)
-                .font(.system(size: 16, weight: .bold))
+                .font(.callout.weight(.bold))
                 .foregroundStyle(Theme.homeInk)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)

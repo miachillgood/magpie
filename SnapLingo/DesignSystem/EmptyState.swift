@@ -15,6 +15,7 @@ struct IllustratedEmptyState: View {
     var action: (() -> Void)?
 
     @State private var bounce = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
@@ -25,6 +26,7 @@ struct IllustratedEmptyState: View {
                 .background(color, in: .circle)
                 .scaleEffect(bounce ? 1.04 : 0.98)
                 .onAppear {
+                    guard !reduceMotion else { return }
                     withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { bounce = true }
                 }
             VStack(spacing: Spacing.xs) {

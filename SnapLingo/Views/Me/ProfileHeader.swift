@@ -50,11 +50,11 @@ struct ProfileHeader: View {
 
                     if settings.isSignedIn {
                         Label("已通过 Apple 登录", systemImage: "apple.logo")
-                            .font(.system(size: 13))
+                            .font(.footnote)
                             .foregroundStyle(Theme.homeInk.opacity(0.7))
                     } else {
                         Text("还没登录 · 数据只存在这台手机上")
-                            .font(.system(size: 13))
+                            .font(.footnote)
                             .foregroundStyle(Theme.homeInk.opacity(0.7))
                     }
                 }
@@ -138,7 +138,7 @@ struct AvatarPickerSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("更换头像")
-                .font(.system(size: 20, weight: .heavy))
+                .font(.title3.weight(.heavy))
                 .foregroundStyle(Theme.homeInk)
                 .padding(.bottom, 6)
 
@@ -165,7 +165,7 @@ struct AvatarPickerSheet: View {
                         .frame(width: 24, height: 24)
                         .background(Theme.marker, in: .circle)
                     Text("用名字首字母")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.callout.weight(.semibold))
                     Spacer()
                 }
                 .foregroundStyle(Theme.homeInk)
@@ -176,7 +176,7 @@ struct AvatarPickerSheet: View {
             .buttonStyle(.pressable)
 
             Text("头像只存在这台手机上")
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(Theme.homeMuted)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 8)
@@ -205,10 +205,10 @@ struct AvatarPickerSheet: View {
     private func optionLabel(_ icon: Image, _ title: LocalizedStringKey) -> some View {
         HStack(spacing: 12) {
             icon
-                .font(.system(size: 18, weight: .medium))
+                .font(.headline.weight(.medium))
                 .frame(width: 24)
             Text(title)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.callout.weight(.semibold))
             Spacer()
         }
         .foregroundStyle(Theme.homeInk)

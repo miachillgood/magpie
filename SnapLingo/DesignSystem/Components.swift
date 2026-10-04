@@ -132,6 +132,35 @@ struct PrimaryButton: View {
     }
 }
 
+/// 引导页的蜡笔按钮：直接用设计稿原图（字和箭头都是画在图上的），所有语言都一样
+struct SketchImageButton: View {
+    var image: String
+    var label: LocalizedStringKey
+    var height: CGFloat = 78
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(image)
+                .resizable()
+                .scaledToFit()
+                .frame(height: height)
+                .contentShape(.capsule)
+        }
+        .buttonStyle(.pressable)
+        .accessibilityLabel(Text(label))
+    }
+}
+
+/// 「Continue →」（ContinueButton，1546 × 508）
+struct ContinueSketchButton: View {
+    var action: () -> Void
+
+    var body: some View {
+        SketchImageButton(image: "ContinueButton", label: "继续", action: action)
+    }
+}
+
 /// 次按钮：白色胶囊
 struct SecondaryButton: View {
     var title: LocalizedStringKey
@@ -171,6 +200,9 @@ struct CircleIconButton: View {
                 .frame(width: size, height: size)
                 .background(filled ? Theme.ink : Theme.card, in: .circle)
                 .softShadow(filled ? 0.6 : 1)
+                // 小号按钮也保证 44pt 点击区域
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(.circle)
         }
         .buttonStyle(.pressable)
     }
@@ -178,7 +210,18 @@ struct CircleIconButton: View {
 
 struct PressableButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
+        PressableLabel(configuration: configuration)
+    }
+}
+
+/// 按下缩小；禁用时变淡，和系统按钮一样
+private struct PressableLabel: View {
+    let configuration: ButtonStyleConfiguration
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
         configuration.label
+            .opacity(isEnabled ? 1 : 0.4)
             .scaleEffect(configuration.isPressed ? 0.95 : 1)
             .animation(.spring(response: 0.28, dampingFraction: 0.65), value: configuration.isPressed)
     }

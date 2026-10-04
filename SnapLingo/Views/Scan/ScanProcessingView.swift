@@ -106,6 +106,14 @@ struct ScanProcessingView: View {
         step = .choosing
         let settings = UserSettings.current(in: context)
         var draft = WordLibrary.ScanDraft(image: normalized, ocr: ocr, extraction: nil)
+        #if DEBUG
+        if DemoData.demoAI {
+            try? await Task.sleep(for: .seconds(1.5))
+            draft.extraction = DemoData.extraction(for: ocr.fullText)
+            onFinished(draft)
+            return
+        }
+        #endif
         do {
             draft.extraction = try await ClaudeAPIService.shared.extractWords(
                 from: ocr.fullText,
@@ -124,6 +132,7 @@ struct ScanProcessingView: View {
 /// 扫光动画
 private struct ScanSweep: View {
     @State private var phase: CGFloat = -0.2
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { proxy in
@@ -137,6 +146,8 @@ private struct ScanSweep: View {
         }
         .allowsHitTesting(false)
         .onAppear {
+            // 减弱动态效果时停在中间，不来回扫
+            guard !reduceMotion else { phase = 0.4; return }
             withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
                 phase = 1.0
             }

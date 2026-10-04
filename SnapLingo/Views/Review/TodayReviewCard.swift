@@ -51,7 +51,7 @@ struct TodayReviewCard: View {
     private var todo: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("今日目标")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.homeMuted)
 
             markedLine(String(localized: "**\(plan.remaining)** 个词", comment: "Big number with a highlighter mark, then the unit (Review tab: 'To study today: 12 words')"))
@@ -70,7 +70,7 @@ struct TodayReviewCard: View {
                     Text("开始复习")
                     Image(systemName: "arrow.right")
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.body.weight(.bold))
                 .foregroundStyle(Theme.cream)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
@@ -139,7 +139,7 @@ struct TodayReviewCard: View {
             }
             .accessibilityHidden(true)
             Text(text)
-                .font(.system(size: 13))
+                .font(.footnote)
                 .foregroundStyle(Theme.homeMuted)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
@@ -162,7 +162,7 @@ struct TodayReviewCard: View {
     private var done: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(plan.doneToday > 0 ? "今日目标完成 ✓" : "今天没有要复习的词")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.homeMuted)
 
             if plan.doneToday > 0 {
@@ -171,7 +171,7 @@ struct TodayReviewCard: View {
             }
 
             Text(upcomingText.map { String(localized: "下一次：\($0)", comment: "Next reviews, e.g. 'Next: Tomorrow 5 · Thursday 3'") } ?? String(localized: "拍一个新场景，积累更多单词"))
-                .font(.system(size: 15, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(Theme.homeInk.opacity(0.75))
                 .padding(.top, 6)
 
@@ -181,19 +181,18 @@ struct TodayReviewCard: View {
                     Image(systemName: "pencil")
                         .font(.system(size: 12, weight: .bold))
                 }
-                .font(.system(size: 14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.homeMuted)
-                .padding(.vertical, 4)
+                .frame(minHeight: 44)
                 .contentShape(.rect)
             }
             .buttonStyle(.pressable)
-            .padding(.top, 6)
             .accessibilityHint(Text("调整每天学几个新词"))
 
             if backlog > 0 {
                 Button(action: onMore) {
                     Label("再学 5 个新词", systemImage: "plus")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.body.weight(.bold))
                         .foregroundStyle(Theme.homeInk)
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
@@ -267,9 +266,9 @@ private struct ProgressRow: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(verbatim: title)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.subheadline.weight(.bold))
                 Text(verbatim: "\(done) / \(target)")
-                    .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
                     .contentTransition(.numericText())
                 if editable {
                     Image(systemName: "pencil")
@@ -278,7 +277,7 @@ private struct ProgressRow: View {
                 }
                 if let note {
                     Text(verbatim: note)
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(Theme.homeMuted)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)

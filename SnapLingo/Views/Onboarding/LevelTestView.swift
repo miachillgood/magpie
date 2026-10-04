@@ -69,7 +69,7 @@ struct LevelTestView: View {
                 // 跳过做得不显眼：大多数人应该测一下，但不会卡住完全不会的人
                 if let onSkip {
                     Button("跳过", action: onSkip)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.homeMuted)
                 }
             }
