@@ -8,6 +8,11 @@
 An iOS app that turns the English you run into in real life — menus, signs, bills, house rules — into a small daily review.</p>
 
 <p align="center">
+  <a href="https://youtu.be/sSIMpD1HA24"><img src="https://img.youtube.com/vi/sSIMpD1HA24/hqdefault.jpg" width="480" alt="Watch the Magpie promo video on YouTube"></a><br>
+  <a href="https://youtu.be/sSIMpD1HA24">▶ Watch the 1‑minute promo</a>
+</p>
+
+<p align="center">
   <img src="docs/images/home.png" width="230" alt="Home: two photos from a bakery and a restaurant, 'Just now in Ponsonby, picked up 8 words'">
   &nbsp;&nbsp;
   <img src="docs/images/picker.png" width="230" alt="Pick words: a bakery counter photo, scene detected as 'Bakery counter · Food & drinks'">
