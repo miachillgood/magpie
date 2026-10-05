@@ -42,6 +42,10 @@ enum DemoData {
             let folder = WordLibrary.createFolder(name: String(localized: "搬家"), iconName: "icon-box", context: context)
             WordLibrary.add(words, to: folder, context: context)
         }
+        if let code = demoLanguage, let language = NativeLanguage(rawValue: code) {
+            UserSettings.current(in: context).nativeLanguage = language
+            try? context.save()
+        }
         if arguments.contains("-seedDemoData") {
             let count = (try? context.fetchCount(FetchDescriptor<Scan>())) ?? 0
             if count == 0 { seed(into: context) }
@@ -253,6 +257,32 @@ enum DemoData {
         return true
     }
 
+    // MARK: - 其他母语（录视频用：-demoLanguage ja 等，配合 -AppleLanguages "(ja)" 把界面也换掉）
+
+    static var demoLanguage: String? {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-demoLanguage").flatMap { $0 + 1 < arguments.count ? arguments[$0 + 1] : nil }
+    }
+
+    private struct Local { var gloss, explanation, translation, note: String }
+
+    private static let translations: [String: [String: Local]] = [
+        "savoury": [
+            "zh-Hant": Local(gloss: "鹹味的", explanation: "鹹的、不是甜的食物。", translation: "有鹹口的嗎？", note: "英式拼寫 savoury，美式是 savory。"),
+            "ja": Local(gloss: "しょっぱい系の", explanation: "甘くない、塩味の食べ物のこと。", translation: "しょっぱい系のものはありますか？", note: "イギリス式のつづりは savoury、アメリカ式は savory。"),
+            "ko": Local(gloss: "짭짤한", explanation: "달지 않고 짭짤한 음식.", translation: "짭짤한 거 있어요?", note: "영국식 철자는 savoury, 미국식은 savory예요."),
+            "es": Local(gloss: "salado", explanation: "Comida salada, no dulce.", translation: "¿Tienen algo salado?", note: "Ortografía británica: savoury; estadounidense: savory."),
+            "pt-BR": Local(gloss: "salgado", explanation: "Comida salgada, não doce.", translation: "Vocês têm algo salgado?", note: "Grafia britânica: savoury; americana: savory.")
+        ],
+        "dozen": [
+            "zh-Hant": Local(gloss: "一打（十二個）", explanation: "十二個為一組的數量單位，half a dozen 就是六個。", translation: "我們能要六隻生蠔嗎？", note: "菜單上的 1/2 dozen 就是 6 隻。"),
+            "ja": Local(gloss: "1ダース（12個）", explanation: "12個ひと組の単位。half a dozen は6個のこと。", translation: "牡蠣を6個いただけますか？", note: "メニューの 1/2 dozen は6個という意味。"),
+            "ko": Local(gloss: "한 다스(12개)", explanation: "12개를 한 묶음으로 세는 단위. half a dozen은 6개.", translation: "굴 여섯 개 주문할 수 있을까요?", note: "메뉴의 1/2 dozen은 6개라는 뜻이에요."),
+            "es": Local(gloss: "docena", explanation: "Un grupo de doce. Half a dozen son seis.", translation: "¿Nos pone media docena de ostras?", note: "En el menú, 1/2 dozen significa 6 unidades."),
+            "pt-BR": Local(gloss: "dúzia", explanation: "Um grupo de doze. Half a dozen são seis.", translation: "Pode nos trazer meia dúzia de ostras?", note: "No cardápio, 1/2 dozen quer dizer 6 unidades.")
+        ]
+    ]
+
     // MARK: - 写入
 
     static func seed(into context: ModelContext) {
@@ -281,12 +311,13 @@ enum DemoData {
             context.insert(scan)
 
             for item in demo.words {
-                let word = VocabWord(word: item.word, partOfSpeech: item.pos, cefr: item.cefr, gloss: item.gloss, contextSnippet: item.context, addedAt: date)
+                let local = demoLanguage.flatMap { translations[item.word]?[$0] }
+                let word = VocabWord(word: item.word, partOfSpeech: item.pos, cefr: item.cefr, gloss: local?.gloss ?? item.gloss, contextSnippet: item.context, addedAt: date)
                 word.phonetic = item.phonetic
-                word.explanation = item.explanation
+                word.explanation = local?.explanation ?? item.explanation
                 word.exampleSentence = item.example
-                word.exampleTranslation = item.translation
-                word.sceneNote = item.note
+                word.exampleTranslation = local?.translation ?? item.translation
+                word.sceneNote = local?.note ?? item.note
                 word.explanationStatus = .ready
                 context.insert(word)
                 word.scans.append(scan)

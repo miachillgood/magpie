@@ -92,6 +92,13 @@ struct RootTabView: View {
         case "review": coordinator.selectedTab = .review
         case "camera": coordinator.startScan()
         case "study": coordinator.startStudy()
+        case "word":
+            // -screen word -openWord dozen：直接打开单词详情（录视频用）
+            if let i = arguments.firstIndex(of: "-openWord"), i + 1 < arguments.count,
+               let word = words.first(where: { $0.word == arguments[i + 1] }) {
+                coordinator.selectedTab = .review
+                coordinator.openWordID = word.id
+            }
         default: break
         }
     }
