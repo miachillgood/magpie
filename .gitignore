@@ -14,3 +14,6 @@ DerivedData/
 
 # API Key — 不提交
 SnapLingo/APIConfig.swift
+
+# 宣传视频的工作目录（配音模型、Python 环境、录屏素材，体积很大）
+Video/
