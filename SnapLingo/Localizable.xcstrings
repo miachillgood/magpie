@@ -607,15 +607,39 @@
       "comment" : "Home headline, place line when the photos come from several scenes (inside a white capsule)",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld scenes"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld scene"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld scenes"
+                }
+              }
+            }
           }
         },
         "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld lugares"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld lugar"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld lugares"
+                }
+              }
+            }
           }
         },
         "ja" : {
@@ -631,9 +655,21 @@
           }
         },
         "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld lugares"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld lugar"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld lugares"
+                }
+              }
+            }
           }
         },
         "zh-Hans" : {
@@ -2586,6 +2622,102 @@
         }
       }
     },
+    "session.wordsUnit.one" : {
+      "comment" : "Unit after the big number 1 on the session complete page (1 word)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "word"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "palabra"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "개"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "palavra"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个词"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "個單字"
+          }
+        }
+      }
+    },
+    "session.wordsUnit.other" : {
+      "comment" : "Unit after the big number on the session complete page when it isn't 1 (8 words)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "words"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "palabras"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "개"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "palavras"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个词"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "個單字"
+          }
+        }
+      }
+    },
     "·" : {
       "shouldTranslate" : false
     },
@@ -3826,53 +3958,6 @@
         }
       }
     },
-    "个词" : {
-      "comment" : "Follows the big number on the session complete page: 8 words",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "words"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "palabras"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "개"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "palavras"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "个词"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "個單字"
-          }
-        }
-      }
-    },
     "中级" : {
       "comment" : "Self-assessed English level: intermediate",
       "localizations" : {
@@ -4342,13 +4427,97 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You've done today's %1$lld new words, and %2$lld more are waiting."
+            "value" : "You've done today's %#@new@, and %#@left@ waiting."
+          },
+          "substitutions" : {
+            "left" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg more is"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg more are"
+                    }
+                  }
+                }
+              }
+            },
+            "new" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg new word"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg new words"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ya hiciste las %1$lld palabras nuevas de hoy y quedan %2$lld en espera."
+            "value" : "Ya hiciste %#@new@ de hoy y %#@left@ en espera."
+          },
+          "substitutions" : {
+            "left" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "queda %arg"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "quedan %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "new" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "la %arg palabra nueva"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "las %arg palabras nuevas"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "ja" : {
@@ -4366,7 +4535,49 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Você terminou as %1$lld palavras novas de hoje, e mais %2$lld estão esperando."
+            "value" : "Você terminou %#@new@ de hoje, e %#@left@ esperando."
+          },
+          "substitutions" : {
+            "left" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "mais %arg está"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "mais %arg estão"
+                    }
+                  }
+                }
+              }
+            },
+            "new" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "a %arg palavra nova"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "as %arg palavras novas"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "zh-Hans" : {
@@ -7330,15 +7541,39 @@
     "删除 %lld 个词？" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete %lld words?"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld word?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld words?"
+                }
+              }
+            }
           }
         },
         "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Eliminar %lld palabras?"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "¿Eliminar %lld palabra?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "¿Eliminar %lld palabras?"
+                }
+              }
+            }
           }
         },
         "ja" : {
@@ -7354,9 +7589,21 @@
           }
         },
         "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Excluir %lld palavras?"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Excluir %lld palavra?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Excluir %lld palavras?"
+                }
+              }
+            }
           }
         },
         "zh-Hans" : {
@@ -10219,15 +10466,39 @@
     "复习到期的 %lld 个词" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Review %lld due words"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Review %lld due word"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Review %lld due words"
+                }
+              }
+            }
           }
         },
         "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Repasar %lld palabras pendientes"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Repasar %lld palabra pendiente"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Repasar %lld palabras pendientes"
+                }
+              }
+            }
           }
         },
         "ja" : {
@@ -10243,9 +10514,21 @@
           }
         },
         "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Revisar %lld palavras pendentes"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Revisar %lld palavra pendente"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Revisar %lld palavras pendentes"
+                }
+              }
+            }
           }
         },
         "zh-Hans" : {
@@ -11685,15 +11968,39 @@
     "已删除 %lld 个词" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deleted %lld words"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deleted %lld word"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deleted %lld words"
+                }
+              }
+            }
           }
         },
         "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se eliminaron %lld palabras"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Se eliminó %lld palabra"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Se eliminaron %lld palabras"
+                }
+              }
+            }
           }
         },
         "ja" : {
@@ -11709,9 +12016,21 @@
           }
         },
         "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld palavras excluídas"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld palavra excluída"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld palavras excluídas"
+                }
+              }
+            }
           }
         },
         "zh-Hans" : {
@@ -11963,15 +12282,39 @@
     "已移出 %lld 个词" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Removed %lld words"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Removed %lld word"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Removed %lld words"
+                }
+              }
+            }
           }
         },
         "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se quitaron %lld palabras"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Se quitó %lld palabra"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Se quitaron %lld palabras"
+                }
+              }
+            }
           }
         },
         "ja" : {
@@ -11987,9 +12330,21 @@
           }
         },
         "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld palavras removidas"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld palavra removida"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld palavras removidas"
+                }
+              }
+            }
           }
         },
         "zh-Hans" : {
@@ -12102,9 +12457,21 @@
       "comment" : "Home headline; **N** gets a highlighter mark",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "you've caught **%lld** words already!"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "you've caught **%lld** word already!"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "you've caught **%lld** words already!"
+                }
+              }
+            }
           }
         },
         "es" : {

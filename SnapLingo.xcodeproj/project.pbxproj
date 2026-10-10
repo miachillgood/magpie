@@ -341,6 +341,7 @@
 				CODE_SIGN_ENTITLEMENTS = SnapLingo/SnapLingo.entitlements;
 				DEVELOPMENT_LANGUAGE = en;
 				INFOPLIST_KEY_CFBundleDisplayName = Magpie;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Magpie 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Magpie 会记下你在哪个街区拍的照片，首页会提醒你在哪里碰到这些词。地点只存在手机上。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -361,7 +362,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -379,6 +380,7 @@
 				CODE_SIGN_ENTITLEMENTS = SnapLingo/SnapLingo.entitlements;
 				DEVELOPMENT_LANGUAGE = en;
 				INFOPLIST_KEY_CFBundleDisplayName = Magpie;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Magpie 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Magpie 会记下你在哪个街区拍的照片，首页会提醒你在哪里碰到这些词。地点只存在手机上。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -399,7 +401,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -421,7 +423,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SnapLingo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SnapLingo";
 			};
 			name = Debug;
@@ -444,7 +446,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SnapLingo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SnapLingo";
 			};
 			name = Release;

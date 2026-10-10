@@ -84,8 +84,15 @@ struct SessionCompleteView: View {
                             .font(.system(size: 52, weight: .heavy, design: .rounded))
                             .contentTransition(.numericText())
                             .animation(motion(.smooth(duration: 0.8), delay: 0.35), value: appeared)
-                        Text("个词", comment: "Follows the big number on the session complete page: 8 words")
-                            .font(.title3.weight(.bold))
+                        // 英文等语言要分单复数（1 word / 8 words），数字单独显示，所以按数量选两条字符串
+                        Group {
+                            if plan.doneToday == 1 {
+                                Text("session.wordsUnit.one", comment: "Unit after the big number 1 on the session complete page (1 word)")
+                            } else {
+                                Text("session.wordsUnit.other", comment: "Unit after the big number on the session complete page when it isn't 1 (8 words)")
+                            }
+                        }
+                        .font(.title3.weight(.bold))
                     }
                 } else {
                     Text("今天没有要学的词")
