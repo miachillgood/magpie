@@ -32,20 +32,24 @@ enum StudyStore {
     }
 }
 
-/// 根据今天的计划刷新本地提醒
+/// 根据今天的计划刷新本地提醒，并把今天的卡片同步到手表。
+/// 复习、加词、改目标之后都会调用这里，所以手表上的计划也跟着更新
 enum StudyReminder {
     static func refresh(context: ModelContext) {
         let settings = UserSettings.current(in: context)
+        let startOfToday = Calendar.current.startOfDay(for: Date())
+        let words = StudyStore.words(context)
+        let plan = StudyStore.plan(
+            settings: settings,
+            words: words,
+            logs: StudyStore.logs(since: startOfToday, context)
+        )
+        WatchBridge.shared.push(plan: plan, words: words, accent: settings.accent.rawValue)
+
         guard settings.reminderEnabled else {
             NotificationService.reschedule(enabled: false, hour: 0, minute: 0, pendingCount: 0, completedToday: false)
             return
         }
-        let startOfToday = Calendar.current.startOfDay(for: Date())
-        let plan = StudyStore.plan(
-            settings: settings,
-            words: StudyStore.words(context),
-            logs: StudyStore.logs(since: startOfToday, context)
-        )
         NotificationService.reschedule(
             enabled: true,
             hour: settings.reminderHour,

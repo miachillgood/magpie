@@ -155,3 +155,49 @@ struct TooEasyUndoTests {
         #expect(session.pendingUndo == nil)
     }
 }
+
+@MainActor
+struct WatchSyncTests {
+    @Test func snapshotPutsReviewsBeforeNewWords() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let review = VocabWord(word: "receipt", gloss: "收据")
+        review.state = .learning
+        let fresh = VocabWord(word: "oat", gloss: "燕麦")
+        [review, fresh].forEach(context.insert)
+        let plan = DailyPlan(reviewIDs: [review.id], newIDs: [fresh.id], reviewsDone: 0, newDone: 0)
+
+        let snapshot = WatchBridge.snapshot(plan: plan, words: [fresh, review], accent: "en-GB")
+
+        #expect(snapshot.cards.map(\.word) == ["receipt", "oat"])
+        #expect(snapshot.cards.map(\.isNew) == [false, true])
+        #expect(snapshot.cards[1].meaning == "燕麦")
+        #expect(snapshot.accent == "en-GB")
+        #expect(snapshot.isCurrent())
+        // 能编码成 Data 发出去，再原样解回来
+        #expect(WatchSync.decode(WatchSnapshot.self, from: WatchSync.encode(snapshot)) == snapshot)
+    }
+
+    @Test func watchRatingIsRecordedOnceAndOnlyOncePerDay() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let word = VocabWord(word: "oat")
+        context.insert(word)
+        let rating = WatchRating(id: UUID(), wordID: word.id, ratingRaw: ReviewRating.good.rawValue, reviewedAt: Date())
+
+        #expect(ReviewApplier.apply(rating, context: context))
+        #expect(word.state != .new)
+        #expect(word.introducedAt == rating.reviewedAt)
+        let logs = try context.fetch(FetchDescriptor<ReviewLog>())
+        #expect(logs.map(\.id) == [rating.id])
+        #expect(logs.first?.wasNew == true)
+
+        // 同一条又送到一次：不再记
+        #expect(!ReviewApplier.apply(rating, context: context))
+        // 同一天又评了一次（比如手机上先评过）：今天第一次的才算
+        let again = WatchRating(id: UUID(), wordID: word.id, ratingRaw: ReviewRating.again.rawValue, reviewedAt: Date())
+        #expect(!ReviewApplier.apply(again, context: context))
+        #expect(try context.fetchCount(FetchDescriptor<ReviewLog>()) == 1)
+        #expect(word.mistakeAt == nil)
+    }
+}

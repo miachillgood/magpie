@@ -117,32 +117,15 @@ final class StudySession {
         var insertedLog: ReviewLog?
 
         // 错词重练：每个词在这一轮第一次的评分算数，本轮重试答对不算（那只是刚看过）
-        if card.attempt == 0 {
-            word.mistakeAt = MeStats.mistakeAt(after: rating, previous: word.mistakeAt, now: now)
-        }
-
         if card.attempt == 0 && card.isPractice {
             // 顺便再看一遍：只记本轮结果和错词标记，不改排期、不写复习记录
+            word.mistakeAt = MeStats.mistakeAt(after: rating, previous: word.mistakeAt, now: now)
             firstRatings[word.id] = rating
             try? context.save()
         } else if card.attempt == 0 {
-            let settings = UserSettings.current(in: context)
-            let wasNew = word.state == .new
-            let next = SpacedRepetition.schedule(word.srs, rating: rating, on: now, seed: Self.seed(for: word))
-            word.srs = next
-            word.lastReviewedAt = now
-            if wasNew { word.introducedAt = now }
-
-            let log = ReviewLog(wordID: word.id, word: word.word, rating: rating, wasNew: wasNew, intervalAfter: next.intervalDays, reviewedAt: now)
-            context.insert(log)
-            insertedLog = log
-            LevelService.recordFamiliarity(key: word.normalizedForm, confidence: LevelService.confidence(for: rating), source: .review, in: context)
-            if wasNew {
-                let delta = LevelService.firstSightDelta(rating: rating, wordLevel: word.cefr, userLevel: settings.level)
-                settings.levelScore = LevelService.clamp(settings.levelScore + delta)
-            }
+            // 排期、复习记录、错词标记、熟悉度、水平分（手表传回来的评分也走这里）
+            insertedLog = ReviewApplier.apply(rating, to: word, at: now, context: context)
             firstRatings[word.id] = rating
-            try? context.save()
         }
 
         if rating == .easy, let undo {

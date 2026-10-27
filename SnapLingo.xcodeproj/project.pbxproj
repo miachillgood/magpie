@@ -6,9 +6,28 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0B0A7C00000000000000000C /* MagpieWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0B0A7C000000000000000001 /* MagpieWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0B0A7C00000000000000000B /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				0B0A7C00000000000000000C /* MagpieWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		088184362F8C782400773489 /* SnapLingo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnapLingo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A1B2C3D4E5F600000000001 /* SnapLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnapLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B0A7C000000000000000001 /* MagpieWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MagpieWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -20,6 +39,16 @@
 		0A1B2C3D4E5F600000000002 /* SnapLingoTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SnapLingoTests;
+			sourceTree = "<group>";
+		};
+		0B0A7C000000000000000002 /* MagpieWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MagpieWatch;
+			sourceTree = "<group>";
+		};
+		0B0A7C000000000000000003 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -39,6 +68,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0B0A7C000000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -47,6 +83,8 @@
 			children = (
 				088184382F8C782400773489 /* SnapLingo */,
 				0A1B2C3D4E5F600000000002 /* SnapLingoTests */,
+				0B0A7C000000000000000002 /* MagpieWatch */,
+				0B0A7C000000000000000003 /* Shared */,
 				088184372F8C782400773489 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,6 +94,7 @@
 			children = (
 				088184362F8C782400773489 /* SnapLingo.app */,
 				0A1B2C3D4E5F600000000001 /* SnapLingoTests.xctest */,
+				0B0A7C000000000000000001 /* MagpieWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,13 +109,16 @@
 				088184322F8C782400773489 /* Sources */,
 				088184332F8C782400773489 /* Frameworks */,
 				088184342F8C782400773489 /* Resources */,
+				0B0A7C00000000000000000B /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0B0A7C00000000000000000E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				088184382F8C782400773489 /* SnapLingo */,
+				0B0A7C000000000000000003 /* Shared */,
 			);
 			name = SnapLingo;
 			packageProductDependencies = (
@@ -108,6 +150,29 @@
 			productReference = 0A1B2C3D4E5F600000000001 /* SnapLingoTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		0B0A7C000000000000000004 /* MagpieWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0B0A7C000000000000000008 /* Build configuration list for PBXNativeTarget "MagpieWatch" */;
+			buildPhases = (
+				0B0A7C000000000000000005 /* Sources */,
+				0B0A7C000000000000000006 /* Frameworks */,
+				0B0A7C000000000000000007 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0B0A7C000000000000000002 /* MagpieWatch */,
+				0B0A7C000000000000000003 /* Shared */,
+			);
+			name = MagpieWatch;
+			packageProductDependencies = (
+			);
+			productName = MagpieWatch;
+			productReference = 0B0A7C000000000000000001 /* MagpieWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -124,6 +189,9 @@
 					0A1B2C3D4E5F600000000003 = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 088184352F8C782400773489;
+					};
+					0B0A7C000000000000000004 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -149,6 +217,7 @@
 			targets = (
 				088184352F8C782400773489 /* SnapLingo */,
 				0A1B2C3D4E5F600000000003 /* SnapLingoTests */,
+				0B0A7C000000000000000004 /* MagpieWatch */,
 			);
 		};
 /* End PBXProject section */
@@ -162,6 +231,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0A1B2C3D4E5F600000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0B0A7C000000000000000007 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -185,6 +261,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0B0A7C000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXContainerItemProxy section */
@@ -195,6 +278,13 @@
 			remoteGlobalIDString = 088184352F8C782400773489;
 			remoteInfo = SnapLingo;
 		};
+		0B0A7C00000000000000000D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0881842E2F8C782400773489 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0B0A7C000000000000000004;
+			remoteInfo = MagpieWatch;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXTargetDependency section */
@@ -202,6 +292,11 @@
 			isa = PBXTargetDependency;
 			target = 088184352F8C782400773489 /* SnapLingo */;
 			targetProxy = 0A1B2C3D4E5F600000000008 /* PBXContainerItemProxy */;
+		};
+		0B0A7C00000000000000000E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0B0A7C000000000000000004 /* MagpieWatch */;
+			targetProxy = 0B0A7C00000000000000000D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -455,6 +550,76 @@
 			};
 			name = Release;
 		};
+		0B0A7C000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_LANGUAGE = en;
+				DEVELOPMENT_TEAM = RDM6CLF45F;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Magpie;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = name.Mia.SnapLingo;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = name.Mia.SnapLingo.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		0B0A7C00000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_LANGUAGE = en;
+				DEVELOPMENT_TEAM = RDM6CLF45F;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Magpie;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = name.Mia.SnapLingo;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = name.Mia.SnapLingo.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -481,6 +646,15 @@
 			buildConfigurations = (
 				0A1B2C3D4E5F60000000000A /* Debug */,
 				0A1B2C3D4E5F60000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0B0A7C000000000000000008 /* Build configuration list for PBXNativeTarget "MagpieWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0B0A7C000000000000000009 /* Debug */,
+				0B0A7C00000000000000000A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

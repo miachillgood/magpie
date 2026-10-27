@@ -27,6 +27,8 @@ struct SnapLingoApp: App {
         #endif
         SpacedRepetitionMigration.run(context: container.mainContext)
         MistakeBackfill.run(context: container.mainContext)
+        // 手表复习：收发今天的卡片和手表上的评分
+        WatchBridge.shared.start(container: container)
     }
 
     var body: some Scene {
