@@ -26,6 +26,26 @@ struct SceneExtraction: Sendable {
     }
 }
 
+/// 「说一说」听到的是什么
+enum SpeechIntent: Sendable {
+    /// 念了一个英文词（或「燕麦英语怎么说」）：直接查这个词
+    case word(String)
+    /// 描述了一个场景：推荐这个场景要用的词
+    case scene(SceneExtraction)
+
+    /// AI 判断错了也尽量给个能用的结果：说是词却没给词、说是场景却没挑出词时，英语那条像个词就当查词
+    nonisolated static func resolve(kind: String, word: String, english: String, extraction: SceneExtraction) -> SpeechIntent? {
+        let word = word.trimmingCharacters(in: .whitespacesAndNewlines)
+        let english = english.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+        if kind == "word", WordLookupSheet.isLookupQuery(word) { return .word(word) }
+        if !extraction.candidates.isEmpty, kind == "scene" || !WordLookupSheet.isLookupQuery(english) {
+            return .scene(extraction)
+        }
+        if WordLookupSheet.isLookupQuery(english) { return .word(english) }
+        return extraction.candidates.isEmpty ? nil : .scene(extraction)
+    }
+}
+
 /// 要解释的一个词
 struct ExplainItem: Sendable {
     var key: String
@@ -135,36 +155,15 @@ final class ClaudeAPIService: Sendable {
                 "scene": ["type": "string", "enum": SceneType.allCases.map(\.rawValue)],
                 "place": ["type": "string"],
                 "title": ["type": "string"],
-                "words": [
-                    "type": "array",
-                    "items": [
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": ["word", "lemma", "part_of_speech", "cefr", "gloss"],
-                        "properties": [
-                            "word": ["type": "string"],
-                            "lemma": ["type": "string"],
-                            "part_of_speech": ["type": "string"],
-                            "cefr": ["type": "string", "enum": CEFRLevel.allCases.map(\.code)],
-                            "gloss": ["type": "string"]
-                        ]
-                    ]
-                ]
+                "words": Self.wordListSchema
             ]
         ]
 
         struct Raw: Decodable {
-            struct Word: Decodable {
-                let word: String
-                let lemma: String
-                let part_of_speech: String
-                let cefr: String
-                let gloss: String
-            }
             let scene: String
             let place: String
             let title: String
-            let words: [Word]
+            let words: [RawWord]
         }
 
         let raw: Raw = try await callJSON(
@@ -174,8 +173,44 @@ final class ClaudeAPIService: Sendable {
             maxTokens: language.usesCharacterCount ? 3000 : 3600
         )
 
+        let place = raw.place.trimmingCharacters(in: .whitespacesAndNewlines)
+        return SceneExtraction(
+            scene: SceneType(key: raw.scene),
+            title: SceneExtraction.title(place: place, noun: raw.title),
+            candidates: Self.candidates(from: raw.words),
+            place: place
+        )
+    }
+
+    /// 挑词结果里的一个词（拍照和说一说共用）
+    private struct RawWord: Decodable {
+        let word: String
+        let lemma: String
+        let part_of_speech: String
+        let cefr: String
+        let gloss: String
+    }
+
+    private static let wordListSchema: [String: Any] = [
+        "type": "array",
+        "items": [
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["word", "lemma", "part_of_speech", "cefr", "gloss"],
+            "properties": [
+                "word": ["type": "string"],
+                "lemma": ["type": "string"],
+                "part_of_speech": ["type": "string"],
+                "cefr": ["type": "string", "enum": CEFRLevel.allCases.map(\.code)],
+                "gloss": ["type": "string"]
+            ]
+        ]
+    ]
+
+    /// 去重、去掉单个字母
+    private static func candidates(from words: [RawWord]) -> [WordCandidate] {
         var seen = Set<String>()
-        let candidates = raw.words.compactMap { word -> WordCandidate? in
+        return words.compactMap { word -> WordCandidate? in
             let candidate = WordCandidate(
                 word: word.word,
                 lemma: word.lemma.isEmpty ? word.word.lowercased() : word.lemma,
@@ -186,13 +221,82 @@ final class ClaudeAPIService: Sendable {
             guard !candidate.key.isEmpty, candidate.key.count > 1, seen.insert(candidate.key).inserted else { return nil }
             return candidate
         }
+    }
+
+    // MARK: 1b. 说一说：判断是查词还是描述场景
+
+    /// english / native 是同一段录音分别按英语和母语识别出来的文字
+    func interpretSpeech(english: String, native: String, level: CEFRLevel, language: NativeLanguage) async throws -> SpeechIntent? {
+        let sceneList = SceneType.allCases
+            .map { "- \($0.rawValue): \($0.promptHint)" }
+            .joined(separator: "\n")
+        let nativeName = language.promptName
+        let interface = NativeLanguage(preferredLanguages: Bundle.main.preferredLocalizations)
+
+        let system = """
+        You are an English teacher helping people whose native language is \(nativeName) live in an English-speaking country. \
+        The user just spoke to the app. The same recording was transcribed twice, once as English and once as \(nativeName); \
+        the transcript in the wrong language is usually garbled, so trust the one that makes sense.
+
+        Decide what the user wants:
+        - kind "word": they said one English word or short phrase they want to look up, or asked how to say something in English \
+        (e.g. "oat milk", "怎么说燕麦"). Put the English word or phrase in `word` (dictionary form, lowercase). Leave `words` empty.
+        - kind "scene": they described a situation, plan or place in daily life (e.g. "明天要去看牙医", "I need to open a bank account"). \
+        Leave `word` empty and pick 8–15 practical English words or phrases they will likely hear, read or need to say there.
+
+        The user's current level: CEFR \(level.code). For "scene" words:
+        1. Range from \(level.code) up to two levels above; a few easier words are fine.
+        2. `word` and `lemma` are the dictionary form (lowercase, singular noun, base verb); a phrase may be one entry.
+        3. `cefr` is the rough level of this sense in everyday English.
+        4. `gloss` is a short meaning in \(nativeName) that fits this scene, \(language.lengthLimit(characters: 8, words: 4)).
+        5. `part_of_speech` uses English abbreviations: n. / v. / adj. / adv. / phr. etc.
+
+        Pick the one `scene` that fits best (use general for "word"):
+        \(sceneList)
+
+        `place` is a shop, brand or venue the user named, in its original spelling; use an empty string if none. Never invent one.
+        `title` is a short noun for the situation, in \(interface.promptName) (\(interface.lengthLimit(characters: 6, words: 3))), \
+        without the place name, e.g. dentist visit, opening a bank account, flat viewing. Empty for "word".
+        """
+
+        let schema: [String: Any] = [
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "word", "scene", "place", "title", "words"],
+            "properties": [
+                "kind": ["type": "string", "enum": ["word", "scene"]],
+                "word": ["type": "string"],
+                "scene": ["type": "string", "enum": SceneType.allCases.map(\.rawValue)],
+                "place": ["type": "string"],
+                "title": ["type": "string"],
+                "words": Self.wordListSchema
+            ]
+        ]
+
+        struct Raw: Decodable {
+            let kind: String
+            let word: String
+            let scene: String
+            let place: String
+            let title: String
+            let words: [RawWord]
+        }
+
+        let raw: Raw = try await callJSON(
+            system: system,
+            user: "English transcript: \"\(english.prefix(1000))\"\n\(nativeName) transcript: \"\(native.prefix(1000))\"",
+            schema: schema,
+            maxTokens: language.usesCharacterCount ? 2400 : 3000
+        )
+
         let place = raw.place.trimmingCharacters(in: .whitespacesAndNewlines)
-        return SceneExtraction(
+        let extraction = SceneExtraction(
             scene: SceneType(key: raw.scene),
             title: SceneExtraction.title(place: place, noun: raw.title),
-            candidates: candidates,
+            candidates: Self.candidates(from: raw.words),
             place: place
         )
+        return SpeechIntent.resolve(kind: raw.kind, word: raw.word, english: english, extraction: extraction)
     }
 
     // MARK: 2. 批量生成解释

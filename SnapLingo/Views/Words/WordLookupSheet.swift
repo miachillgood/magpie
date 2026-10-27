@@ -253,7 +253,10 @@ struct WordLookupSheet: View {
             // 搜的是 oats、词库里存的是 oat：按原形再找一次
             if existing == nil { existing = find(explanation.lemma.normalizedWordKey) }
             withAnimation(.snappy) { phase = .loaded(explanation) }
+        } catch is CancellationError {
+            // 面板刚弹出时可能被系统重新出现一次，前一次的请求会被取消，新的那次会接着查
         } catch {
+            guard !Task.isCancelled else { return }
             phase = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
         }
     }

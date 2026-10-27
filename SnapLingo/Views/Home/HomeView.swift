@@ -266,6 +266,11 @@ struct HomeView: View {
 
     /// 句子第一行；街区名已经放进下一行的胶囊（多个场景）就不再写
     private static func whereCaption(_ day: [Scan]) -> HeadlinePiece {
+        // 说一说的场景不是“在”哪里：刚刚聊到 [看牙医]
+        if day.count == 1, day[0].isVoice {
+            let when = HomeDates.whenPhrase(for: day[0].createdAt)
+            return .caption(String(localized: "hero.whenTalking", defaultValue: "\(when)聊到", comment: "Home headline line 1 when the words came from something the user said into the app (not a photo), followed by the topic in a white capsule (e.g. 'Just now, talking about' + [dentist visit]). The argument is Just now / Today / Yesterday / a weekday / a date"))
+        }
         if day.count > 1, neighborhood(of: day) != nil {
             let when = HomeDates.whenPhrase(for: day[0].createdAt)
             return .caption(String(localized: "hero.whenIn", defaultValue: "\(when)在", comment: "Home headline line 1 when the next line is a suburb in a white capsule (e.g. 'Just now in' + [Ponsonby]). The argument is Just now / Today / Yesterday / a weekday / a date"))

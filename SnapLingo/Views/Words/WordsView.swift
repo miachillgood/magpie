@@ -18,6 +18,8 @@ struct WordsView: View {
     @State private var deletedCount = 0
     /// 词库里没有的词：查一查，看了释义再加入复习
     @State private var lookup: LookupTerm?
+    /// 说一说：念一个词就查词，说一段话就推荐这个场景的词
+    @State private var speaking = false
     private let startsSearching: Bool
 
     init(initialFilter: WordsFilter = .all, startsSearching: Bool = false) {
@@ -152,6 +154,22 @@ struct WordsView: View {
         .sensoryFeedback(.selection, trigger: filter)
         .sheet(item: $lookup) { term in
             WordLookupSheet(query: term.text)
+        }
+        .sheet(isPresented: $speaking) {
+            VoiceCaptureSheet { word in
+                query = word
+                // 等语音面板收起来再弹查词面板
+                Task {
+                    try? await Task.sleep(for: .milliseconds(450))
+                    lookup = LookupTerm(text: word)
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("说一说", systemImage: "mic") { speaking = true }
+                    .tint(Theme.homeInk)
+            }
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: deletedCount)
         .confirmationDialog(

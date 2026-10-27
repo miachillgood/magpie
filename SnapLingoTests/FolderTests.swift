@@ -195,3 +195,55 @@ struct LookupTests {
         #expect(plan.newIDs == [word.id])
     }
 }
+
+@MainActor
+struct VoiceSceneTests {
+    private func extraction(_ words: [String]) -> SceneExtraction {
+        SceneExtraction(
+            scene: .medical,
+            title: "看牙医",
+            candidates: words.map { WordCandidate(word: $0, lemma: $0, partOfSpeech: "n.", cefrRaw: 2, gloss: "") }
+        )
+    }
+
+    @Test func speechIsAWordOrAScene() {
+        let scene = extraction(["dentist", "appointment"])
+        // AI 说是词：直接查
+        if case .word(let word) = SpeechIntent.resolve(kind: "word", word: "oat", english: "how do you say 燕麦", extraction: extraction([])) {
+            #expect(word == "oat")
+        } else { Issue.record("应该是查词") }
+        // 描述场景：推荐的词
+        if case .scene(let result) = SpeechIntent.resolve(kind: "scene", word: "", english: "I'm seeing the dentist tomorrow", extraction: scene) {
+            #expect(result.candidates.count == 2)
+        } else { Issue.record("应该是场景") }
+        // AI 说是词却没给词：英语那条像个词就查它
+        if case .word(let word) = SpeechIntent.resolve(kind: "word", word: "", english: "Oat.", extraction: extraction([])) {
+            #expect(word == "Oat")
+        } else { Issue.record("应该退回查英语那条") }
+        // 什么都没听出来
+        #expect(SpeechIntent.resolve(kind: "scene", word: "", english: "嗯嗯", extraction: extraction([])) == nil)
+    }
+
+    @Test func voiceSceneHasNoPhotoAndKeepsWhatWasSaid() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let candidates = extraction(["dentist", "appointment", "cavity"]).candidates
+
+        let scan = WordLibrary.saveVoiceScene(
+            title: "看牙医",
+            placeName: "",
+            scene: .medical,
+            transcript: "明天要去看牙医",
+            candidates: candidates,
+            selectedKeys: ["dentist", "appointment"],
+            context: context
+        )
+
+        #expect(scan.isVoice)
+        #expect(scan.imageData == nil)
+        #expect(scan.ocrText == "明天要去看牙医")
+        #expect(Set(scan.words.map(\.word)) == ["dentist", "appointment"])
+        #expect(scan.candidates.count == 3)
+        #expect(Scan().isVoice == false)
+    }
+}

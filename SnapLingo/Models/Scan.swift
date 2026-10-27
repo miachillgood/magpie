@@ -66,7 +66,10 @@ final class Scan {
     /// 宽 / 高
     var imageAspectRatio: Double = 1
 
+    /// 照片上认出的文字；「说一说」的场景存的是用户说的原话
     var ocrText: String = ""
+    /// 场景从哪来：photo 拍照 / voice 说一说（说一说的场景没有照片）
+    var sourceRaw: String = "photo"
     var tokensData: Data?
     var linesData: Data?
     var candidatesData: Data?
@@ -83,6 +86,8 @@ final class Scan {
         get { SceneType(key: sceneRaw) }
         set { sceneRaw = newValue.rawValue }
     }
+
+    var isVoice: Bool { sourceRaw == "voice" }
 
     var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)

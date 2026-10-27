@@ -6,11 +6,12 @@
 import SwiftUI
 import SwiftData
 
-/// 选词页：照片上点词 + 按水平分组的推荐列表
+/// 选词页：照片上点词 + 按水平分组的推荐列表。「说一说」也用这一页，只是顶上没有照片、换成说的原话
 struct WordPickerView: View {
     private enum Mode {
         case new(WordLibrary.ScanDraft)
         case existing(Scan)
+        case voice(WordLibrary.VoiceDraft)
     }
 
     private let mode: Mode
@@ -52,15 +53,33 @@ struct WordPickerView: View {
         self.onRetake = nil
     }
 
+    /// 说一说：在词库的语音面板里打开，保存或关闭时关掉的是那个面板
+    init(voice draft: WordLibrary.VoiceDraft, onRetake: @escaping () -> Void) {
+        self.mode = .voice(draft)
+        self.onRetake = onRetake
+    }
+
+    /// 新场景（拍照或说一说）；再选几个词时是 false
     private var isNewScan: Bool {
-        if case .new = mode { return true }
+        if case .existing = mode { return false }
+        return true
+    }
+
+    private var isVoice: Bool {
+        if case .voice = mode { return true }
         return false
+    }
+
+    /// 关掉整个流程：拍照是全屏的相机流程，说一说是词库里的面板
+    private func close() {
+        if isVoice { dismiss() } else { coordinator.showingScan = false }
     }
 
     private var image: UIImage? {
         switch mode {
         case .new(let draft): draft.image
         case .existing(let scan): scan.fullImage
+        case .voice: nil
         }
     }
 
@@ -68,6 +87,7 @@ struct WordPickerView: View {
         switch mode {
         case .new(let draft): draft.ocr.tokens
         case .existing(let scan): scan.tokens
+        case .voice: []
         }
     }
 
@@ -84,6 +104,10 @@ struct WordPickerView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 photo
+                if case .voice(let draft) = mode {
+                    TranscriptCard(text: draft.transcript)
+                        .padding(.top, Spacing.xs)
+                }
                 if let aiError {
                     Text("😕 \(aiError)。你可以直接点照片上的词来添加。")
                         .font(.subheadline)
@@ -268,14 +292,14 @@ struct WordPickerView: View {
     private var toolbar: some ToolbarContent {
         if let onRetake {
             ToolbarItem(placement: .topBarLeading) {
-                Button("重拍", systemImage: "arrow.counterclockwise", action: onRetake)
+                Button(isVoice ? "重说" : "重拍", systemImage: "arrow.counterclockwise", action: onRetake)
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("关闭", systemImage: "xmark") {
-                    if savedCount == nil { confirmingDiscard = true } else { coordinator.showingScan = false }
+                    if savedCount == nil { confirmingDiscard = true } else { close() }
                 }
-                .confirmationDialog("放弃这张照片？", isPresented: $confirmingDiscard, titleVisibility: .visible) {
-                    Button("放弃", role: .destructive) { coordinator.showingScan = false }
+                .confirmationDialog(isVoice ? "放弃这些词？" : "放弃这张照片？", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                    Button("放弃", role: .destructive) { close() }
                     Button("继续选词", role: .cancel) {}
                 } message: {
                     Text("还没保存，选好的词不会加进词库。")
@@ -310,6 +334,10 @@ struct WordPickerView: View {
             scene = draft.extraction?.scene ?? .general
         case .existing(let scan):
             candidates = scan.candidates
+        case .voice(let draft):
+            candidates = draft.extraction.candidates
+            title = draft.extraction.title
+            scene = draft.extraction.scene
         }
 
         classified = LevelService.classify(
@@ -408,6 +436,16 @@ struct WordPickerView: View {
         case .existing(let scan):
             WordLibrary.addWords(candidates.filter { linkKeys.contains($0.key) }, to: scan, context: context)
             scan.candidates = candidates
+        case .voice(let draft):
+            WordLibrary.saveVoiceScene(
+                title: title,
+                placeName: draft.extraction.place,
+                scene: scene,
+                transcript: draft.transcript,
+                candidates: candidates,
+                selectedKeys: linkKeys,
+                context: context
+            )
         }
 
         // 这次选中的词（新词 + 已经存过的）放进勾选的文件夹
@@ -431,8 +469,9 @@ struct WordPickerView: View {
         Task {
             try? await Task.sleep(for: .seconds(1.1))
             if isNewScan {
+                // 回首页看新场景
                 coordinator.selectedTab = .home
-                coordinator.showingScan = false
+                close()
             } else {
                 dismiss()
             }
@@ -488,6 +527,33 @@ private struct LocationOfferCard: View {
             .buttonStyle(.pressable)
         }
         .foregroundStyle(Theme.ink)
+        .card(padding: Spacing.md)
+    }
+}
+
+// MARK: - 说一说的原话
+
+private struct TranscriptCard: View {
+    var text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "waveform")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Theme.homeInk)
+                .frame(width: 34, height: 34)
+                .background(Theme.streakFill, in: .circle)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("你说的")
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(.secondary)
+                Text(verbatim: "“\(text)”")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
         .card(padding: Spacing.md)
     }
 }

@@ -120,6 +120,100 @@
           }
         }
       }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Privacy - Microphone Usage Description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Say it” uses the microphone: say an English word or describe what you're about to do, and Magpie finds words to learn. The recording is turned into text on your phone and never uploaded."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Dilo» usa el micrófono: di una palabra en inglés o cuenta lo que vas a hacer y Magpie encontrará palabras para aprender. La grabación se convierte en texto en tu teléfono y no se sube."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「話してみる」ではマイクを使います。英単語を言うか、これからすることを話すと、Magpie が覚える単語を探します。録音はiPhone上で文字にするだけで、アップロードされません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘말해 보기’는 마이크를 사용해요. 영어 단어를 말하거나 하려는 일을 말하면 Magpie가 배울 단어를 찾아 줘요. 녹음은 휴대폰에서 글자로만 바뀌고 업로드되지 않아요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O “Fale” usa o microfone: diga uma palavra em inglês ou conte o que vai fazer, e o Magpie encontra palavras para aprender. A gravação vira texto no seu celular e nunca é enviada."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「说一说」需要麦克风：念一个英文词，或者说说你要去做什么，Magpie 帮你找要学的词。录音只在手机上转成文字，不会上传。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「說一說」需要麥克風：念一個英文詞，或者說說你要去做什麼，Magpie 幫你找要學的詞。錄音只在手機上轉成文字，不會上傳。"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "comment" : "Privacy - Speech Recognition Usage Description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Say it” turns your speech into text on your phone to look up words and suggest new ones."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Dilo» convierte tu voz en texto en tu teléfono para buscar palabras y sugerir otras nuevas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「話してみる」は話した内容をiPhone上で文字にして、単語を調べたりおすすめしたりします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘말해 보기’는 휴대폰에서 말을 글자로 바꿔 단어를 찾고 추천해요."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O “Fale” transforma sua fala em texto no celular para procurar e sugerir palavras."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「说一说」在手机上把你说的话转成文字，用来查词和推荐单词。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「說一說」在手機上把你說的話轉成文字，用來查詞和推薦單字。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

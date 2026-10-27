@@ -260,7 +260,16 @@ private struct CardFront: View {
     var body: some View {
         let word = card.word
         VStack(spacing: 0) {
-            if let scan = word.latestScan {
+            if let scan = word.latestScan, scan.isVoice {
+                // 说一说的场景没有照片：只标一下是在哪个场景里学的
+                Label { Text(scan.displayTitle) } icon: { IconImage(name: scan.scene.iconName, size: 18) }
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(Theme.ink)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, 7)
+                    .background(scan.scene.pastel, in: .capsule)
+                    .padding(.top, Spacing.lg)
+            } else if let scan = word.latestScan {
                 WordInPhotoView(word: word, scan: scan)
                     .frame(maxWidth: .infinity)
                     .frame(height: 240)

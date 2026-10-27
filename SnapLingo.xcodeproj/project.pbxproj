@@ -344,6 +344,8 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Magpie 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Magpie 会记下你在哪个街区拍的照片，首页会提醒你在哪里碰到这些词。地点只存在手机上。";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "「说一说」需要麦克风：念一个英文词，或者说说你要去做什么，Magpie 帮你找要学的词。录音只在手机上转成文字，不会上传。";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "「说一说」在手机上把你说的话转成文字，用来查词和推荐单词。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -383,6 +385,8 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Magpie 需要使用相机拍下身边的英文场景，帮你从中挑选要学的单词。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Magpie 会记下你在哪个街区拍的照片，首页会提醒你在哪里碰到这些词。地点只存在手机上。";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "「说一说」需要麦克风：念一个英文词，或者说说你要去做什么，Magpie 帮你找要学的词。录音只在手机上转成文字，不会上传。";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "「说一说」在手机上把你说的话转成文字，用来查词和推荐单词。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

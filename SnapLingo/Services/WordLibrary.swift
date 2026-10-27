@@ -23,6 +23,12 @@ enum WordLibrary {
         var fromCamera = false
     }
 
+    /// 「说一说」：AI 从原话里推荐的词，等用户挑
+    struct VoiceDraft {
+        var transcript: String
+        var extraction: SceneExtraction
+    }
+
     /// 记下拍照的街区（定位往往比选词慢，保存后再补上）
     static func setPlace(_ place: ScanPlace, on scan: Scan, context: ModelContext) {
         scan.neighborhood = place.neighborhood
@@ -53,6 +59,31 @@ enum WordLibrary {
         scan.ocrText = draft.ocr.fullText
         scan.tokens = draft.ocr.tokens
         scan.lines = draft.ocr.lines
+        scan.candidates = candidates
+        context.insert(scan)
+
+        addWords(candidates.filter { selectedKeys.contains($0.key) }, to: scan, context: context)
+        try? context.save()
+        return scan
+    }
+
+    /// 「说一说」的场景：没有照片，原话存在 ocrText 里，首页显示成一张场景卡
+    @discardableResult
+    static func saveVoiceScene(
+        title: String,
+        placeName: String,
+        scene: SceneType,
+        transcript: String,
+        candidates: [WordCandidate],
+        selectedKeys: Set<String>,
+        context: ModelContext
+    ) -> Scan {
+        let scan = Scan()
+        scan.sourceRaw = "voice"
+        scan.title = title
+        scan.placeName = title.localizedCaseInsensitiveContains(placeName) ? placeName : ""
+        scan.scene = scene
+        scan.ocrText = transcript
         scan.candidates = candidates
         context.insert(scan)
 

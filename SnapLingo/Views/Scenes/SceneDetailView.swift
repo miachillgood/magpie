@@ -32,11 +32,15 @@ struct SceneDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
-                photo
+                if scan.isVoice {
+                    spoken
+                } else {
+                    photo
+                }
                 header
                 actions
                 wordsSection
-                if !scan.ocrText.isEmpty {
+                if !scan.ocrText.isEmpty, !scan.isVoice {
                     ocrSection
                 }
             }
@@ -95,7 +99,11 @@ struct SceneDetailView: View {
                 }
             }
         } message: {
-            Text("照片会被删除；只在这个场景里出现过的词也会一起删除，其他场景里也有的词会保留。")
+            if scan.isVoice {
+                Text("只在这个场景里出现过的词会一起删除，其他场景里也有的词会保留。")
+            } else {
+                Text("照片会被删除；只在这个场景里出现过的词也会一起删除，其他场景里也有的词会保留。")
+            }
         }
     }
 
@@ -136,6 +144,24 @@ struct SceneDetailView: View {
                 }
                 .padding(.top, Spacing.xs)
         }
+    }
+
+    /// 说一说的场景没有照片：顶上放用户说的原话
+    private var spoken: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Label("你说的", systemImage: "waveform")
+                .font(.caption.weight(.heavy))
+                .foregroundStyle(.secondary)
+            Text(verbatim: "“\(scan.ocrText)”")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.lg)
+        .background(scan.scene.pastel, in: .rect(cornerRadius: Radius.hero, style: .continuous))
+        .padding(.top, Spacing.xs)
     }
 
     private var header: some View {
