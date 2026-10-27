@@ -92,6 +92,25 @@ enum WordLibrary {
         return touched
     }
 
+    /// 在词库里查到的词：不属于任何场景，直接加进复习。已经有了就返回原来那个
+    @discardableResult
+    static func addStandalone(_ candidate: WordCandidate, explanation: WordExplanation?, context: ModelContext) -> VocabWord {
+        let key = candidate.key
+        let existing = (try? context.fetch(FetchDescriptor<VocabWord>(predicate: #Predicate { $0.normalizedForm == key }))) ?? []
+        if let word = existing.first { return word }
+
+        let word = VocabWord(
+            word: candidate.displayWord,
+            partOfSpeech: candidate.partOfSpeech,
+            cefr: candidate.cefr,
+            gloss: candidate.gloss
+        )
+        if let explanation { word.applyExplanation(explanation) }
+        context.insert(word)
+        try? context.save()
+        return word
+    }
+
     /// 语境：优先找包含原文写法的那一行
     private static func contextLine(for candidate: WordCandidate, in scan: Scan) -> String {
         let surface = candidate.word.normalizedWordKey

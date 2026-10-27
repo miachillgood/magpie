@@ -16,6 +16,8 @@ struct WordsView: View {
     /// 左滑删除先确认（和词夹里的删除一致）
     @State private var pendingDelete: VocabWord?
     @State private var deletedCount = 0
+    /// 词库里没有的词：查一查，看了释义再加入复习
+    @State private var lookup: LookupTerm?
     private let startsSearching: Bool
 
     init(initialFilter: WordsFilter = .all, startsSearching: Bool = false) {
@@ -39,12 +41,27 @@ struct WordsView: View {
         }
     }
 
+    /// 搜的是一个英文词、词库里又没有完全一样的：给一个「查一查」
+    private var lookupTerm: String? {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard WordLookupSheet.isLookupQuery(trimmed) else { return nil }
+        let key = trimmed.normalizedWordKey
+        return words.contains { $0.normalizedForm == key } ? nil : trimmed
+    }
+
     private func count(_ filter: WordsFilter) -> Int {
         words.filter(filter.matches).count
     }
 
     var body: some View {
         List {
+            if let lookupTerm {
+                LookupRow(term: lookupTerm) { lookup = LookupTerm(text: lookupTerm) }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: Spacing.lg, bottom: 8, trailing: Spacing.lg))
+            }
+
             if !words.isEmpty {
                 filterBar
                     .listRowBackground(Color.clear)
@@ -52,7 +69,7 @@ struct WordsView: View {
                     .listRowInsets(EdgeInsets(top: 4, leading: Spacing.lg, bottom: 8, trailing: Spacing.lg))
             }
 
-            if words.isEmpty {
+            if words.isEmpty, lookupTerm == nil {
                 ContentUnavailableView(
                     "词库还是空的",
                     systemImage: "book.closed",
@@ -60,7 +77,7 @@ struct WordsView: View {
                 )
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-            } else if filtered.isEmpty {
+            } else if filtered.isEmpty, lookupTerm == nil {
                 Group {
                     if query.isEmpty {
                         ContentUnavailableView("这里还没有词", systemImage: "tray", description: Text(emptyDescription))
@@ -133,6 +150,9 @@ struct WordsView: View {
         .autocorrectionDisabled()
         .textInputAutocapitalization(.never)
         .sensoryFeedback(.selection, trigger: filter)
+        .sheet(item: $lookup) { term in
+            WordLookupSheet(query: term.text)
+        }
         .sensoryFeedback(.impact(weight: .medium), trigger: deletedCount)
         .confirmationDialog(
             "删除“\(pendingDelete?.word ?? "")”？",
@@ -170,5 +190,45 @@ struct WordsView: View {
         case .learning: String(localized: "开始今日学习后，词会出现在这里。")
         case .mastered: String(localized: "复习间隔超过 21 天或手动标记的词会出现在这里。")
         }
+    }
+}
+
+private struct LookupTerm: Identifiable {
+    let id = UUID()
+    let text: String
+}
+
+/// 搜索结果最上面的「查一查 “oat”」
+private struct LookupRow: View {
+    var term: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "text.magnifyingglass")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Theme.homeInk)
+                    .frame(width: 34, height: 34)
+                    .background(Theme.streakFill, in: .circle)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("查一查 “\(term)”", comment: "Look up a word that is not in the library yet")
+                        .font(.headline)
+                        .foregroundStyle(Theme.homeInk)
+                    Text("看释义，再决定要不要加入复习")
+                        .font(.caption)
+                        .foregroundStyle(Theme.homeMuted)
+                }
+                .lineLimit(1)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(Theme.homeMuted)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, 10)
+            .background(Theme.sheet, in: .rect(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.pressable)
     }
 }

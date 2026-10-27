@@ -157,3 +157,41 @@ struct BatchOrganizeTests {
         #expect(folder.words.isEmpty)
     }
 }
+
+@MainActor
+struct LookupTests {
+    @Test func onlyEnglishWordsOrShortPhrasesCanBeLookedUp() {
+        #expect(WordLookupSheet.isLookupQuery("oat"))
+        #expect(WordLookupSheet.isLookupQuery(" flat white "))
+        #expect(WordLookupSheet.isLookupQuery("take-away"))
+        #expect(WordLookupSheet.isLookupQuery("don't"))
+        #expect(!WordLookupSheet.isLookupQuery("燕麦"))
+        #expect(!WordLookupSheet.isLookupQuery("123"))
+        #expect(!WordLookupSheet.isLookupQuery("a b c d e"))
+        #expect(!WordLookupSheet.isLookupQuery(""))
+    }
+
+    @Test func lookedUpWordJoinsTodaysNewWordsOnce() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let candidate = WordCandidate(word: "oats", lemma: "oat", partOfSpeech: "n.", cefrRaw: 2, gloss: "燕麦")
+        let explanation = WordExplanation(
+            lemma: "oat", partOfSpeech: "n.", cefr: .a2, gloss: "燕麦", phonetic: "/oʊt/",
+            explanation: "燕麦", exampleSentence: "Oat milk, please.", exampleTranslation: "请用燕麦奶。", sceneNote: ""
+        )
+
+        let word = WordLibrary.addStandalone(candidate, explanation: explanation, context: context)
+        let again = WordLibrary.addStandalone(candidate, explanation: nil, context: context)
+
+        #expect(again.id == word.id)
+        #expect(try context.fetch(FetchDescriptor<VocabWord>()).count == 1)
+        #expect(word.word == "oat")
+        #expect(word.scans.isEmpty)
+        #expect(word.state == .new)
+        #expect(word.explanationStatus == .ready)
+        #expect(word.exampleSentence == "Oat milk, please.")
+
+        let plan = DailyPlanner.plan(words: [word], events: [ReviewLog](), newPerDay: 10, maxReviews: 100)
+        #expect(plan.newIDs == [word.id])
+    }
+}
