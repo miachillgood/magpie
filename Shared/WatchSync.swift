@@ -54,7 +54,7 @@ nonisolated struct WatchSnapshot: Codable, Hashable, Sendable {
 nonisolated struct WatchRating: Codable, Hashable, Sendable {
     var id: UUID
     var wordID: UUID
-    /// ReviewRating 的 rawValue：0 不会 / 4 会
+    /// ReviewRating 的 rawValue：0 不会 / 4 会 / 5 掌握（以后不再复习）
     var ratingRaw: Int
     var reviewedAt: Date
 }

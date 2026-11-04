@@ -201,3 +201,21 @@ struct WatchSyncTests {
         #expect(word.mistakeAt == nil)
     }
 }
+
+@MainActor
+struct WatchMasteryTests {
+    @Test func swipingUpOnTheWatchTakesTheWordOutOfReview() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let word = VocabWord(word: "receipt")
+        context.insert(word)
+
+        let rating = WatchRating(id: UUID(), wordID: word.id, ratingRaw: ReviewRating.easy.rawValue, reviewedAt: Date())
+        #expect(ReviewApplier.apply(rating, context: context))
+
+        #expect(word.excludedFromReview)
+        #expect(word.state == .mastered)
+        let logs = try context.fetch(FetchDescriptor<ReviewLog>())
+        #expect(logs.map(\.rating) == [.easy])
+    }
+}

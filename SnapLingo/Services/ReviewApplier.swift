@@ -35,7 +35,7 @@ enum ReviewApplier {
         return log
     }
 
-    /// 手表上的评分：同一条只记一次；这个词今天已经在手机上评过了也不再记（今天第一次的评分才算数）
+    /// 手表上的评分（不会 / 会 / 掌握）：同一条只记一次；这个词今天已经在手机上评过了也不再记（今天第一次的评分才算数）
     @discardableResult
     static func apply(_ rating: WatchRating, context: ModelContext, calendar: Calendar = .current) -> Bool {
         guard let value = ReviewRating(rawValue: rating.ratingRaw) else { return false }
@@ -50,6 +50,10 @@ enum ReviewApplier {
         if let last = word.lastReviewedAt, calendar.isDate(last, inSameDayAs: rating.reviewedAt) { return false }
 
         apply(value, to: word, at: rating.reviewedAt, logID: rating.id, context: context)
+        // 手表上滑「掌握」：和手机上的「太简单」一样移出复习
+        if value == .easy {
+            WordLibrary.setMastered(word, true, context: context)
+        }
         return true
     }
 }

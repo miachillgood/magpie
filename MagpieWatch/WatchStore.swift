@@ -38,12 +38,12 @@ final class WatchStore: NSObject, WCSessionDelegate {
         WCSession.default.activate()
     }
 
-    /// 评一张卡（只有每张卡第一次的评分会发回手机）
-    func record(_ card: WatchCard, success: Bool, at date: Date = Date()) {
+    /// 评一张卡（只有每张卡第一次的评分会发回手机）。ratingRaw 是 ReviewRating：0 不会 / 4 会 / 5 掌握
+    func record(_ card: WatchCard, ratingRaw: Int, at date: Date = Date()) {
         resetDoneIfNewDay(date)
         done.insert(card.id)
         saveDone(day: date)
-        let rating = WatchRating(id: UUID(), wordID: card.id, ratingRaw: success ? 4 : 0, reviewedAt: date)
+        let rating = WatchRating(id: UUID(), wordID: card.id, ratingRaw: ratingRaw, reviewedAt: date)
         guard let data = WatchSync.encode(rating), WCSession.isSupported() else { return }
         let session = WCSession.default
         let payload = [WatchSync.ratingKey: data]
