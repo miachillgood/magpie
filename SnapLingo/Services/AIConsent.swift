@@ -35,6 +35,8 @@ extension AIConsent {
     static func grant(context: ModelContext) {
         state = .granted
         ExplanationQueue.shared.run(context: context)
+        // 手表上的「怎么说」也跟着能用了
+        StudyReminder.refresh(context: context)
     }
 
     static func decline() {

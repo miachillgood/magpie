@@ -247,3 +247,58 @@ struct VoiceSceneTests {
         #expect(Scan().isVoice == false)
     }
 }
+
+@MainActor
+struct PhrasingTests {
+    private let result = PhrasingResult(situation: "少放点冰", phrasings: [
+        Phrasing(text: "Less ice, please.", tone: .casual, translation: "少点冰，谢谢。", note: ""),
+        Phrasing(text: "Could I have it with less ice?", tone: .polite, translation: "可以少放点冰吗？", note: "点单时最常用")
+    ])
+
+    @Test func wantingToSaySomethingGivesPhrasings() {
+        let empty = SceneExtraction(scene: .general, title: "", candidates: [])
+        if case .say(let got) = SpeechIntent.resolve(kind: "say", word: "", english: "", extraction: empty, phrasing: result) {
+            #expect(got.phrasings.count == 2)
+        } else { Issue.record("应该是怎么说") }
+        // AI 说是 say 却没给说法：不能空着进结果页
+        #expect(SpeechIntent.resolve(kind: "say", word: "", english: "嗯", extraction: empty) == nil)
+    }
+
+    @Test func cleanDropsEmptyAndDuplicateSentences() {
+        let messy = [
+            Phrasing(text: " \"Less ice, please.\" ", tone: .casual, translation: "", note: ""),
+            Phrasing(text: "less ice, please.", tone: .neutral, translation: "", note: ""),
+            Phrasing(text: "  ", tone: .polite, translation: "", note: ""),
+            Phrasing(text: "A", tone: .polite, translation: "", note: ""),
+            Phrasing(text: "B", tone: .polite, translation: "", note: ""),
+            Phrasing(text: "C", tone: .polite, translation: "", note: "")
+        ]
+        #expect(PhrasingPrompt.clean(messy).map(\.text) == ["Less ice, please.", "A", "B"])
+    }
+
+    @Test func savedSentenceIsAReviewCardWithItsTranslation() throws {
+        let container = try ModelContainer(for: SnapLingoApp.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let phrasing = result.phrasings[1]
+
+        let word = WordLibrary.addPhrase(phrasing, situation: result.situation, context: context)
+        let again = WordLibrary.addPhrase(phrasing, situation: result.situation, context: context)
+
+        #expect(again.id == word.id)
+        #expect(word.word == "Could I have it with less ice?")
+        #expect(word.gloss == "可以少放点冰吗？")
+        #expect(word.explanation == "点单时最常用")
+        #expect(word.explanationStatus == .ready)
+        #expect(word.state == .new)
+    }
+
+    @Test func watchKnowsWhetherAIIsAllowed() {
+        let snapshot = WatchBridge.snapshot(plan: .empty, words: [], accent: "en-US", nativeName: "Simplified Chinese")
+        #expect(snapshot.nativeName == "Simplified Chinese")
+        // 旧版快照没有这两项也能解出来
+        let old = #"{"day":0,"cards":[],"accent":"en-US"}"#.data(using: .utf8)
+        let decoded = WatchSync.decode(WatchSnapshot.self, from: old)
+        #expect(decoded != nil)
+        #expect(decoded?.aiAllowed == nil)
+    }
+}

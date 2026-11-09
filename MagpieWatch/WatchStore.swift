@@ -44,11 +44,22 @@ final class WatchStore: NSObject, WCSessionDelegate {
         done.insert(card.id)
         saveDone(day: date)
         let rating = WatchRating(id: UUID(), wordID: card.id, ratingRaw: ratingRaw, reviewedAt: date)
-        guard let data = WatchSync.encode(rating), WCSession.isSupported() else { return }
+        guard let data = WatchSync.encode(rating) else { return }
+        send([WatchSync.ratingKey: data])
+    }
+
+    /// 「怎么说」里挑中的一句话：交给手机加入复习
+    func addPhrase(_ phrasing: Phrasing, situation: String) {
+        let phrase = WatchPhrase(id: UUID(), phrasing: phrasing, situation: situation)
+        guard let data = WatchSync.encode(phrase) else { return }
+        send([WatchSync.phraseKey: data])
+    }
+
+    /// 手机在旁边：马上送到，手机上立刻更新；
+    /// 不在旁边或没送到：交给系统排队，连上之后再送（同一条送到两次手机只记一次）
+    private func send(_ payload: [String: Data]) {
+        guard WCSession.isSupported() else { return }
         let session = WCSession.default
-        let payload = [WatchSync.ratingKey: data]
-        // 手机在旁边：马上送到，手机上的进度立刻更新；
-        // 不在旁边或没送到：交给系统排队，连上之后再送（同一条送到两次手机只记一次）
         guard session.isReachable else {
             session.transferUserInfo(payload)
             return

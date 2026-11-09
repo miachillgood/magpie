@@ -28,9 +28,9 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     }
 
     /// 发送今天的卡片；没配对手表、没装手表 App、内容没变时什么都不做
-    func push(plan: DailyPlan, words: [VocabWord], accent: String, now: Date = Date()) {
+    func push(plan: DailyPlan, words: [VocabWord], accent: String, nativeName: String, now: Date = Date()) {
         guard let session, session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
-        let snapshot = Self.snapshot(plan: plan, words: words, accent: accent, now: now)
+        let snapshot = Self.snapshot(plan: plan, words: words, accent: accent, nativeName: nativeName, now: now)
         guard snapshot != lastSent, let data = WatchSync.encode(snapshot) else { return }
         do {
             try session.updateApplicationContext([WatchSync.snapshotKey: data])
@@ -43,7 +43,7 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     }
 
     /// 先复习到期的，再学新词；和手机上开始复习时的顺序一样
-    static func snapshot(plan: DailyPlan, words: [VocabWord], accent: String, now: Date = Date(), calendar: Calendar = .current) -> WatchSnapshot {
+    static func snapshot(plan: DailyPlan, words: [VocabWord], accent: String, nativeName: String = "", now: Date = Date(), calendar: Calendar = .current) -> WatchSnapshot {
         let byID = Dictionary(words.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let newIDs = Set(plan.newIDs)
         let cards = (plan.reviewIDs + plan.newIDs).prefix(WatchSync.maxCards).compactMap { id -> WatchCard? in
@@ -58,7 +58,13 @@ final class WatchBridge: NSObject, WCSessionDelegate {
                 isNew: newIDs.contains(id)
             )
         }
-        return WatchSnapshot(day: calendar.startOfDay(for: now), cards: Array(cards), accent: accent)
+        return WatchSnapshot(
+            day: calendar.startOfDay(for: now),
+            cards: Array(cards),
+            accent: accent,
+            aiAllowed: AIConsent.isGranted,
+            nativeName: nativeName
+        )
     }
 
     private func receive(_ rating: WatchRating) {
@@ -66,6 +72,13 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         if ReviewApplier.apply(rating, context: context) {
             StudyReminder.refresh(context: context)
         }
+    }
+
+    /// 手表上「怎么说」挑中的一句话：加进词库
+    private func receive(_ phrase: WatchPhrase) {
+        guard let context = container?.mainContext else { return }
+        WordLibrary.addPhrase(phrase.phrasing, situation: phrase.situation, context: context)
+        StudyReminder.refresh(context: context)
     }
 
     private func refresh() {
@@ -94,12 +107,20 @@ final class WatchBridge: NSObject, WCSessionDelegate {
 
     /// 手表评分：手机在旁边时直接送到（message），不在旁边时系统排队送到（userInfo）
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-        guard let rating = WatchSync.decode(WatchRating.self, from: message[WatchSync.ratingKey] as? Data) else { return }
-        Task { @MainActor in self.receive(rating) }
+        handle(message)
     }
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-        guard let rating = WatchSync.decode(WatchRating.self, from: userInfo[WatchSync.ratingKey] as? Data) else { return }
-        Task { @MainActor in self.receive(rating) }
+        handle(userInfo)
+    }
+
+    /// 评分或「怎么说」的一句话
+    nonisolated private func handle(_ payload: [String: Any]) {
+        if let rating = WatchSync.decode(WatchRating.self, from: payload[WatchSync.ratingKey] as? Data) {
+            Task { @MainActor in self.receive(rating) }
+        }
+        if let phrase = WatchSync.decode(WatchPhrase.self, from: payload[WatchSync.phraseKey] as? Data) {
+            Task { @MainActor in self.receive(phrase) }
+        }
     }
 }

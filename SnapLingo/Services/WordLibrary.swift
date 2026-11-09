@@ -142,6 +142,24 @@ enum WordLibrary {
         return word
     }
 
+    /// 「怎么说」里挑中的一句话：整句当一张卡复习，背面是母语翻译和用法提示
+    @discardableResult
+    static func addPhrase(_ phrasing: Phrasing, situation: String, context: ModelContext) -> VocabWord {
+        let candidate = WordCandidate(word: phrasing.text, lemma: "", partOfSpeech: "phr.", cefrRaw: 0, gloss: phrasing.translation)
+        let explanation = WordExplanation(
+            lemma: phrasing.text,
+            partOfSpeech: "phr.",
+            cefr: nil,
+            gloss: phrasing.translation,
+            phonetic: "",
+            explanation: phrasing.note.isEmpty ? phrasing.translation : phrasing.note,
+            exampleSentence: "",
+            exampleTranslation: "",
+            sceneNote: situation.isEmpty ? "" : String(localized: "想说「\(situation)」时用", comment: "Study card tip for a saved sentence: when you want to say <situation>")
+        )
+        return addStandalone(candidate, explanation: explanation, context: context)
+    }
+
     /// 语境：优先找包含原文写法的那一行
     private static func contextLine(for candidate: WordCandidate, in scan: Scan) -> String {
         let surface = candidate.word.normalizedWordKey

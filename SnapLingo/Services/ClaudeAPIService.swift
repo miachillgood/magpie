@@ -32,11 +32,20 @@ enum SpeechIntent: Sendable {
     case word(String)
     /// 描述了一个场景：推荐这个场景要用的词
     case scene(SceneExtraction)
+    /// 想说一句话不会说（「我想跟店员说少放点冰」）：给几种地道说法
+    case say(PhrasingResult)
 
     /// AI 判断错了也尽量给个能用的结果：说是词却没给词、说是场景却没挑出词时，英语那条像个词就当查词
-    nonisolated static func resolve(kind: String, word: String, english: String, extraction: SceneExtraction) -> SpeechIntent? {
+    nonisolated static func resolve(
+        kind: String,
+        word: String,
+        english: String,
+        extraction: SceneExtraction,
+        phrasing: PhrasingResult = PhrasingResult(situation: "", phrasings: [])
+    ) -> SpeechIntent? {
         let word = word.trimmingCharacters(in: .whitespacesAndNewlines)
         let english = english.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+        if kind == "say", !phrasing.phrasings.isEmpty { return .say(phrasing) }
         if kind == "word", WordLookupSheet.isLookupQuery(word) { return .word(word) }
         if !extraction.candidates.isEmpty, kind == "scene" || !WordLookupSheet.isLookupQuery(english) {
             return .scene(extraction)
@@ -243,6 +252,11 @@ final class ClaudeAPIService: Sendable {
         (e.g. "oat milk", "怎么说燕麦"). Put the English word or phrase in `word` (dictionary form, lowercase). Leave `words` empty.
         - kind "scene": they described a situation, plan or place in daily life (e.g. "明天要去看牙医", "I need to open a bank account"). \
         Leave `word` empty and pick 8–15 practical English words or phrases they will likely hear, read or need to say there.
+        - kind "say": they want to say one specific thing to someone and don't know how (e.g. "我想跟店员说少放点冰", \
+        "怎么跟房东说热水器坏了"). Fill `phrasings` and `situation`; leave `word` and `words` empty.
+        Leave `phrasings` empty and `situation` empty unless kind is "say".
+
+        For "say": \(PhrasingPrompt.rules(nativeName: nativeName))
 
         The user's current level: CEFR \(level.code). For "scene" words:
         1. Range from \(level.code) up to two levels above; a few easier words are fine.
@@ -262,9 +276,11 @@ final class ClaudeAPIService: Sendable {
         let schema: [String: Any] = [
             "type": "object",
             "additionalProperties": false,
-            "required": ["kind", "word", "scene", "place", "title", "words"],
+            "required": ["kind", "word", "scene", "place", "title", "words", "situation", "phrasings"],
             "properties": [
-                "kind": ["type": "string", "enum": ["word", "scene"]],
+                "kind": ["type": "string", "enum": ["word", "scene", "say"]],
+                "situation": ["type": "string"],
+                "phrasings": PhrasingPrompt.phrasingSchema,
                 "word": ["type": "string"],
                 "scene": ["type": "string", "enum": SceneType.allCases.map(\.rawValue)],
                 "place": ["type": "string"],
@@ -280,6 +296,8 @@ final class ClaudeAPIService: Sendable {
             let place: String
             let title: String
             let words: [RawWord]
+            let situation: String
+            let phrasings: [Phrasing]
         }
 
         let raw: Raw = try await callJSON(
@@ -296,7 +314,8 @@ final class ClaudeAPIService: Sendable {
             candidates: Self.candidates(from: raw.words),
             place: place
         )
-        return SpeechIntent.resolve(kind: raw.kind, word: raw.word, english: english, extraction: extraction)
+        let phrasing = PhrasingResult(situation: raw.situation, phrasings: PhrasingPrompt.clean(raw.phrasings))
+        return SpeechIntent.resolve(kind: raw.kind, word: raw.word, english: english, extraction: extraction, phrasing: phrasing)
     }
 
     // MARK: 2. 批量生成解释

@@ -44,7 +44,7 @@ enum StudyReminder {
             words: words,
             logs: StudyStore.logs(since: startOfToday, context)
         )
-        WatchBridge.shared.push(plan: plan, words: words, accent: settings.accent.rawValue)
+        WatchBridge.shared.push(plan: plan, words: words, accent: settings.accent.rawValue, nativeName: settings.nativeLanguage.promptName)
 
         guard settings.reminderEnabled else {
             NotificationService.reschedule(enabled: false, hour: 0, minute: 0, pendingCount: 0, completedToday: false)

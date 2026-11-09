@@ -9,7 +9,6 @@
 //  「不会」的词和手机上一样，隔 4 张再出现一次（最多 3 次），重练的结果不发回手机。
 //
 
-import AVFoundation
 import SwiftUI
 
 struct WatchReviewView: View {
@@ -34,7 +33,6 @@ struct WatchReviewView: View {
     private static let maxAttempts = 3
     /// 拖过这么远松手就算数
     private static let threshold: CGFloat = 45
-    private static let speech = AVSpeechSynthesizer()
 
     private struct Item: Identifiable {
         let id = UUID()
@@ -444,10 +442,6 @@ struct WatchReviewView: View {
     }
 
     private func speak(_ text: String) {
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: accent)
-        utterance.rate = 0.46
-        Self.speech.stopSpeaking(at: .immediate)
-        Self.speech.speak(utterance)
+        WatchSpeech.speak(text, accent: accent)
     }
 }

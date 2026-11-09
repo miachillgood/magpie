@@ -13,6 +13,8 @@ import Foundation
 nonisolated enum WatchSync {
     static let snapshotKey = "snapshot"
     static let ratingKey = "rating"
+    /// 手表上「怎么说」挑中的一句话，交给手机加入复习
+    static let phraseKey = "phrase"
     /// 手表一次最多带多少张卡（applicationContext 有大小限制，也没人会在手表上一次复习上百个）
     static let maxCards = 60
 
@@ -44,10 +46,21 @@ nonisolated struct WatchSnapshot: Codable, Hashable, Sendable {
     var cards: [WatchCard]
     /// 发音口音：en-US / en-GB / en-AU
     var accent: String
+    /// 用户在手机上同意了用 AI：手表上的「怎么说」才能联网问（旧版手机发来的没有这一项，当作没同意）
+    var aiAllowed: Bool? = nil
+    /// 母语的英文名（Simplified Chinese 等），写进手表「怎么说」的提示词
+    var nativeName: String? = nil
 
     func isCurrent(now: Date = Date(), calendar: Calendar = .current) -> Bool {
         calendar.isDate(day, inSameDayAs: now)
     }
+}
+
+/// 手表上「怎么说」里加入复习的一句话。id 用来去重：同一条送到两次只加一次
+nonisolated struct WatchPhrase: Codable, Hashable, Sendable {
+    var id: UUID
+    var phrasing: Phrasing
+    var situation: String
 }
 
 /// 手表上的一次评分。id 也是手机上那条复习记录的 id，同一条送到两次只记一次

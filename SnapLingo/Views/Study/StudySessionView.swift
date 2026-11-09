@@ -307,12 +307,14 @@ private struct CardFront: View {
             Spacer(minLength: Spacing.md)
 
             VStack(spacing: Spacing.sm) {
+                // 「怎么说」存下来的整句比单词长得多：字小一点，多给几行
+                let isSentence = word.word.split(separator: " ").count > 3
                 Text(word.word)
-                    .font(.system(size: 46, weight: .bold, design: .serif))
+                    .font(.system(size: isSentence ? 30 : 46, weight: .bold, design: .serif))
                     .foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.5)
-                    .lineLimit(2)
+                    .lineLimit(isSentence ? 4 : 2)
                 if !word.phonetic.isEmpty {
                     Text(word.phonetic)
                         .font(.title3.weight(.medium))

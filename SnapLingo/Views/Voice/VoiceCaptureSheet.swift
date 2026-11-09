@@ -28,6 +28,8 @@ struct VoiceCaptureSheet: View {
         case listen
         case thinking
         case picking(WordLibrary.VoiceDraft)
+        /// 想说一句话：几种地道说法
+        case phrasing(transcript: String, result: PhrasingResult)
         case failed(String)
     }
 
@@ -37,6 +39,8 @@ struct VoiceCaptureSheet: View {
                 switch stage {
                 case .picking(let draft):
                     WordPickerView(voice: draft) { restart() }
+                case .phrasing(let transcript, let result):
+                    PhrasingResultView(transcript: transcript, result: result) { restart() }
                 default:
                     capture
                 }
@@ -80,7 +84,7 @@ struct VoiceCaptureSheet: View {
                     .font(.system(size: 24, weight: .heavy))
                     .foregroundStyle(Theme.homeInk)
                     .accessibilityAddTraits(.isHeader)
-                Text("念一个英文词，或者说说你要去做什么")
+                Text("念一个英文词，说说你要去做什么，或者想说的话")
                     .font(.subheadline)
                     .foregroundStyle(Theme.homeMuted)
                     .multilineTextAlignment(.center)
@@ -130,9 +134,12 @@ struct VoiceCaptureSheet: View {
     private var transcript: some View {
         let primary = recorder.native.isEmpty ? recorder.english : recorder.native
         if primary.isEmpty {
-            HStack(spacing: Spacing.xs) {
-                example("oat milk")
-                example(String(localized: "明天要去看牙医", comment: "Example of a situation to say into the voice input"))
+            VStack(spacing: Spacing.xs) {
+                HStack(spacing: Spacing.xs) {
+                    example("oat milk")
+                    example(String(localized: "明天要去看牙医", comment: "Example of a situation to say into the voice input"))
+                }
+                example(String(localized: "想跟店员说少放点冰", comment: "Example of something the user wants to say in English, said into the voice input"))
             }
         } else {
             VStack(spacing: 4) {
@@ -268,6 +275,12 @@ struct VoiceCaptureSheet: View {
                 withAnimation(.snappy) {
                     detent = .large
                     stage = .picking(WordLibrary.VoiceDraft(transcript: transcript, extraction: extraction))
+                }
+            case .say(let result):
+                let transcript = heard.native.isEmpty ? heard.english : heard.native
+                withAnimation(.snappy) {
+                    detent = .large
+                    stage = .phrasing(transcript: transcript, result: result)
                 }
             case nil:
                 stage = .failed(String(localized: "没听出要学什么，换个说法试试？"))

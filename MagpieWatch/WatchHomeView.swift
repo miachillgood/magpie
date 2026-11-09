@@ -9,6 +9,13 @@ import SwiftUI
 struct WatchHomeView: View {
     private var store = WatchStore.shared
     @State private var reviewing = false
+    /// 「怎么说」：听写完的那句话
+    @State private var sayRequest: SayRequest?
+
+    private struct SayRequest: Identifiable, Hashable {
+        let id = UUID()
+        let text: String
+    }
 
     var body: some View {
         ScrollView {
@@ -35,9 +42,35 @@ struct WatchHomeView: View {
             .frame(maxWidth: .infinity)
         }
         .navigationTitle("Magpie")
+        .toolbar {
+            // 右上角的麦克风：想说一句话不会说，点开系统听写，说完问 AI
+            ToolbarItem(placement: .topBarTrailing) {
+                TextFieldLink(prompt: Text("想说什么？")) {
+                    Image(systemName: "mic.fill")
+                        .foregroundStyle(.white)
+                        .accessibilityLabel(Text("怎么说"))
+                } onSubmit: { text in
+                    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    sayRequest = SayRequest(text: trimmed)
+                }
+            }
+        }
         .navigationDestination(isPresented: $reviewing) {
             WatchReviewView(cards: store.remaining)
         }
+        .navigationDestination(item: $sayRequest) { request in
+            WatchPhrasingView(request: request.text)
+        }
+        #if DEBUG
+        // 模拟器上没法听写中文：-watchSay "我想让店员帮我加热一下" 直接打开「怎么说」
+        .task {
+            let arguments = ProcessInfo.processInfo.arguments
+            if let index = arguments.firstIndex(of: "-watchSay"), arguments.indices.contains(index + 1) {
+                sayRequest = SayRequest(text: arguments[index + 1])
+            }
+        }
+        #endif
     }
 
     private func message(symbol: String, text: LocalizedStringKey) -> some View {

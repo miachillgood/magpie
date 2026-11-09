@@ -24,6 +24,16 @@
 		};
 /* End PBXCopyFilesBuildPhase section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0B0A7C00000000000000000F /* Exceptions for "SnapLingo" folder in "MagpieWatch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				APIConfig.swift,
+			);
+			target = 0B0A7C000000000000000004 /* MagpieWatch */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileReference section */
 		088184362F8C782400773489 /* SnapLingo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnapLingo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A1B2C3D4E5F600000000001 /* SnapLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnapLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -33,6 +43,9 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		088184382F8C782400773489 /* SnapLingo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0B0A7C00000000000000000F /* Exceptions for "SnapLingo" folder in "MagpieWatch" target */,
+			);
 			path = SnapLingo;
 			sourceTree = "<group>";
 		};
